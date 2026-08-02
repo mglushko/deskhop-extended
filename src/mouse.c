@@ -391,6 +391,14 @@ void process_mouse_queue_task(device_t *state) {
     if (!queue_try_peek(&state->mouse_queue, &report))
         return;
 
+    /* In boot protocol (UEFI/BIOS/BitLocker) the shared HID interface only speaks the
+       8-byte boot keyboard format; an absolute mouse report would be misread as
+       keystrokes. Drop it instead of sending garbage. */
+    if (report.mode == ABSOLUTE && tud_hid_n_get_protocol(ITF_NUM_HID) == HID_PROTOCOL_BOOT) {
+        queue_try_remove(&state->mouse_queue, &report);
+        return;
+    }
+
     /* If we are suspended, let's wake the host up */
     if (tud_suspended())
         tud_remote_wakeup();

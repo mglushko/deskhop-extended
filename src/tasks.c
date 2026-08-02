@@ -178,6 +178,14 @@ void process_hid_queue_task(device_t *state) {
     if (!queue_try_peek(&state->hid_queue_out, &packet))
         return;
 
+    /* In boot protocol (UEFI/BIOS/BitLocker) the boot keyboard interface only speaks the
+       8-byte boot keyboard format; report-ID reports (consumer/system) would be misread
+       as keystrokes, so drop them while boot protocol is active. */
+    if (packet.instance == ITF_NUM_HID && tud_hid_n_get_protocol(ITF_NUM_HID) == HID_PROTOCOL_BOOT) {
+        queue_try_remove(&state->hid_queue_out, &packet);
+        return;
+    }
+
     if (!tud_hid_n_ready(packet.instance))
         return;
 
