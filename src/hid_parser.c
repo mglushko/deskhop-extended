@@ -54,13 +54,41 @@ uint32_t get_current_offset(parser_state_t *parser) {
     return offset ? *offset : 0;
 }
 
+/* Usages are kept in a fixed-size array, so this returns how many slots are still
+   free at the current position. Guarding on an index relative to p_usage is not
+   enough - p_usage has usually moved on by then. */
+uint32_t usages_left(parser_state_t *parser) {
+    uint32_t used = (uint32_t)(parser->p_usage - parser->usages);
+
+    return (used < HID_MAX_USAGES) ? HID_MAX_USAGES - used : 0;
+}
+
 void update_usage(parser_state_t *parser, int i) {
     /* If we don't have as many usages as elements, the usage for the previous element applies */
-    if (i > 0 && i >= parser->usage_count && i < HID_MAX_USAGES)
+    if (i > 0 && i >= parser->usage_count && (uint32_t)i < usages_left(parser))
         *(parser->p_usage + i) = *(parser->p_usage + i - 1);
 }
 
-void store_element(parser_state_t *parser, report_val_t *val, int i, uint32_t data, uint16_t size, hid_interface_t *iface) {
+/* Usage that applies to element i of the current main item. A report count can be far
+   larger than the number of usages we have room for - vendor collections happily declare
+   blocks of hundreds or thousands of bytes with a single usage - and past the last
+   declared usage that same usage keeps applying anyway, so reuse the last slot instead
+   of walking off the end of the array. */
+uint16_t get_usage(parser_state_t *parser, int i) {
+    uint32_t left = usages_left(parser);
+
+    if (left == 0)
+        return 0;
+
+    if ((uint32_t)i >= left)
+        i = (int)left - 1;
+
+    update_usage(parser, i);
+
+    return *(parser->p_usage + i);
+}
+
+void store_element(parser_state_t *parser, report_val_t *val, uint16_t usage, uint32_t data, uint16_t size, hid_interface_t *iface) {
     uint32_t current_offset = get_current_offset(parser);
 
     *val = (report_val_t){
@@ -74,7 +102,7 @@ void store_element(parser_state_t *parser, report_val_t *val, int i, uint32_t da
         .item_type   = (data & 0x01) ? CONSTANT : DATA,
         .data_type   = (data & 0x02) ? VARIABLE : ARRAY,
 
-        .usage        = *(parser->p_usage + i),
+        .usage        = usage,
         .usage_page   = parser->globals[RI_GLOBAL_USAGE_PAGE].val,
         .global_usage = parser->global_usage,
         .report_id    = parser->report_id
@@ -100,7 +128,7 @@ void handle_local_item(parser_state_t *parser, item_t *item) {
         if(IS_BLOCK_END)
             parser->global_usage = item->val;
 
-        else if (parser->usage_count < HID_MAX_USAGES - 1)
+        else if (parser->usage_count + 1 < usages_left(parser))
             *(parser->p_usage + parser->usage_count++) = item->val;
     }
 }
@@ -124,8 +152,7 @@ void handle_main_input(parser_state_t *parser, item_t *item, hid_interface_t *if
         return;
 
     for (int i = 0; i < count; i++) {
-        update_usage(parser, i);
-        store_element(parser, &val, i, item->val, size, iface);
+        store_element(parser, &val, get_usage(parser, i), item->val, size, iface);
 
         /* Use the parsed data to populate internal device structures */
         extract_data(iface, &val);
@@ -134,11 +161,15 @@ void handle_main_input(parser_state_t *parser, item_t *item, hid_interface_t *if
         *current_offset += size;
     }
 
-    /* Advance the usage array pointer by global report count and reset the count variable */
-    parser->p_usage += parser->usage_count;
+    /* Advance the usage array pointer by global report count and reset the count variable.
+       Once we are out of room we stop advancing, otherwise the carry below writes past
+       the end of the array (and straight into the parser's own state). */
+    if (parser->usage_count < usages_left(parser)) {
+        parser->p_usage += parser->usage_count;
 
-    /* Carry the last usage to the new location */
-    *parser->p_usage = *(parser->p_usage - parser->usage_count);
+        /* Carry the last usage to the new location */
+        *parser->p_usage = *(parser->p_usage - parser->usage_count);
+    }
 }
 
 void handle_main_item(parser_state_t *parser, item_t *item, hid_interface_t *iface) {
