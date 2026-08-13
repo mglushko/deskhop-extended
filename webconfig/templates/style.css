@@ -35,6 +35,7 @@ body {
 button, input { box-sizing: border-box; font-family: inherit; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 input[type=range] { accent-color: var(--accent); width: 100%; margin: 0; }
+input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
 .wrap { min-height: 100%; padding: 28px 24px 40px; display: flex; justify-content: center; }
 .page { width: 1020px; max-width: 100%; }
@@ -268,6 +269,9 @@ input[type=range] { accent-color: var(--accent); width: 100%; margin: 0; }
 .grp { display: flex; flex-direction: column; gap: 11px; margin-bottom: 24px; }
 .chk { display: flex; align-items: center; gap: 8px; }
 .chk input { margin: 0; }
+/* Follows the double-tap toggle: stacks like .grp, minus the trailing gap,
+   since it sits inside one. Dimmed through .off when the feature is off. */
+.dtap-part { display: flex; flex-direction: column; gap: 11px; }
 .row-btn { display: flex; gap: 8px; margin-bottom: 24px; }
 .box { padding: 16px; background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: 4px; }
 .box .lbl { color: var(--warn-fg); margin-bottom: 6px; }

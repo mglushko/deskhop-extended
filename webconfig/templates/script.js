@@ -407,6 +407,8 @@ function syncControl(element) {
 
   if (element.dataset.o)
     refreshOutput(element.dataset.o);
+  else if (element.dataset.n === 'dtap')
+    refreshSwitching();
 }
 
 function renderView(view, element) {
@@ -427,6 +429,13 @@ function renderView(view, element) {
     view.setAttribute('aria-checked', element.checked);
   } else if (list.contains('sec')) {
     view.value = Math.round((parseInt(value, 10) || 0) / 1000000);
+  } else if (list.contains('pctv')) {
+    /* Raw screen coordinates mean little on their own, so the share of the screen
+       is spelled out beside them. One decimal, because the bottom of the range
+       would otherwise read a flat 0%. */
+    const raw = parseInt(value, 10) || 0;
+
+    view.textContent = `${raw} (${(raw / MAX_SCREEN_COORD * 100).toFixed(1)}% of screen width)`;
   } else {
     view.textContent = value;
   }
@@ -501,6 +510,21 @@ function refreshOutput(output) {
 
 function note(output, name, text) {
   document.querySelector(`[data-o="${output}"][data-note="${name}"]`).textContent = text;
+}
+
+/* ----------------------------------------------- shared-setting redrawing */
+
+/* The window and the pull-back distance only mean anything while the double-tap
+   requirement is on, so they follow it. They keep their values while dimmed, so
+   saveHandler still writes them and the stored config matches what is shown. */
+function refreshSwitching() {
+  const master = document.querySelector('.api[data-n="dtap"]');
+  const off = !master || !master.checked;
+
+  document.querySelectorAll('.dtap-part').forEach(part => {
+    part.classList.toggle('off', off);
+    part.querySelectorAll('button, input').forEach(control => { control.disabled = off; });
+  });
 }
 
 function useFullEdge(output) {
@@ -630,5 +654,6 @@ window.addEventListener('load', function () {
   document.querySelectorAll('.api').forEach(syncControl);
   refreshOutput('A');
   refreshOutput('B');
+  refreshSwitching();
   setConnected(false);
 });

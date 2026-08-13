@@ -66,6 +66,7 @@ body {
 button, input { box-sizing: border-box; font-family: inherit; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 input[type=range] { accent-color: var(--accent); width: 100%; margin: 0; }
+input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
 .wrap { min-height: 100%; padding: 28px 24px 40px; display: flex; justify-content: center; }
 .page { width: 1020px; max-width: 100%; }
@@ -299,6 +300,9 @@ input[type=range] { accent-color: var(--accent); width: 100%; margin: 0; }
 .grp { display: flex; flex-direction: column; gap: 11px; margin-bottom: 24px; }
 .chk { display: flex; align-items: center; gap: 8px; }
 .chk input { margin: 0; }
+/* Follows the double-tap toggle: stacks like .grp, minus the trailing gap,
+   since it sits inside one. Dimmed through .off when the feature is off. */
+.dtap-part { display: flex; flex-direction: column; gap: 11px; }
 .row-btn { display: flex; gap: 8px; margin-bottom: 24px; }
 .box { padding: 16px; background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: 4px; }
 .box .lbl { color: var(--warn-fg); margin-bottom: 6px; }
@@ -586,11 +590,11 @@ input[type=range] { accent-color: var(--accent); width: 100%; margin: 0; }
             <span class="hint">Where the pointer sits on this computer once you've switched away.</span>
 
             <div class="fld">
-  <div class="rowb"><span class="k">Speed X =</span><span class="val" data-for="k12"></span></div>
+  <div class="rowb"><span class="k">Speed X =</span><span class="val " data-for="k12"></span></div>
   <input class="api " type="range" id="k12" data-key="12" data-type="int32" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="spx" min="1" max="100" aria-label="Speed X">
 </div>
             <div class="fld">
-  <div class="rowb"><span class="k">Speed Y =</span><span class="val" data-for="k13"></span></div>
+  <div class="rowb"><span class="k">Speed Y =</span><span class="val " data-for="k13"></span></div>
   <input class="api " type="range" id="k13" data-key="13" data-type="int32" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="spy" min="1" max="100" aria-label="Speed Y">
 </div>
 
@@ -614,11 +618,11 @@ input[type=range] { accent-color: var(--accent); width: 100%; margin: 0; }
             <span class="hint">Where the pointer sits on this computer once you've switched away.</span>
 
             <div class="fld">
-  <div class="rowb"><span class="k">Speed X =</span><span class="val" data-for="k42"></span></div>
+  <div class="rowb"><span class="k">Speed X =</span><span class="val " data-for="k42"></span></div>
   <input class="api " type="range" id="k42" data-key="42" data-type="int32" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="spx" min="1" max="100" aria-label="Speed X">
 </div>
             <div class="fld">
-  <div class="rowb"><span class="k">Speed Y =</span><span class="val" data-for="k43"></span></div>
+  <div class="rowb"><span class="k">Speed Y =</span><span class="val " data-for="k43"></span></div>
   <input class="api " type="range" id="k43" data-key="43" data-type="int32" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="spy" min="1" max="100" aria-label="Speed Y">
 </div>
 
@@ -747,14 +751,42 @@ input[type=range] { accent-color: var(--accent); width: 100%; margin: 0; }
       </div>
 
       <div class="shared-in">
+        
+        <span class="lbl">Switching</span>
+        <div class="grp">
+          <div class="fld">
+  <div class="rowb"><span class="k">Jump Threshold =</span><span class="val " data-for="k77"></span></div>
+  <input class="api " type="range" id="k77" data-key="77" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-n="jump" min="0" max="3000" aria-label="Jump Threshold">
+</div>
+          <span class="hint">How far past the edge the pointer has to be pushed before it crosses to
+            the other computer. Moving between screens on the same computer is unaffected.</span>
+
+          <div class="sw-row">
+            <button type="button" class="sw" role="switch" aria-checked="false" data-for="k83"><span></span></button>
+            <input class="api " type="checkbox" id="k83" data-key="83" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-n="dtap" hidden>
+            <span>Require a double tap at the edge</span>
+          </div>
+          <span class="hint">Off: the pointer crosses as soon as it is pushed past the edge. On: the
+            first push is held back, and the pointer only crosses if it is pulled away and pushed
+            against the same edge again within the window below. Leaning on the edge counts as one
+            push, not many. Moving between screens on the same computer is unaffected.</span>
+
+          <div class="dtap-part">
+            <div class="fld">
+  <div class="rowb"><span class="k">Double-tap window (ms) =</span><span class="val " data-for="k84"></span></div>
+  <input class="api " type="range" id="k84" data-key="84" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-n="dtapms" min="50" max="2000" aria-label="Double-tap window (ms)">
+</div>
+            <div class="fld">
+  <div class="rowb"><span class="k">Pull back at least =</span><span class="val pctv" data-for="k85"></span></div>
+  <input class="api " type="range" id="k85" data-key="85" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-n="dtapmargin" min="50" max="5000" aria-label="Pull back at least">
+</div>
+          </div>
+        </div>
+
         <span class="lbl">Mouse</span>
         <div class="grp">
           <label class="chk"><input class="api " type="checkbox" id="k71" data-key="71" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Force Mouse Boot Mode</span></label>
           <label class="chk"><input class="api " type="checkbox" id="k75" data-key="75" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Enable Acceleration</span></label>
-          <div class="fld">
-  <div class="rowb"><span class="k">Jump Threshold =</span><span class="val" data-for="k77"></span></div>
-  <input class="api " type="range" id="k77" data-key="77" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-n="jump" min="0" max="3000" aria-label="Jump Threshold">
-</div>
         </div>
 
         <span class="lbl">Device flags</span>
@@ -1211,6 +1243,8 @@ function syncControl(element) {
 
   if (element.dataset.o)
     refreshOutput(element.dataset.o);
+  else if (element.dataset.n === 'dtap')
+    refreshSwitching();
 }
 
 function renderView(view, element) {
@@ -1231,6 +1265,13 @@ function renderView(view, element) {
     view.setAttribute('aria-checked', element.checked);
   } else if (list.contains('sec')) {
     view.value = Math.round((parseInt(value, 10) || 0) / 1000000);
+  } else if (list.contains('pctv')) {
+    /* Raw screen coordinates mean little on their own, so the share of the screen
+       is spelled out beside them. One decimal, because the bottom of the range
+       would otherwise read a flat 0%. */
+    const raw = parseInt(value, 10) || 0;
+
+    view.textContent = `${raw} (${(raw / MAX_SCREEN_COORD * 100).toFixed(1)}% of screen width)`;
   } else {
     view.textContent = value;
   }
@@ -1305,6 +1346,21 @@ function refreshOutput(output) {
 
 function note(output, name, text) {
   document.querySelector(`[data-o="${output}"][data-note="${name}"]`).textContent = text;
+}
+
+/* ----------------------------------------------- shared-setting redrawing */
+
+/* The window and the pull-back distance only mean anything while the double-tap
+   requirement is on, so they follow it. They keep their values while dimmed, so
+   saveHandler still writes them and the stored config matches what is shown. */
+function refreshSwitching() {
+  const master = document.querySelector('.api[data-n="dtap"]');
+  const off = !master || !master.checked;
+
+  document.querySelectorAll('.dtap-part').forEach(part => {
+    part.classList.toggle('off', off);
+    part.querySelectorAll('button, input').forEach(control => { control.disabled = off; });
+  });
 }
 
 function useFullEdge(output) {
@@ -1434,6 +1490,7 @@ window.addEventListener('load', function () {
   document.querySelectorAll('.api').forEach(syncControl);
   refreshOutput('A');
   refreshOutput('B');
+  refreshSwitching();
   setConnected(false);
 });
 </script>

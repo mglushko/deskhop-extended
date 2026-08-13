@@ -32,7 +32,11 @@ CONFIG_ = [
     FormField(75, "Enable Acceleration", None, {}, "uint8", "checkbox"),
     FormField(77, "Jump Threshold", 0, {"min": 0, "max": 3000}, "uint16", "range"),
     FormField(83, "Edge Double-Tap to Switch", None, {}, "uint8", "checkbox"),
-    FormField(84, "Double-Tap Time (ms)", 300, {"min": 0, "max": 2000}, "uint16", "range"),
+    # Not 0: a zero window makes window_us 0 in edge_double_tap_ready(), so the second
+    # tap can never land inside it and output switching stops working altogether.
+    FormField(84, "Double-Tap Time (ms)", 300, {"min": 50, "max": 2000}, "uint16", "range"),
+    # Kept far below 16384, where the release check in process_mouse_report() can no
+    # longer be satisfied by any pointer_x and the edge never releases.
     FormField(85, "Double-Tap Pull-Back Distance", 1000, {"min": 50, "max": 5000}, "uint16", "range"),
 
     FormField(1002, "Keyboard", elem="label"),

@@ -33,9 +33,9 @@
 {{- api(item, o, n) }}
 {%- endmacro %}
 
-{% macro rng(item, o, n, label) -%}
+{% macro rng(item, o, n, label, cls='') -%}
 <div class="fld">
-  <div class="rowb"><span class="k">{{ label }} =</span><span class="val" data-for="k{{ item.key }}"></span></div>
+  <div class="rowb"><span class="k">{{ label }} =</span><span class="val {{ cls }}" data-for="k{{ item.key }}"></span></div>
   {{ api(item, o, n, 'range', 'min="' ~ item['values'].min ~ '" max="' ~ item['values'].max ~ '" aria-label="' ~ label ~ '"') }}
 </div>
 {%- endmacro %}
@@ -310,11 +310,34 @@
       </div>
 
       <div class="shared-in">
+        {# Both knobs here gate crossing to the other computer and both are ignored
+           between screens on the same one, so they belong together. #}
+        <span class="lbl">Switching</span>
+        <div class="grp">
+          {{ rng(C['Jump Threshold'], '', 'jump', 'Jump Threshold') }}
+          <span class="hint">How far past the edge the pointer has to be pushed before it crosses to
+            the other computer. Moving between screens on the same computer is unaffected.</span>
+
+          <div class="sw-row">
+            <button type="button" class="sw" role="switch" aria-checked="false" data-for="k{{ C['Edge Double-Tap to Switch'].key }}"><span></span></button>
+            {{ api(C['Edge Double-Tap to Switch'], '', 'dtap', 'checkbox', 'hidden') }}
+            <span>Require a double tap at the edge</span>
+          </div>
+          <span class="hint">Off: the pointer crosses as soon as it is pushed past the edge. On: the
+            first push is held back, and the pointer only crosses if it is pulled away and pushed
+            against the same edge again within the window below. Leaning on the edge counts as one
+            push, not many. Moving between screens on the same computer is unaffected.</span>
+
+          <div class="dtap-part">
+            {{ rng(C['Double-Tap Time (ms)'], '', 'dtapms', 'Double-tap window (ms)') }}
+            {{ rng(C['Double-Tap Pull-Back Distance'], '', 'dtapmargin', 'Pull back at least', 'pctv') }}
+          </div>
+        </div>
+
         <span class="lbl">Mouse</span>
         <div class="grp">
           {{ chk(C['Force Mouse Boot Mode'], 'Force Mouse Boot Mode') }}
           {{ chk(C['Enable Acceleration'], 'Enable Acceleration') }}
-          {{ rng(C['Jump Threshold'], '', 'jump', 'Jump Threshold') }}
         </div>
 
         <span class="lbl">Device flags</span>
