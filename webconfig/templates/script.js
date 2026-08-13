@@ -7,6 +7,9 @@ const packetType = {
   rebootMsg: 19, getValMsg: 20, setValMsg: 21, getValAllMsg: 22, proxyPacketMsg: 23
 };
 
+/* Matches MAX_SCREEN_COORD in src/include/screen.h */
+const MAX_SCREEN_COORD = 32767;
+
 function calcChecksum(report) {
   let checksum = 0;
   for (let i = 3; i < 11; i++)
@@ -70,48 +73,16 @@ function packValue(element, key, dataType, buffer) {
   return new Uint8Array(buffer);
 }
 
-window.addEventListener('load', function () {
-  if (!("hid" in navigator)) {
-    document.getElementById('warning').style.display = 'block';
-  }
-
-  this.document.getElementById('menu-buttons').addEventListener('click', function (event) {
-    window[event.target.dataset.handler]();
-  })
-});
-
-document.getElementById('submitButton').addEventListener('click', async () => { await saveHandler(); });
-
-async function connectHandler() {
-  if (device && device.opened)
-    return;
-
-  var devices = await navigator.hid.requestDevice({
-    filters: [{ vendorId: 0x2e8a, productId: 0x107c, usagePage: 0xff00, usage: 0x10 }]
-  });
-
-  device = devices[0];
-  device.open().then(async () => {
-    device.addEventListener('inputreport', handleInputReport);
-    document.querySelectorAll('.online').forEach(element => { element.style.opacity = 1.0; });
-    await readHandler();
-  });
-}
-
-async function blinkHandler() {
-  await sendReport(packetType.flashLedMsg, []);
-}
-
-async function blinkBothHandler() {
-  await sendReport(packetType.flashLedMsg, [], true);
-}
-
 function getValue(element) {
   if (element.type === 'checkbox')
     return element.checked ? 1 : 0;
   else
     return element.value;
 }
+
+/* Set while a value is being pushed in from the device, so that redrawing the
+   controls does not count as an edit. */
+var applying = false;
 
 function setValue(element, value) {
   element.setAttribute('fetched-value', value);
@@ -120,9 +91,11 @@ function setValue(element, value) {
     element.checked = value;
   else
     element.value = value;
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-}
 
+  applying = true;
+  element.dispatchEvent(new Event('input', { bubbles: true }));
+  applying = false;
+}
 
 function updateElement(key, event) {
   var dataOffset = 4;
@@ -159,26 +132,11 @@ function updateElement(key, event) {
   }
 }
 
-async function readHandler() {
-  if (!device || !device.opened)
-    await connectHandler();
-
-  await sendReport(packetType.getValAllMsg);
-}
-
 async function handleInputReport(event) {
   var data = new Uint8Array(event.data.buffer);
   var key = data[3];
 
   updateElement(key, event);
-}
-
-async function rebootHandler() {
-  await sendReport(packetType.rebootMsg);
-}
-
-async function enterBootloaderHandler() {
-  await sendReport(packetType.firmwareUpgradeMsg, true, true);
 }
 
 async function valueChangedHandler(element) {
@@ -199,6 +157,34 @@ async function valueChangedHandler(element) {
   }
 }
 
+/* ---------------------------------------------------------------- device */
+
+async function connectHandler() {
+  if (device && device.opened)
+    return;
+
+  var devices = await navigator.hid.requestDevice({
+    filters: [{ vendorId: 0x2e8a, productId: 0x107c, usagePage: 0xff00, usage: 0x10 }]
+  });
+
+  if (!devices || !devices.length)
+    return;
+
+  try {
+    device = devices[0];
+    await device.open();
+  } catch (e) {
+    /* Someone else has it open, or it went away between picking and opening. */
+    device = undefined;
+    return;
+  }
+
+  device.addEventListener('inputreport', handleInputReport);
+
+  setConnected(true);
+  await reloadFromDevice();
+}
+
 async function saveHandler() {
   const elements = document.querySelectorAll('.api');
 
@@ -215,8 +201,434 @@ async function saveHandler() {
       await valueChangedHandler(element);
   }
   await sendReport(packetType.saveConfigMsg, [], true);
+  markClean();
+}
+
+async function blinkHandler() {
+  await sendReport(packetType.flashLedMsg, []);
+}
+
+async function blinkBothHandler() {
+  await sendReport(packetType.flashLedMsg, [], true);
+}
+
+async function enterBootloaderHandler() {
+  await sendReport(packetType.firmwareUpgradeMsg, true, true);
 }
 
 async function wipeConfigHandler() {
   await sendReport(packetType.wipeConfigMsg, [], true);
 }
+
+async function rebootHandler() {
+  await sendReport(packetType.rebootMsg);
+  await closeDevice();
+}
+
+async function closeDevice() {
+  try {
+    if (device && device.opened)
+      await device.close();
+  } catch (e) { /* already gone */ }
+
+  device = undefined;
+  setConnected(false);
+}
+
+/* ------------------------------------------------------- connection gate */
+
+var dirty = false;
+var pendingExit = null;
+
+const DISCARD_MSG = "Disconnecting discards the edits you haven't written to the device.";
+
+function el(id) {
+  return document.getElementById(id);
+}
+
+function setConnected(on) {
+  const panel = el('panel');
+
+  if (on)
+    panel.removeAttribute('inert');
+  else
+    panel.setAttribute('inert', '');
+
+  document.body.classList.toggle('offline', !on);
+  el('not-connected').hidden = on;
+
+  const connect = el('btn-connect');
+  connect.textContent = on ? 'Disconnect' : 'Connect';
+  connect.classList.toggle('btn-call', !on && ("hid" in navigator));
+  connect.dataset.handler = on ? 'disconnectHandler' : 'connectHandler';
+
+  document.querySelectorAll('.online').forEach(element => { element.style.opacity = on ? 1.0 : 0.5; });
+  document.querySelectorAll('#menu-buttons .online').forEach(element => { element.disabled = !on; });
+
+  if (!on) {
+    setPlaceholders();
+    markClean();
+    hideGuard();
+  }
+}
+
+function setPlaceholders() {
+  const fw = document.querySelector('[data-fw-ver]');
+  const sum = document.querySelector('[data-hex]');
+
+  if (fw) fw.value = '—';
+  if (sum) sum.value = '————————';
+}
+
+/* ------------------------------------------------------- dirty behaviour */
+
+function markDirty() {
+  if (dirty)
+    return;
+
+  dirty = true;
+  updateDirty();
+}
+
+function markClean() {
+  dirty = false;
+  updateDirty();
+}
+
+function updateDirty() {
+  const indicator = el('dirty-ind');
+
+  indicator.textContent = dirty ? 'Unsaved changes' : 'No changes';
+  indicator.classList.toggle('dirty', dirty);
+  el('btn-save').disabled = !dirty;
+
+  /* Saving answers the question the guard was asking. */
+  if (!dirty)
+    hideGuard();
+}
+
+/* Anything that throws away unsaved edits asks first. */
+function confirmDiscard(action, message, label) {
+  if (dirty && device && device.opened) {
+    pendingExit = action;
+    el('guard-msg').textContent = message;
+    el('guard-confirm').textContent = label;
+    el('confirm-disconnect').hidden = false;
+    el('confirm-disconnect').scrollIntoView({ block: 'nearest' });
+    return;
+  }
+  action();
+}
+
+function hideGuard() {
+  pendingExit = null;
+  el('confirm-disconnect').hidden = true;
+}
+
+async function disconnectHandler() {
+  confirmDiscard(closeDevice, DISCARD_MSG, 'Discard & disconnect');
+}
+
+async function exitHandler() {
+  confirmDiscard(rebootHandler, DISCARD_MSG, 'Discard & exit');
+}
+
+async function readHandler() {
+  confirmDiscard(reloadFromDevice,
+    'Reading replaces the form with the configuration stored on the device.',
+    'Discard & reload');
+}
+
+async function reloadFromDevice() {
+  if (!device || !device.opened)
+    return;
+
+  await sendReport(packetType.getValAllMsg);
+  markClean();
+}
+
+function keepEditingHandler() {
+  hideGuard();
+}
+
+function discardHandler() {
+  const action = pendingExit;
+
+  hideGuard();
+  markClean();
+
+  if (action)
+    action();
+}
+
+/* ------------------------------------------------- custom control proxies */
+
+/* Segmented pickers, steppers and toggles own no state: they read and write the
+   hidden .api input that carries data-key / data-type / fetched-value. Plain
+   fields — speeds, coordinates, checkboxes — are the .api element themselves and
+   need none of this. */
+
+function apiValue(output, name) {
+  return document.querySelector(`[data-o="${output}"][data-n="${name}"]`);
+}
+
+function apiNumber(output, name, fallback) {
+  const element = apiValue(output, name);
+  const value = element ? parseInt(element.value, 10) : NaN;
+
+  return isNaN(value) ? fallback : value;
+}
+
+function setApi(element, value) {
+  if (!element)
+    return;
+
+  if (element.type === 'checkbox') {
+    if (element.checked === value)
+      return;
+    element.checked = value;
+  } else {
+    if (String(element.value) === String(value))
+      return;
+    element.value = value;
+  }
+
+  /* Marks the form dirty and redraws through the shared input listener. */
+  element.dispatchEvent(new Event('input', { bubbles: true }));
+  valueChangedHandler(element);
+}
+
+function syncControl(element) {
+  if (!element.id)
+    return;
+
+  document.querySelectorAll(`[data-for="${element.id}"]`)
+    .forEach(view => renderView(view, element));
+
+  if (element.dataset.o)
+    refreshOutput(element.dataset.o);
+}
+
+function renderView(view, element) {
+  const value = element.value;
+  const list = view.classList;
+
+  if (list.contains('seg')) {
+    view.querySelectorAll('button').forEach(button => {
+      button.setAttribute('aria-checked', button.dataset.v === String(value));
+    });
+  } else if (list.contains('step')) {
+    const count = parseInt(value, 10) || 1;
+
+    view.querySelector('.step-v').textContent = count;
+    view.querySelector('[data-d="-1"]').disabled = count <= 1;
+    view.querySelector('[data-d="1"]').disabled = count >= 3;
+  } else if (list.contains('sw')) {
+    view.setAttribute('aria-checked', element.checked);
+  } else if (list.contains('sec')) {
+    view.value = Math.round((parseInt(value, 10) || 0) / 1000000);
+  } else {
+    view.textContent = value;
+  }
+}
+
+/* --------------------------------------------------- per-output redrawing */
+
+function refreshOutput(output) {
+  const count = Math.max(1, Math.min(3, apiNumber(output, 'count', 1)));
+  const left = apiNumber(output, 'side', 1) === 1;
+  const top = Math.max(0, Math.min(MAX_SCREEN_COORD, apiNumber(output, 'bt', 0)));
+  const bottom = Math.max(top, Math.min(MAX_SCREEN_COORD, apiNumber(output, 'bb', MAX_SCREEN_COORD)));
+  const park = String(apiNumber(output, 'park', 0));
+  const mode = String(apiNumber(output, 'mode', 0));
+  const pct = raw => raw / MAX_SCREEN_COORD * 100;
+
+  /* Screens, and the slice of the crossing screen that lines up with the other
+     output. The border is stored per output rather than per monitor, so it is
+     drawn on the screen at the crossing edge on behalf of the whole output. */
+  const diagram = document.querySelector(`.diag[data-o="${output}"]`);
+  const bandIndex = left ? count - 1 : 0;
+
+  diagram.className = left ? 'diag diag-l' : 'diag diag-r';
+  diagram.querySelectorAll('.mon').forEach((monitor, i) => {
+    const band = monitor.querySelector('.aband');
+
+    monitor.hidden = i >= count;
+    monitor.querySelector('.scr').classList.toggle('scr-main', i === bandIndex);
+
+    band.hidden = i !== bandIndex;
+    band.style.top = pct(top) + '%';
+    band.style.height = Math.max(2, pct(bottom - top)) + '%';
+  });
+
+  const edge = left ? 'right' : 'left';
+
+  document.querySelector(`.cap[data-o="${output}"]`).textContent =
+    `${count} ${count === 1 ? 'screen' : 'screens'} on the ${left ? 'left' : 'right'}` +
+    `, cursor crosses off the ${edge} edge.`;
+
+  /* Cursor park. src/mouse.c parks the hidden pointer at x = MAX_SCREEN_COORD,
+     so the preview shows the right edge for both outputs. */
+  const cursor = document.querySelector(`.cur[data-o="${output}"][data-pv="park"]`);
+
+  cursor.style.top = (park === '0' ? 0 : park === '1' ? 83 : 41) + '%';
+  cursor.classList.toggle('dim', park === '3');
+
+  /* Keep awake */
+  const preview = document.querySelector(`.pv-scr[data-o="${output}"][data-pv="awake"]`);
+
+  preview.className = 'pv-scr' + (mode === '1' ? ' pong' : mode === '2' ? ' jitter' : '');
+  preview.querySelector('.cur').classList.toggle('dimmer', mode === '0');
+
+  note(output, 'mode', mode === '1'
+    ? 'Pong bounces the pointer around the screen in absolute coordinates, moving every 5 ms.'
+    : mode === '2'
+      ? 'Jitter nudges the pointer a few pixels up and down once every 10 seconds.'
+      : 'Nothing is sent. The computer may sleep or lock as usual.');
+
+  const asleep = mode === '0';
+
+  document.querySelectorAll(`.awake-part[data-o="${output}"]`).forEach(part => {
+    part.classList.toggle('off', asleep);
+    part.querySelectorAll('button, input').forEach(control => { control.disabled = asleep; });
+  });
+
+  note(output, 'times', asleep
+    ? 'Timers apply once a keep-awake mode is selected.'
+    : 'Stops after 0 means it keeps going until you come back. Stored as Idle Time ' +
+      `${apiNumber(output, 'idle', 0)} μs / Max Time ${apiNumber(output, 'maxt', 0)} μs.`);
+}
+
+function note(output, name, text) {
+  document.querySelector(`[data-o="${output}"][data-note="${name}"]`).textContent = text;
+}
+
+function useFullEdge(output) {
+  setApi(apiValue(output, 'bt'), 0);
+  setApi(apiValue(output, 'bb'), MAX_SCREEN_COORD);
+}
+
+/* ------------------------------------------------------------- listeners */
+
+function menuClick(event) {
+  const button = event.target.closest('[data-handler]');
+
+  if (button && !button.disabled)
+    window[button.dataset.handler]();
+}
+
+function panelClick(event) {
+  const button = event.target.closest('button');
+
+  if (!button || button.disabled)
+    return;
+
+  const group = button.closest('.seg');
+  if (group)
+    return setApi(el(group.dataset.for), button.dataset.v);
+
+  const stepper = button.closest('.step');
+  if (stepper) {
+    const element = el(stepper.dataset.for);
+    const count = (parseInt(element.value, 10) || 1) + Number(button.dataset.d);
+
+    return setApi(element, Math.max(1, Math.min(3, count)));
+  }
+
+  if (button.classList.contains('sw')) {
+    const element = el(button.dataset.for);
+
+    return setApi(element, !element.checked);
+  }
+
+  if (button.dataset.full)
+    return useFullEdge(button.dataset.full);
+}
+
+/* Alignment coordinates are typed straight into the .api field. screen_from_y()
+   in src/mouse.c divides by (bottom - top), so the two are never allowed to meet.
+   Runs in the capture phase, ahead of the field's own onchange, so the value is
+   corrected before it is sent. */
+const MIN_ALIGN_GAP = 328; /* ~1% of the screen height */
+
+function coordChanged(event) {
+  const field = event.target;
+
+  if (!field.classList.contains('coord'))
+    return;
+
+  const output = field.dataset.o;
+  const other = field.dataset.n === 'bt' ? 'bb' : 'bt';
+  const limit = apiNumber(output, other, field.dataset.n === 'bt' ? MAX_SCREEN_COORD : 0);
+  var value = Math.round(Number(field.value) || 0);
+
+  if (field.dataset.n === 'bt')
+    value = Math.max(0, Math.min(value, limit - MIN_ALIGN_GAP));
+  else
+    value = Math.min(MAX_SCREEN_COORD, Math.max(value, limit + MIN_ALIGN_GAP));
+
+  if (String(value) !== field.value) {
+    field.value = value;
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+}
+
+/* Idle/Max time are µs on the wire, seconds in the form. The wire value is a
+   uint32, so seconds are capped short of 2^32 µs. */
+function secondsChanged(event) {
+  const field = event.target;
+
+  if (!field.classList.contains('sec'))
+    return;
+
+  const seconds = Math.max(0, Math.min(4200, Math.round(Number(field.value) || 0)));
+
+  field.value = seconds;
+  setApi(el(field.dataset.for), seconds * 1000000);
+}
+
+window.addEventListener('load', function () {
+  if (!("hid" in navigator)) {
+    document.getElementById('warning').style.display = 'block';
+
+    /* Nothing to connect to, so stop the button inviting the click. */
+    const connect = el('btn-connect');
+    connect.disabled = true;
+    connect.classList.remove('btn-call');
+  }
+
+  document.querySelectorAll('.menu-buttons').forEach(function (container) {
+    container.addEventListener('click', menuClick);
+  });
+
+  const panel = el('panel');
+
+  panel.addEventListener('click', panelClick);
+  panel.addEventListener('change', coordChanged, true);
+  panel.addEventListener('change', secondsChanged);
+
+  /* Redraw on every value change, whether it came from the device or an edit.
+     Only edits mark the form dirty. */
+  document.addEventListener('input', function (event) {
+    const element = event.target;
+
+    if (!element.classList || !element.classList.contains('api'))
+      return;
+
+    syncControl(element);
+
+    if (!applying)
+      markDirty();
+  });
+
+  if ("hid" in navigator)
+    navigator.hid.addEventListener('disconnect', function (event) {
+      if (event.device === device)
+        closeDevice();
+    });
+
+  document.querySelectorAll('.api').forEach(syncControl);
+  refreshOutput('A');
+  refreshOutput('B');
+  setConnected(false);
+});
