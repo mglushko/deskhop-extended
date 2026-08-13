@@ -1,4 +1,59 @@
-{# templates/main.j2 #}
+{# templates/main.html — single-page config, one column per output #}
+
+{#
+  Every control that talks to the device is a real input carrying
+  class="api", data-key, data-type, fetched-value and onchange. Anything that
+  looks like a button, stepper or toggle is a proxy: it carries data-for="kNNN"
+  pointing at the hidden input it drives. script.js keeps the two in sync.
+#}
+
+{% set A = {} %}{% for i in screen_A %}{% set _ = A.update({i.name: i}) %}{% endfor %}
+{% set B = {} %}{% for i in screen_B %}{% set _ = B.update({i.name: i}) %}{% endfor %}
+{% set C = {} %}{% for i in config %}{% set _ = C.update({i.name: i}) %}{% endfor %}
+{% set S = {} %}{% for i in status %}{% set _ = S.update({i.name: i}) %}{% endfor %}
+
+{% set outputs = [
+  {'id': 'A', 'f': A, 'chip': 'keyboard here', 'main': true},
+  {'id': 'B', 'f': B, 'chip': 'powered', 'main': false}
+] %}
+
+{# MAX_SCREEN_COORD, from src/include/screen.h #}
+{% set MAX_COORD = 32767 %}
+
+{% macro api(item, o='', n='', type='hidden', extra='', cls='') -%}
+<input class="api {{ cls }}" type="{{ type }}" id="k{{ item.key }}" data-key="{{ item.key }}" data-type="{{ item.type }}" fetched-value="" onchange="valueChangedHandler(this)"{% if o %} data-o="{{ o }}"{% endif %}{% if n %} data-n="{{ n }}"{% endif %} {{ extra }}>
+{%- endmacro %}
+
+{% macro seg(item, o, n, aria, cls='') -%}
+<div class="seg {{ cls }}" role="radiogroup" aria-label="{{ aria }}" data-for="k{{ item.key }}">
+{%- for v, name in item['values'].items() %}
+  <button type="button" role="radio" aria-checked="false" data-v="{{ v }}">{{ name }}</button>
+{%- endfor %}
+</div>
+{{- api(item, o, n) }}
+{%- endmacro %}
+
+{% macro rng(item, o, n, label) -%}
+<div class="fld">
+  <div class="rowb"><span class="k">{{ label }} =</span><span class="val" data-for="k{{ item.key }}"></span></div>
+  {{ api(item, o, n, 'range', 'min="' ~ item['values'].min ~ '" max="' ~ item['values'].max ~ '" aria-label="' ~ label ~ '"') }}
+</div>
+{%- endmacro %}
+
+{% macro chk(item, label) -%}
+<label class="chk">{{ api(item, '', '', 'checkbox') }}<span>{{ label }}</span></label>
+{%- endmacro %}
+
+{% macro secs(item, o, n, label) -%}
+<label class="fld">
+  <span class="hint">{{ label }}</span>
+  <span class="num">
+    <input type="number" min="0" max="4200" data-for="k{{ item.key }}" class="sec">
+    <span class="num-u">sec</span>
+  </span>
+</label>
+{{- api(item, o, n) }}
+{%- endmacro %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -9,134 +64,306 @@
   <style>
     {% include "style.css" %}
   </style>
-
   <title>DeskHop Config</title>
 </head>
 
-<body>
+<body class="offline">
 
-  <main class="wrapper">
+<div class="wrap">
+<div class="page">
 
-    <section class="container">
+  <div id="warning" style="display: none;">
+    <b>WebHID unavailable</b>
+    Your browser does not support WebHID, or a Permissions Policy is blocking its usage.
+    Please try Chromium (or Chrome if you have to). Apologies for the inconvenience,
+    hopefully a cross-browser solution happens soon.
+  </div>
 
-      <div class="row" id="warning" style="display: none;">
-        <blockquote>
-          <h3> Oh, no! </h3>
-          Unfortunately, your browser does not support WebHID or the Permissions Policy is blocking its usage. Please try Chromium <br />
-          (or Chrome if you have to). Apologies for the inconvenience, hopefully a cross-browser solution happens soon.
-        </blockquote>
+  <div class="hdr">
+    <div class="brand">
+      <svg class="logo" viewBox="40 5 118 70" shape-rendering="geometricPrecision">
+        <g transform="translate(-135, -190) scale (2)">
+          <path d="m 88.742006,98.633938 c -0.12648,0.0838 -0.252994,0.223292 -0.309214,0.320992 -0.0984,0.223308 0.337328,26.23798 0.44977,26.53106 0.0984,0.2512 0.42166,0.41868 0.74493,0.41868 0.309218,0 0.224886,0.0838 3.837102,-3.37742 l 1.672582,-1.56312 0.210828,0.43264 c 0.11244,0.23728 1.236868,2.5261 2.473736,5.09408 1.9818,4.11712 2.27696,4.68934 2.47373,4.81496 0.16868,0.1116 0.28111,0.1396 0.44977,0.1256 0.16868,-0.014 5.34102,-2.42842 6.21245,-2.88898 0.253,-0.1396 0.42166,-0.4187 0.42166,-0.68386 0,-0.1814 -0.59032,-1.4654 -2.44562,-5.28946 -1.33526,-2.77734 -2.43157,-5.06616 -2.40346,-5.09408 0.0281,-0.0278 1.57419,-0.23728 3.4295,-0.47452 1.8553,-0.23724 3.47166,-0.47452 3.5841,-0.5164 0.23894,-0.1116 0.46383,-0.43262 0.46383,-0.6699 0,-0.0838 -0.0562,-0.25122 -0.11244,-0.36286 -0.0703,-0.1256 -1.02604,-0.963 -2.41752,-2.09346 -1.26498,-1.03276 -5.80484,-4.75912 -10.077656,-8.29008 -4.272816,-3.53096 -7.842866,-6.447844 -7.941254,-6.489712 -0.23894,-0.12554 -0.47788,-0.11164 -0.71682,0.0558 z" />
+          <path d="m 112.69484,105.14605 a 1.8639801,1.8639801 0 0 0 -1.86328,1.86328 1.8639801,1.8639801 0 0 0 1.86328,1.86328 h 17.58204 a 1.8639801,1.8639801 0 0 0 1.86328,-1.86328 1.8639801,1.8639801 0 0 0 -1.86328,-1.86328 z" />
+          <path d="m 136.31594,110.95075 a 1.8639801,1.8639801 0 0 0 -1.86328,1.86328 1.8639801,1.8639801 0 0 0 1.86328,1.86328 h 2.71874 a 1.8639801,1.8639801 0 0 0 1.8672,-1.86328 1.8639801,1.8639801 0 0 0 -1.8672,-1.86328 z" />
+          <path d="m 121.55422,128.36481 a 1.8639801,1.8639801 0 0 0 -1.86328,1.86328 1.8639801,1.8639801 0 0 0 1.86328,1.86328 h 2.72266 a 1.8639801,1.8639801 0 0 0 1.86328,-1.86328 1.8639801,1.8639801 0 0 0 -1.86328,-1.86328 z" />
+          <path d="m 121.55812,110.83355 a 1.8639801,1.8639801 0 0 0 -1.86328,1.8672 1.8639801,1.8639801 0 0 0 1.86328,1.86328 h 4.15626 a 1.8639801,1.8639801 0 0 0 1.86328,-1.86328 1.8639801,1.8639801 0 0 0 -1.86328,-1.8672 z" />
+          <path d="m 118.64406,116.75543 a 1.8639801,1.8639801 0 0 0 -1.86328,1.86328 1.8639801,1.8639801 0 0 0 1.86328,1.86328 h 24.70704 a 1.8639801,1.8639801 0 0 0 1.86718,-1.86328 1.8639801,1.8639801 0 0 0 -1.86718,-1.86328 z" />
+          <path d="m 129.55812,122.56011 a 1.8639801,1.8639801 0 0 0 -1.86328,1.86328 1.8639801,1.8639801 0 0 0 1.86328,1.8633 h 10.6836 a 1.8639801,1.8639801 0 0 0 1.86328,-1.8633 1.8639801,1.8639801 0 0 0 -1.86328,-1.86328 z" />
+          <path d="m 104.01516,99.341366 a 1.8639801,1.8639801 0 0 0 -1.86329,1.863284 1.8639801,1.8639801 0 0 0 1.86329,1.86328 h 27.4375 a 1.8639801,1.8639801 0 0 0 1.86718,-1.86328 1.8639801,1.8639801 0 0 0 -1.86718,-1.863284 z" />
+        </g>
+      </svg>
+      <h1 class="title">Desk<span>Hop</span> Config</h1>
+    </div>
+
+    <div class="hdr-r">
+      <div class="meta">
+        <span class="meta-i">
+          <span class="meta-k">Firmware</span>
+          {{ api(S['Running FW version'], type='text', extra='data-fw-ver readonly', cls='meta-v') }}
+        </span>
+        <span class="meta-sep"></span>
+        <span class="meta-i">
+          <span class="meta-k">Checksum</span>
+          {{ api(S['Running FW checksum'], type='text', extra='data-hex readonly', cls='meta-v mono') }}
+        </span>
       </div>
 
-      <div class="row">
-
-        <div class="column column-80" style="padding-top: 1%;">
-          <h3>Desk<span style="color: #5e9f41;">Hop</span> Config</h3>
-        </div>
-      </div>
-
-      <div class="column" style="border: 2px solid #d7e5f0; padding-right: 3em;">
-
-
-      <div class="row">
-        <div class="column column-20" style="margin-right: 2em; padding-top: 2em; background-color: #d7e5f0">
-
-          <svg style="width:180px; height:110px; stroke:#384955; stroke-width:1px; fill:white">
-            <g transform="translate(-135, -190) scale (2)">
-              <path d="m 88.742006,98.633938 c -0.12648,0.0838 -0.252994,0.223292 -0.309214,0.320992 -0.0984,0.223308 0.337328,26.23798 0.44977,26.53106 0.0984,0.2512 0.42166,0.41868 0.74493,0.41868 0.309218,0 0.224886,0.0838 3.837102,-3.37742 l 1.672582,-1.56312 0.210828,0.43264 c 0.11244,0.23728 1.236868,2.5261 2.473736,5.09408 1.9818,4.11712 2.27696,4.68934 2.47373,4.81496 0.16868,0.1116 0.28111,0.1396 0.44977,0.1256 0.16868,-0.014 5.34102,-2.42842 6.21245,-2.88898 0.253,-0.1396 0.42166,-0.4187 0.42166,-0.68386 0,-0.1814 -0.59032,-1.4654 -2.44562,-5.28946 -1.33526,-2.77734 -2.43157,-5.06616 -2.40346,-5.09408 0.0281,-0.0278 1.57419,-0.23728 3.4295,-0.47452 1.8553,-0.23724 3.47166,-0.47452 3.5841,-0.5164 0.23894,-0.1116 0.46383,-0.43262 0.46383,-0.6699 0,-0.0838 -0.0562,-0.25122 -0.11244,-0.36286 -0.0703,-0.1256 -1.02604,-0.963 -2.41752,-2.09346 -1.26498,-1.03276 -5.80484,-4.75912 -10.077656,-8.29008 -4.272816,-3.53096 -7.842866,-6.447844 -7.941254,-6.489712 -0.23894,-0.12554 -0.47788,-0.11164 -0.71682,0.0558 z" />
-              <path d="m 112.69484,105.14605 a 1.8639801,1.8639801 0 0 0 -1.86328,1.86328 1.8639801,1.8639801 0 0 0 1.86328,1.86328 h 17.58204 a 1.8639801,1.8639801 0 0 0 1.86328,-1.86328 1.8639801,1.8639801 0 0 0 -1.86328,-1.86328 z" />
-              <path d="m 136.31594,110.95075 a 1.8639801,1.8639801 0 0 0 -1.86328,1.86328 1.8639801,1.8639801 0 0 0 1.86328,1.86328 h 2.71874 a 1.8639801,1.8639801 0 0 0 1.8672,-1.86328 1.8639801,1.8639801 0 0 0 -1.8672,-1.86328 z" />
-              <path d="m 121.55422,128.36481 a 1.8639801,1.8639801 0 0 0 -1.86328,1.86328 1.8639801,1.8639801 0 0 0 1.86328,1.86328 h 2.72266 a 1.8639801,1.8639801 0 0 0 1.86328,-1.86328 1.8639801,1.8639801 0 0 0 -1.86328,-1.86328 z" />
-              <path d="m 121.55812,110.83355 a 1.8639801,1.8639801 0 0 0 -1.86328,1.8672 1.8639801,1.8639801 0 0 0 1.86328,1.86328 h 4.15626 a 1.8639801,1.8639801 0 0 0 1.86328,-1.86328 1.8639801,1.8639801 0 0 0 -1.86328,-1.8672 z" />
-              <path d="m 118.64406,116.75543 a 1.8639801,1.8639801 0 0 0 -1.86328,1.86328 1.8639801,1.8639801 0 0 0 1.86328,1.86328 h 24.70704 a 1.8639801,1.8639801 0 0 0 1.86718,-1.86328 1.8639801,1.8639801 0 0 0 -1.86718,-1.86328 z" />
-              <path d="m 129.55812,122.56011 a 1.8639801,1.8639801 0 0 0 -1.86328,1.86328 1.8639801,1.8639801 0 0 0 1.86328,1.8633 h 10.6836 a 1.8639801,1.8639801 0 0 0 1.86328,-1.8633 1.8639801,1.8639801 0 0 0 -1.86328,-1.86328 z" />
-              <path d="m 104.01516,99.341366 a 1.8639801,1.8639801 0 0 0 -1.86329,1.863284 1.8639801,1.8639801 0 0 0 1.86329,1.86328 h 27.4375 a 1.8639801,1.8639801 0 0 0 1.86718,-1.86328 1.8639801,1.8639801 0 0 0 -1.86718,-1.863284 z" />
-            </g>
-          </svg>
-
-          <div id="menu-buttons">
-            <button data-handler="connectHandler" class="button button-clear button-shifted">Connect</button><br />
-            <button data-handler="readHandler" class="button button-clear button-shifted online">Read</button><br />
-            <button data-handler="saveHandler" class="button button-clear button-shifted online">Save</button><br />
-            <button data-handler="rebootHandler" class="button button-clear button-shifted online">Exit</button><br />
-
-            <hr />
-            <button data-handler="blinkHandler" class="button button-clear button-shifted online">Blink</button><br />
-            <button data-handler="blinkBothHandler" class="button button-clear button-shifted online">Blink both</button><br />
-            <button data-handler="enterBootloaderHandler" class="button button-clear button-shifted online">Bootloader</button><br />
-            <button data-handler="wipeConfigHandler" class="button button-clear button-shifted online">Wipe Config</button><br />
-
-          </div>
-
-        </div>
-
-        <div class="column" style="padding-top: 2em;">
-
-          <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <rect x="5" y="5" width="90" height="70" stroke="black" stroke-width="2" fill="#beffa1" rx="10" ry="10" />
-            <line x1="50" y1="90" x2="50" y2="75" stroke="black" stroke-width="2" />
-            <rect x="30" y="90" width="40" height="3" stroke="black" stroke-width="2" fill="#d7e5f0" rx="5" ry="5" />
-          </svg>
-
-            <h3>Output A</h3>
-
-            {% for item in screen_A %}
-              {% include "form.html" with context %}
-            {% endfor %}
-
-        </div>
-        <div class="column" style="padding-top: 2em;">
-
-          <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <rect x="5" y="5" width="90" height="70" stroke="black" stroke-width="2" fill="#beffa1" rx="10" ry="10" />
-            <line x1="50" y1="90" x2="50" y2="75" stroke="black" stroke-width="2" />
-            <rect x="30" y="90" width="40" height="3" stroke="black" stroke-width="2" fill="#d7e5f0" rx="5" ry="5" />
-          </svg>
-
-            <h3>Output B</h3>
-
-            {% for item in screen_B %}
-              {% include "form.html" with context %}
-            {% endfor %}
-
-        </div>
-
-      </div>
-
-      <div class="row">
-        <div class="column column-20" style="background-color: #d7e5f0; margin-right: 2em;">
-        </div>
-        <div class="column-20" style="background-color: #d7e5f0;">
-        </div>
-
-        <div class="column">
-
-
-          <h3>Common Config</h3>
-
-            {% for item in config %}
-              {% include "form.html" with context %}
-            {% endfor %}
-
-          <input type="submit" value="Save" id="submitButton">
-        </div>
-
-        <div class="column">
-          <h3>Device Status</h3>
-
-          {% for item in status %}
-            {% include "form.html" with context %}
-          {% endfor %}
-
-        </div>
-
+      <div class="acts menu-buttons" id="menu-buttons">
+        <button id="btn-connect" class="btn btn-wide btn-call" data-handler="connectHandler" title="Pair with the device over WebHID">Connect</button>
+        <button class="btn online" data-handler="readHandler" title="Reload the configuration from the device" disabled>Read</button>
+        <button class="btn online" data-handler="exitHandler" title="Leaves config mode and reboots" disabled>Exit</button>
       </div>
     </div>
-    </section>
-  </main>
+  </div>
 
-  <script>
-  {% include "script.js" %}
-  </script>
+  <div class="strip" id="not-connected">
+    <span class="strip-t">Not connected</span>
+    <span class="strip-m">Settings are read from the device. Use Connect above to load the current configuration and start editing.</span>
+  </div>
+
+  <div class="strip menu-buttons" id="confirm-disconnect" hidden>
+    <span class="strip-t">Unsaved changes</span>
+    <span class="strip-m" id="guard-msg"></span>
+    <button class="btn btn-quiet" data-handler="keepEditingHandler">Keep editing</button>
+    <button class="btn btn-quiet btn-danger" id="guard-confirm" data-handler="discardHandler">Discard</button>
+  </div>
+
+  <div class="card">
+  <div class="gate" id="panel" inert>
+
+    <div class="rail">
+
+      <div class="obar">
+        <div class="duo">
+        {%- for o in outputs %}
+          <div class="out">
+            <span class="out-n">Output {{ o.id }}</span>
+            <span class="out-chip{% if o.main %} on{% endif %}">{{ o.chip }}</span>
+          </div>
+        {%- endfor %}
+        </div>
+      </div>
+
+      {# ---- operating system ---- #}
+      <div class="duo band-in">
+      {%- for o in outputs %}
+        <div class="fld">
+          <span class="lbl">Operating system</span>
+          {{ seg(o.f['Operating System'], o.id, 'os', 'Operating system') }}
+        </div>
+      {%- endfor %}
+      </div>
+
+      {# ---- arrangement ---- #}
+      <div class="sect">
+        <span class="sect-t">Arrangement</span><span class="sect-l"></span>
+      </div>
+      <div class="band">
+        <div class="duo duo-wide band-in">
+        {%- for o in outputs %}
+          <div class="arr">
+
+            <div class="arr-top">
+              <div class="arr-grp">
+                <span class="lbl">Screens</span>
+                <div class="step" data-for="k{{ o.f['Screen Count'].key }}">
+                  <button type="button" data-d="-1" title="Remove screen">&minus;</button>
+                  <span class="step-v">1</span>
+                  <button type="button" data-d="1" title="Add screen">+</button>
+                </div>
+                {{ api(o.f['Screen Count'], o.id, 'count') }}
+              </div>
+              <div class="arr-grp">
+                <span class="lbl">Screen side</span>
+                {{ seg(o.f['Screen Position'], o.id, 'side', 'Screen side', 'seg-sm') }}
+              </div>
+            </div>
+
+            <div class="diag" data-o="{{ o.id }}">
+            {%- for n in [1, 2, 3] %}
+              <div class="mon">
+                <div class="scr"><span class="scr-n">{{ n }}</span><i class="aband"></i></div>
+                <div class="neck"></div>
+                <div class="foot"></div>
+              </div>
+            {%- endfor %}
+            </div>
+
+            <div class="cap" data-o="{{ o.id }}"></div>
+
+            <div class="align">
+              <div class="rowb">
+                <span class="k">Screen alignment</span>
+                <button type="button" class="link" data-full="{{ o.id }}">Same height</button>
+              </div>
+              <span class="hint">If this monitor is a different height, or sits higher or lower on the
+                desk, mark the part of it that lines up with the other computer's screen. The pointer
+                keeps its height when it crosses. Highlighted on the screen above.</span>
+              <div class="align-row">
+                <span class="val">Top edge</span>
+                {{ api(o.f['Border Top'], o.id, 'bt', 'number',
+                       'min="0" max="' ~ MAX_COORD ~ '" step="1" aria-label="Top edge in device coordinates"',
+                       'coord') }}
+              </div>
+              <div class="align-row">
+                <span class="val">Bottom edge</span>
+                {{ api(o.f['Border Bottom'], o.id, 'bb', 'number',
+                       'min="0" max="' ~ MAX_COORD ~ '" step="1" aria-label="Bottom edge in device coordinates"',
+                       'coord') }}
+              </div>
+              <span class="note">Easier from the keyboard: park the pointer on the larger screen at
+                the height of the smaller screen's top edge and press <b class="kbd">Right Shift</b>
+                <b class="kbd">F12</b> <b class="kbd">Y</b> &mdash; the LED and caps lock flash to
+                confirm. Repeat at the bottom edge; the device picks top or bottom from which half
+                the pointer is in. It saves straight away, so press Read to pull the values in here.</span>
+            </div>
+
+          </div>
+        {%- endfor %}
+        </div>
+      </div>
+
+      {# ---- cursor ---- #}
+      <div class="band">
+        <div class="sect">
+          <span class="sect-t">Cursor</span><span class="sect-l"></span>
+        </div>
+        <div class="duo band-in">
+        {%- for o in outputs %}
+          <div class="fld">
+
+            <div class="pv-row">
+              {{ seg(o.f['Cursor Park Position'], o.id, 'park', 'Cursor parks at', 'seg-col') }}
+              <div class="pv">
+                <div class="pv-scr">
+                  <svg class="cur" data-o="{{ o.id }}" data-pv="park" viewBox="2.5 0.5 12 15.5"><path d="M3 1l11 8.4-4.7.5 2.6 5.2-2.2 1.1-2.6-5.2L3 14.6z"/></svg>
+                </div>
+                <div class="neck"></div>
+                <div class="foot"></div>
+              </div>
+            </div>
+            <span class="hint">Where the pointer sits on this computer once you've switched away.</span>
+
+            {{ rng(o.f['Speed X'], o.id, 'spx', 'Speed X') }}
+            {{ rng(o.f['Speed Y'], o.id, 'spy', 'Speed Y') }}
+
+          </div>
+        {%- endfor %}
+        </div>
+      </div>
+
+      {# ---- keep awake ---- #}
+      <div class="band">
+        <div class="sect">
+          <span class="sect-t">Keep awake</span><span class="sect-l"></span>
+        </div>
+        <div class="duo band-in">
+        {%- for o in outputs %}
+          <div class="awake">
+
+            <div class="fld">
+              <div class="pv-row">
+                {{ seg(o.f['Mode'], o.id, 'mode', 'Keep-awake mode', 'seg-col') }}
+                <div class="pv">
+                  <div class="pv-scr" data-o="{{ o.id }}" data-pv="awake">
+                    <div class="pv-in"><div class="pv-x"><div class="pv-y">
+                      <svg class="cur" viewBox="2.5 0.5 12 15.5"><path d="M3 1l11 8.4-4.7.5 2.6 5.2-2.2 1.1-2.6-5.2L3 14.6z"/></svg>
+                    </div></div></div>
+                  </div>
+                  <div class="neck"></div>
+                  <div class="foot"></div>
+                </div>
+              </div>
+              <span class="hint awake-hint" data-o="{{ o.id }}" data-note="mode"></span>
+            </div>
+
+            <div class="fld awake-part" data-o="{{ o.id }}">
+              <div class="sw-row">
+                <button type="button" class="sw" role="switch" aria-checked="false" data-for="k{{ o.f['Only If Inactive'].key }}"><span></span></button>
+                {{ api(o.f['Only If Inactive'], o.id, 'inact', 'checkbox', 'hidden') }}
+                <span>Only when this output is idle</span>
+              </div>
+              <span class="hint">Off: keeps this computer awake at all times. On: only while you're on the other computer.</span>
+            </div>
+
+            <div class="times awake-part" data-o="{{ o.id }}">
+              {{ secs(o.f['Idle Time (μs)'], o.id, 'idle', 'Starts after') }}
+              {{ secs(o.f['Max Time (μs)'], o.id, 'maxt', 'Stops after') }}
+              <span class="hint" data-o="{{ o.id }}" data-note="times"></span>
+            </div>
+
+          </div>
+        {%- endfor %}
+        </div>
+      </div>
+
+      <div class="sep"></div>
+    </div>
+
+    {# ---- shared ---- #}
+    <div class="shared">
+      <div class="sect">
+        <span class="sect-t">Shared settings</span>
+        <span class="sect-s">apply to both outputs</span>
+        <span class="sect-l"></span>
+      </div>
+
+      <div class="shared-in">
+        <span class="lbl">Mouse</span>
+        <div class="grp">
+          {{ chk(C['Force Mouse Boot Mode'], 'Force Mouse Boot Mode') }}
+          {{ chk(C['Enable Acceleration'], 'Enable Acceleration') }}
+          {{ rng(C['Jump Threshold'], '', 'jump', 'Jump Threshold') }}
+        </div>
+
+        <span class="lbl">Device flags</span>
+        <div class="grp">
+          {{ chk(C['Force KBD Boot Protocol'], 'Force KBD Boot Protocol') }}
+          {{ chk(C['KBD LED as Indicator'], 'KBD LED as Indicator') }}
+        </div>
+
+        <span class="lbl">Wiring</span>
+        <div class="grp">
+          {{ chk(C['Enforce Ports'], 'Enforce Ports') }}
+          <span class="hint">Requires the keyboard and mouse to be plugged into their designated ports.</span>
+        </div>
+
+        <span class="lbl">Diagnostics</span>
+        <div class="row-btn menu-buttons">
+          <button class="btn btn-plain online" data-handler="blinkHandler">Blink</button>
+          <button class="btn btn-plain online" data-handler="blinkBothHandler">Blink both</button>
+        </div>
+
+        <div class="box menu-buttons">
+          <span class="lbl">Destructive</span>
+          <p>Bootloader reboots the device into firmware-flashing mode. Wipe Config erases the
+            stored configuration and restores the compiled-in defaults. Neither can be undone
+            from this page.</p>
+          <div class="row-btn">
+            <button class="btn btn-plain btn-danger online" data-handler="enterBootloaderHandler">Bootloader</button>
+            <button class="btn btn-plain btn-danger online" data-handler="wipeConfigHandler">Wipe Config</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot-bar">
+      <div class="foot-in menu-buttons">
+        <span class="ind" id="dirty-ind">No changes</span>
+        <button class="btn btn-save online" id="btn-save" data-handler="saveHandler" disabled>Save to device</button>
+      </div>
+    </div>
+
+  </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+{% include "script.js" %}
+</script>
 </body>
 
 </html>
