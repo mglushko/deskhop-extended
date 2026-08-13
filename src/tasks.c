@@ -205,8 +205,10 @@ void firmware_upgrade_task(device_t *state) {
     if (queue_is_full(&state->uart_tx_queue))
         return;
 
-    /* If we're on the last element of the current page, page is done - write it. */
-    if (TU_U32_BYTE0(state->fw.address) == 0x00) {
+    /* If we're on the last element of the current page, page is done - write it.
+       Address zero is not the end of a page: nothing has arrived yet, and
+       (0 - 1) & 0xFFFFFF00 would put the target below ADDR_FW_RUNNING. */
+    if (TU_U32_BYTE0(state->fw.address) == 0x00 && state->fw.address != 0) {
 
         uint32_t page_start_addr = (state->fw.address - 1) & 0xFFFFFF00;
         write_flash_page((uint32_t)ADDR_FW_RUNNING + page_start_addr - XIP_BASE, state->page_buffer);
