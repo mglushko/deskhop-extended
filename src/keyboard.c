@@ -343,20 +343,33 @@ void process_consumer_report(uint8_t *raw_report, int length, uint8_t itf, hid_i
     device_t *state = &global_state;
     keyboard_t *keyboard = get_keyboard(iface, raw_report[0]);
 
+    /* Only skip the leading byte if this interface actually uses report IDs. Keyboards
+       that expose consumer controls on a dedicated interface commonly omit the report
+       ID entirely (e.g. Cherry KC 6000), in which case the data starts at byte 0 and
+       skipping unconditionally would read the wrong byte - reporting the wrong keys or,
+       when the payload is short, none at all. */
+    uint8_t *data = raw_report;
+    int data_len  = length;
+
+    if (iface->uses_report_id) {
+        data++;
+        data_len--;
+    }
+
     /* If consumer control is variable, read the values from cc_array and send as array. */
     if (iface->consumer.is_variable) {
-        for (int i = 0; i < MAX_CC_BUTTONS && i < 8 * (length - 1); i++) {
+        for (int i = 0; i < MAX_CC_BUTTONS && i < 8 * data_len; i++) {
             int bit_idx = i % 8;
             int byte_idx = i >> 3;
 
-            if ((raw_report[byte_idx + 1] >> bit_idx) & 1) {
+            if ((data[byte_idx] >> bit_idx) & 1) {
                 report_ptr[0] = keyboard->cc_array[i];
             }
         }
     }
     else {
-        for (int i = 0; i < length - 1 && i < CONSUMER_CONTROL_LENGTH; i++)
-            new_report[i] = raw_report[i + 1];
+        for (int i = 0; i < data_len && i < CONSUMER_CONTROL_LENGTH; i++)
+            new_report[i] = data[i];
     }
 
     if (CURRENT_BOARD_IS_ACTIVE_OUTPUT) {
@@ -367,10 +380,21 @@ void process_consumer_report(uint8_t *raw_report, int length, uint8_t itf, hid_i
 }
 
 void process_system_report(uint8_t *raw_report, int length, uint8_t itf, hid_interface_t *iface) {
-    if (length <= SYSTEM_CONTROL_LENGTH)
+    /* As in process_consumer_report, the report ID is only present if the interface
+       uses one - without this an interface that omits it either reads the wrong byte
+       or gets rejected by the length check below. */
+    uint8_t *data = raw_report;
+    int data_len  = length;
+
+    if (iface->uses_report_id) {
+        data++;
+        data_len--;
+    }
+
+    if (data_len < SYSTEM_CONTROL_LENGTH)
         return;
 
-    uint16_t new_report = raw_report[1];
+    uint16_t new_report = data[0];
     uint8_t *report_ptr = (uint8_t *)&new_report;
     device_t *state = &global_state;
 
