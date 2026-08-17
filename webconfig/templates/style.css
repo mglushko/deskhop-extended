@@ -288,6 +288,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 /* Credit to the upstream project, below the card and outside the inert gate so
    it stays readable and clickable while no device is attached. */
 .attrib { margin: 16px 4px 0; font-size: 12px; line-height: 1.6; color: var(--grey); text-align: center; }
+.attrib p { margin: 3px 0; }
 .attrib a { color: var(--muted); }
 
 /* Buttons that only mean something once a device is attached. */
