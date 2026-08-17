@@ -54,6 +54,11 @@ buttons move into the header, and Save becomes a sticky footer with an unsaved-c
 Same WebHID protocol and same 64 kB flash budget - see
 [Web configuration mode](#web-configuration-mode) for how to reach it.
 
+![The rewritten DeskHop Extended config page](img/config-page-extended.png)
+
+<p align="center"><em>Output A and Output B side by side, shared settings below. Values shown are a
+sample configuration.</em></p>
+
 Because upstream's README below is reproduced unchanged, its screenshots and its instruction to
 "click *exit* in the menu" still show upstream's page - on this build, Exit sits in the header.
 Everything else in those steps applies as written.
