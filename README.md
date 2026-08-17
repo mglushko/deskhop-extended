@@ -1,40 +1,21 @@
 # DeskHop Extended - Fast Desktop Switching
 
-This is a downstream integration build of [hrvach/deskhop](https://github.com/hrvach/deskhop). All
-the hardware, the design and effectively all of the firmware are upstream's work - this repository
-just keeps them merged with a handful of fixes that are still pending review upstream, plus a few
-features and a config page rewrite that are specific to how I use the device. See
-[What's extended](#whats-extended) below for exactly what differs; everything else in this README
-is upstream documentation and applies unchanged.
+DeskHop is a small piece of open hardware - two Raspberry Pi Picos with a galvanic isolator
+between them - that lets a single keyboard and mouse drive two computers. You switch with a
+keyboard shortcut, or simply by dragging the mouse pointer off the edge of one screen and onto the
+other; the keyboard follows the mouse, so it feels like one machine. Nothing is installed on
+either computer - both just see ordinary USB HID devices - so it works across Linux, macOS and
+Windows.
 
-Did you ever notice how, in the crazy world of tech, there's always that one quirky little project trying to solve a problem so niche that its only competitors might be a left-handed screwdriver and a self-hiding alarm clock?
-
-I use two different computers in my daily workflow and share a single keyboard/mouse pair between them. Trying several USB switching boxes found on Amazon made me realize they all suffer from similar issues - it takes a while to switch, the process is quite clumsy when trying to find the button and frankly, it just doesn't get any better with time.
-
-All I wanted was a way to use a keyboard shortcut to quickly switch outputs, paired with the ability to do the same by magically moving the mouse pointer between monitors. This project enables you to do both, even if your computers run different operating systems!
-
-![DeskHop case and board](img/case_and_board_s.png)
-
-## Features
-
-- Completely **[free and open source](https://certification.oshwa.org/de000149.html)**
-- No noticeable delay when switching
-- Simply drag the mouse pointer between computers
-- No software installed
-- Affordable and obtainable components (<15€)
-- 3D printable snap-fit case
-- Full Galvanic isolation between your outputs
-- Works with Linux, macOS and Windows
-
-[User Manual](misc/user-manual.pdf) is now available
-
-![Open Source Hardware Logo](img/oshw.svg)
-
-------
+DeskHop Extended is a downstream integration build of
+[hrvach/deskhop](https://github.com/hrvach/deskhop). All the hardware, the design and effectively
+all of the firmware are upstream's work. This repository exists to run upstream *plus* the fixes
+that are still waiting on review there, plus two features and a rewritten config page that suit
+how I use the device day to day. If you want the canonical project, go upstream - this is for
+people who want those pending fixes now. [What's extended](#whats-extended) is the exact delta;
+everything after it is upstream's own README, reproduced unchanged.
 
 ## What's extended
-
-Everything below this section is upstream DeskHop. This is what this fork adds on top of it.
 
 ### Pending upstream pull requests
 
@@ -73,9 +54,49 @@ buttons move into the header, and Save becomes a sticky footer with an unsaved-c
 Same WebHID protocol and same 64 kB flash budget - see
 [Web configuration mode](#web-configuration-mode) for how to reach it.
 
-> **Note:** the config page ships inside a small FAT image, so changing `webconfig/templates/`
-> requires regenerating both: `make render` in `webconfig/`, then `./create.sh` in `disk/`
-> (needs sudo for the loop mount). Rebuilding the firmware alone will not pick up the change.
+Because upstream's README below is reproduced unchanged, its screenshots and its instruction to
+"click *exit* in the menu" still show upstream's page - on this build, Exit sits in the header.
+Everything else in those steps applies as written.
+
+### Building the config page
+
+The config page ships inside a small FAT image, so changing `webconfig/templates/` requires
+regenerating both: `make render` in `webconfig/`, then `./create.sh` in `disk/` (needs sudo for the
+loop mount). Rebuilding the firmware alone will not pick up the change.
+
+------
+
+> **Everything below this line is the original DeskHop README from
+> [hrvach/deskhop](https://github.com/hrvach/deskhop), reproduced unchanged.** First person ("I")
+> in it refers to upstream's author, and it describes upstream's build. Where this repository
+> behaves differently, it is listed in [What's extended](#whats-extended) above.
+
+------
+
+# DeskHop - Fast Desktop Switching
+
+Did you ever notice how, in the crazy world of tech, there's always that one quirky little project trying to solve a problem so niche that its only competitors might be a left-handed screwdriver and a self-hiding alarm clock?
+
+I use two different computers in my daily workflow and share a single keyboard/mouse pair between them. Trying several USB switching boxes found on Amazon made me realize they all suffer from similar issues - it takes a while to switch, the process is quite clumsy when trying to find the button and frankly, it just doesn't get any better with time.
+
+All I wanted was a way to use a keyboard shortcut to quickly switch outputs, paired with the ability to do the same by magically moving the mouse pointer between monitors. This project enables you to do both, even if your computers run different operating systems!
+
+![DeskHop case and board](img/case_and_board_s.png)
+
+## Features
+
+- Completely **[free and open source](https://certification.oshwa.org/de000149.html)**
+- No noticeable delay when switching
+- Simply drag the mouse pointer between computers
+- No software installed
+- Affordable and obtainable components (<15€)
+- 3D printable snap-fit case
+- Full Galvanic isolation between your outputs
+- Works with Linux, macOS and Windows
+
+[User Manual](misc/user-manual.pdf) is now available
+
+![Open Source Hardware Logo](img/oshw.svg)
 
 ------
 
