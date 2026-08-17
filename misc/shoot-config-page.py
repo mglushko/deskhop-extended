@@ -8,8 +8,15 @@ version comes from CMakeLists.txt and the checksum from build/deskhop.crc, so bo
 the real values for this tree rather than invented ones. Run `cmake --build build`
 first if you want the checksum to be current.
 
-Requires playwright (with `playwright install chromium`) and pillow. On Debian/Ubuntu
-the browser also needs: sudo apt install libnss3 libnspr4 libasound2t64
+Setup, from misc/:
+
+    python3 -m venv venv
+    ./venv/bin/pip install -r requirements.txt
+    ./venv/bin/playwright install chromium
+
+On Debian/Ubuntu the browser also needs system libraries that pip does not carry:
+
+    sudo apt install libnss3 libnspr4 libasound2t64
 
 Usage: misc/shoot-config-page.py [output.png]
 """
