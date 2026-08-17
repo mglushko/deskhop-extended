@@ -73,6 +73,8 @@ loop mount). Rebuilding the firmware alone will not pick up the change.
 
 ------
 
+<!-- upstream-readme-below - everything past this line is hrvach/deskhop's README, verbatim. See misc/sync-upstream-readme.sh -->
+
 # DeskHop - Fast Desktop Switching
 
 Did you ever notice how, in the crazy world of tech, there's always that one quirky little project trying to solve a problem so niche that its only competitors might be a left-handed screwdriver and a self-hiding alarm clock?
