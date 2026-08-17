@@ -316,10 +316,15 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 .ind { font-size: 12.5px; color: var(--grey); white-space: nowrap; }
 .ind.dirty { color: var(--danger); }
 
+/* Credit to the upstream project, below the card and outside the inert gate so
+   it stays readable and clickable while no device is attached. */
+.attrib { margin: 16px 4px 0; font-size: 12px; line-height: 1.6; color: var(--grey); text-align: center; }
+.attrib a { color: var(--muted); }
+
 /* Buttons that only mean something once a device is attached. */
 .online { opacity: 0.5; }
   </style>
-  <title>DeskHop Extended Config</title>
+  <title>DeskHop Extended</title>
 </head>
 
 <body class="offline">
@@ -348,7 +353,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           <path d="m 104.01516,99.341366 a 1.8639801,1.8639801 0 0 0 -1.86329,1.863284 1.8639801,1.8639801 0 0 0 1.86329,1.86328 h 27.4375 a 1.8639801,1.8639801 0 0 0 1.86718,-1.86328 1.8639801,1.8639801 0 0 0 -1.86718,-1.863284 z" />
         </g>
       </svg>
-      <h1 class="title">Desk<span>Hop</span> Extended Config</h1>
+      <h1 class="title">Desk<span>Hop</span> Extended</h1>
     </div>
 
     <div class="hdr-r">
@@ -828,6 +833,13 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
     </div>
 
   </div>
+  </div>
+
+  <div class="attrib">
+    DeskHop is the work of Hrvoje Cavrak -
+    <a href="https://github.com/hrvach/deskhop" target="_blank" rel="noopener noreferrer">github.com/hrvach/deskhop</a>.
+    This page belongs to a downstream build; the hardware, the design and
+    effectively all of the firmware are upstream's work.
   </div>
 
 </div>
