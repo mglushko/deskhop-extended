@@ -63,9 +63,15 @@ such as UEFI setup and the BitLocker PIN prompt.
 
 ### Rewritten web config page
 
-The config page is a single page with one column per output instead of the upstream tabbed layout,
-so the whole configuration is visible and comparable side by side. Same WebHID protocol and same
-64 kB flash budget - see [Web configuration mode](#web-configuration-mode) for how to reach it.
+Upstream's page is already a single page with Output A and Output B side by side, but each output is
+a flat list of raw fields, with a button column on the left and Common Config / Device Status
+underneath. This rewrite keeps the two output columns and groups each one into labelled sections -
+operating system, arrangement (screen count, side, monitor diagram, screen alignment), cursor (park
+preview, speed) and keep awake (mode preview, idle toggle, timers) - driven by segmented pickers,
+steppers and toggles rather than bare inputs. Shared settings sit below both columns, the device
+buttons move into the header, and Save becomes a sticky footer with an unsaved-changes indicator.
+Same WebHID protocol and same 64 kB flash budget - see
+[Web configuration mode](#web-configuration-mode) for how to reach it.
 
 > **Note:** the config page ships inside a small FAT image, so changing `webconfig/templates/`
 > requires regenerating both: `make render` in `webconfig/`, then `./create.sh` in `disk/`
