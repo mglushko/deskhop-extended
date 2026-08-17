@@ -1,4 +1,11 @@
-# DeskHop - Fast Desktop Switching
+# DeskHop Extended - Fast Desktop Switching
+
+This is a downstream integration build of [hrvach/deskhop](https://github.com/hrvach/deskhop). All
+the hardware, the design and effectively all of the firmware are upstream's work - this repository
+just keeps them merged with a handful of fixes that are still pending review upstream, plus a few
+features and a config page rewrite that are specific to how I use the device. See
+[What's extended](#whats-extended) below for exactly what differs; everything else in this README
+is upstream documentation and applies unchanged.
 
 Did you ever notice how, in the crazy world of tech, there's always that one quirky little project trying to solve a problem so niche that its only competitors might be a left-handed screwdriver and a self-hiding alarm clock?
 
@@ -22,6 +29,47 @@ All I wanted was a way to use a keyboard shortcut to quickly switch outputs, pai
 [User Manual](misc/user-manual.pdf) is now available
 
 ![Open Source Hardware Logo](img/oshw.svg)
+
+------
+
+## What's extended
+
+Everything below this section is upstream DeskHop. This is what this fork adds on top of it.
+
+### Pending upstream pull requests
+
+These are all open against [hrvach/deskhop](https://github.com/hrvach/deskhop) and are merged here
+so they can be used before (and regardless of whether) they land upstream:
+
+- [#355](https://github.com/hrvach/deskhop/pull/355) - optional edge double-tap requirement for output switching
+- [#356](https://github.com/hrvach/deskhop/pull/356) - boot-protocol keyboard support for UEFI/BitLocker pre-boot
+- [#357](https://github.com/hrvach/deskhop/pull/357) - fixes the cursor jumping when a pointing device is attached to each board ([#263](https://github.com/hrvach/deskhop/issues/263))
+- [#358](https://github.com/hrvach/deskhop/pull/358) - fixes media keys on keyboards that don't use HID report IDs ([#236](https://github.com/hrvach/deskhop/issues/236))
+- [#359](https://github.com/hrvach/deskhop/pull/359) - keeps all key sections on keyboards that use more than one
+- [#361](https://github.com/hrvach/deskhop/pull/361) - fixes an out-of-bounds write when a HID descriptor has a large report count ([#332](https://github.com/hrvach/deskhop/issues/332))
+
+### Edge double-tap to switch
+
+Optional: switching between the two physical outputs requires pushing the cursor against the screen
+edge, pulling it away, and pushing against it again within a short window. Prevents accidental
+switches when working near the edge. Virtual desktop switching is unaffected. Disabled by default;
+configurable from the web config page or in `src/include/user_config.h`
+(`SWITCH_DOUBLE_TAP_ENABLE`, `SWITCH_DOUBLE_TAP_MS`, `SWITCH_DOUBLE_TAP_MARGIN`).
+
+### Boot-protocol keyboard support
+
+The keyboard keeps working in pre-boot environments that only speak the 8-byte HID boot protocol,
+such as UEFI setup and the BitLocker PIN prompt.
+
+### Rewritten web config page
+
+The config page is a single page with one column per output instead of the upstream tabbed layout,
+so the whole configuration is visible and comparable side by side. Same WebHID protocol and same
+64 kB flash budget - see [Web configuration mode](#web-configuration-mode) for how to reach it.
+
+> **Note:** the config page ships inside a small FAT image, so changing `webconfig/templates/`
+> requires regenerating both: `make render` in `webconfig/`, then `./create.sh` in `disk/`
+> (needs sudo for the loop mount). Rebuilding the firmware alone will not pick up the change.
 
 ------
 
