@@ -152,10 +152,9 @@ upgrades the other board, with the LED blinking throughout; once that finishes i
 flash and reboots to complete the operation.
 
 That second half - one board carrying the new firmware to the other - is what
-[#360](https://github.com/hrvach/deskhop/pull/360) repairs, and it is fixed here but not
-yet confirmed on hardware. If a board ends up in a state where none of this works, holding
-its on-board button while plugging it in always reaches the ROM bootloader, whatever the
-device is doing.
+[#360](https://github.com/hrvach/deskhop/pull/360) repairs. If a board ends up in a state
+where none of this works, holding its on-board button while plugging it in always reaches
+the ROM bootloader, whatever the device is doing.
 
 The config page has no button for any of this. The firmware only accepts a short allowlist
 of packets from a connected computer (`validate_packet` in `src/utils.c`) and firmware
