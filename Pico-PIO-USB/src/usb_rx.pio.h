@@ -33,13 +33,13 @@ static const uint16_t usb_edge_detector_program_instructions[] = {
     0x00cc, //  8: jmp    pin, 12                    
     0x00cc, //  9: jmp    pin, 12                    
             //     .wrap
-    0xa226, // 10: mov    x, isr                 [2] 
+    0xa126, // 10: mov    x, isr                 [1] 
     0x0040, // 11: jmp    x--, 0                     
-    0xa0c3, // 12: mov    isr, null                  
-    0x4001, // 13: in     pins, 1                    
-    0xc004, // 14: irq    nowait 4                   
+    0xa1c3, // 12: mov    isr, null              [1] 
+    0xc004, // 13: irq    nowait 4                   
+    0x4001, // 14: in     pins, 1                    
     0x00ca, // 15: jmp    pin, 10                    
-    0x0005, // 16: jmp    5                          
+    0x0006, // 16: jmp    6                          
 };
 
 #if !PICO_NO_HARDWARE
@@ -76,13 +76,13 @@ static const uint16_t usb_edge_detector_debug_program_instructions[] = {
     0x10cc, //  8: jmp    pin, 12         side 1     
     0x10cc, //  9: jmp    pin, 12         side 1     
             //     .wrap
-    0xb226, // 10: mov    x, isr          side 1 [2] 
+    0xb126, // 10: mov    x, isr          side 1 [1] 
     0x1040, // 11: jmp    x--, 0          side 1     
-    0xb0c3, // 12: mov    isr, null       side 1     
-    0x4001, // 13: in     pins, 1         side 0     
-    0xc004, // 14: irq    nowait 4        side 0     
+    0xb1c3, // 12: mov    isr, null       side 1 [1] 
+    0xc004, // 13: irq    nowait 4        side 0     
+    0x4001, // 14: in     pins, 1         side 0     
     0x00ca, // 15: jmp    pin, 10         side 0     
-    0x1005, // 16: jmp    5               side 1     
+    0x1006, // 16: jmp    6               side 1     
 };
 
 #if !PICO_NO_HARDWARE
@@ -239,7 +239,7 @@ static inline void eop_detect_fs_program_init(PIO pio, uint sm, uint offset,
     div = (float)clock_get_hz(clk_sys) / (12000000);
   }
   sm_config_set_clkdiv(&c, div);
-  pio_sm_init(pio, sm, offset + 1, &c);
+  pio_sm_init(pio, sm, offset, &c);
   pio_sm_set_enabled(pio, sm, true);
 }
 

@@ -50,6 +50,31 @@ so they can be used before (and regardless of whether) they land upstream:
 - [#360](https://github.com/hrvach/deskhop/pull/360) - lets the board-to-board firmware upgrade finish instead of hanging one request short of the end
 - [#361](https://github.com/hrvach/deskhop/pull/361) - fixes an out-of-bounds write when a HID descriptor has a large report count ([#332](https://github.com/hrvach/deskhop/issues/332))
 
+### Pico-PIO-USB fixes
+
+The PIO USB host library in `Pico-PIO-USB/` is a vendored copy of upstream 0.5.3. Upstream has moved
+on to 0.7.2, but its 0.6.0 rewrite replaced the transmit encoder and the PIO allocation, which the
+bundled TinyUSB host controller driver was never built against - so rather than bump the whole
+library, these fixes are backported onto the 0.5.3 base:
+
+- [512d3a2](https://github.com/sekigon-gonnoc/Pico-PIO-USB/commit/512d3a2) - puts `calc_usb_crc16`
+  in RAM, the last function on the SOF interrupt path that still ran from flash. That path keeps
+  running while the other core erases and programs flash during a board-to-board firmware upgrade.
+- [bc14d3e](https://github.com/sekigon-gonnoc/Pico-PIO-USB/commit/bc14d3e) +
+  [447ea43](https://github.com/sekigon-gonnoc/Pico-PIO-USB/commit/447ea43) - bounds the receive
+  buffer and times out the receive loops, so a device unplugged mid-packet can no longer spin the
+  USB core forever inside the frame handler.
+- [cbf055d](https://github.com/sekigon-gonnoc/Pico-PIO-USB/commit/cbf055d) - clamps the received
+  length before copying it into the caller's buffer, an out-of-bounds write a non-compliant device
+  could otherwise trigger.
+
+Also completed here: the edge-detector fix carried in the vendored `usb_rx.pio` had never actually
+been built. The generated `usb_rx.pio.h` sitting next to `pio_usb.c` wins the `#include` over the
+one CMake generates, and it had not been regenerated - so the shipped binary kept the 0.5.3 program.
+The `.pio` source was also missing the `in pins, 1` capture that upstream's version of the same fix
+keeps, without which end-of-packet is never signalled. Both edge-detector programs now match
+upstream 0.7.2 instruction for instruction, and the checked-in header is regenerated from them.
+
 ### Edge double-tap to switch
 
 Optional: switching between the two physical outputs requires pushing the cursor against the screen
