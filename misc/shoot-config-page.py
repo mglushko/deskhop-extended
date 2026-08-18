@@ -60,10 +60,8 @@ PAD = 14
 # Run between shots so each one is framed on a page in its resting state, whatever the
 # one before it did to get its picture taken. Keeps BOXES order-independent.
 RESET = """() => {
-    const injected = document.getElementById('shot-style');
+    document.querySelectorAll('[data-shot]').forEach(e => e.remove());
 
-    if (injected)
-      injected.remove();
     if (!el('backup').hidden)
       closeBackupHandler();
 }"""
@@ -89,7 +87,7 @@ BOXES = {
         "setup": """() => {
             const style = document.createElement('style');
 
-            style.id = 'shot-style';
+            style.dataset.shot = '';
             style.textContent = `.swap {
                 outline: 2px solid #d1495b;
                 outline-offset: 4px;
@@ -109,9 +107,36 @@ BOXES = {
     }""",
     # The whole header down through the panel, so Export and Import are in the frame next
     # to what pressing Export gets you. From the top of the header rather than the button
-    # row, which would saw the wordmark in half.
+    # row, which would saw the wordmark in half. One ring around the pair, drawn as an
+    # overlay rather than as an outline on each, which would be two rings.
     "config-backup": {
-        "setup": """() => exportHandler()""",
+        "setup": """() => {
+            exportHandler();
+
+            const box = ['exportHandler', 'importHandler']
+                .map(h => document.querySelector(`[data-handler="${h}"]`).getBoundingClientRect())
+                .reduce((a, b) => ({
+                    x: Math.min(a.x, b.x), y: Math.min(a.y, b.y),
+                    right: Math.max(a.right, b.right), bottom: Math.max(a.bottom, b.bottom),
+                }));
+            const ring = document.createElement('div');
+            const pad = 4;
+
+            ring.dataset.shot = '';
+            Object.assign(ring.style, {
+                position: 'absolute',
+                left: `${window.scrollX + box.x - pad}px`,
+                top: `${window.scrollY + box.y - pad}px`,
+                width: `${box.right - box.x + 2 * pad}px`,
+                height: `${box.bottom - box.y + 2 * pad}px`,
+                border: '2px solid #d1495b',
+                borderRadius: '7px',
+                boxShadow: '0 0 0 5px rgba(209, 73, 91, .16)',
+                pointerEvents: 'none',
+                zIndex: '50',
+            });
+            document.body.appendChild(ring);
+        }""",
         "box": """() => {
             const header = document.querySelector('.hdr').getBoundingClientRect();
             const panel = el('backup').getBoundingClientRect();

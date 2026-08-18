@@ -1,19 +1,20 @@
 # DeskHop Extended - Fast Desktop Switching
 
-DeskHop is a small piece of open hardware - two Raspberry Pi Picos with a galvanic isolator
-between them - that lets a single keyboard and mouse drive two computers. You switch with a
+DeskHop is a small piece of open hardware (two Raspberry Pi Picos with a galvanic isolator
+between them) that lets a single keyboard and mouse drive two computers. You switch with a
 keyboard shortcut, or simply by dragging the mouse pointer off the edge of one screen and onto the
 other; the keyboard follows the mouse, so it feels like one machine. Nothing is installed on
-either computer - both just see ordinary USB HID devices - so it works across Linux, macOS and
+either computer; both just see ordinary USB HID devices, so it works across Linux, macOS and
 Windows.
 
 DeskHop Extended is a downstream integration build of
 [hrvach/deskhop](https://github.com/hrvach/deskhop). All the hardware, the design and effectively
 all of the firmware are upstream's work. This repository exists to run upstream *plus* the fixes
 that are still waiting on review there, plus two features and a rewritten config page that suit
-how I use the device day to day. If you want the canonical project, go upstream - this is for
-people who want those pending fixes now. [What's extended](#whats-extended) is the exact delta;
-everything after it is upstream's own README, reproduced unchanged.
+how I use the device day to day. Upstream remains the canonical project and is the better
+starting point for most people; this build is here for anyone who would rather not wait for those
+fixes to land. [What's extended](#whats-extended) is the exact delta; everything after it is
+upstream's own README, reproduced unchanged.
 
 ## What's extended
 
@@ -34,7 +35,7 @@ so they can be used before (and regardless of whether) they land upstream:
 
 The PIO USB host library in `Pico-PIO-USB/` is a vendored copy of upstream 0.5.3. Upstream has moved
 on to 0.7.2, but its 0.6.0 rewrite replaced the transmit encoder and the PIO allocation, which the
-bundled TinyUSB host controller driver was never built against - so rather than bump the whole
+bundled TinyUSB host controller driver was never built against. Rather than bump the whole
 library, these fixes are backported onto the 0.5.3 base:
 
 - [512d3a2](https://github.com/sekigon-gonnoc/Pico-PIO-USB/commit/512d3a2) - puts `calc_usb_crc16`
@@ -50,10 +51,67 @@ library, these fixes are backported onto the 0.5.3 base:
 
 Also completed here: the edge-detector fix carried in the vendored `usb_rx.pio` had never actually
 been built. The generated `usb_rx.pio.h` sitting next to `pio_usb.c` wins the `#include` over the
-one CMake generates, and it had not been regenerated - so the shipped binary kept the 0.5.3 program.
+one CMake generates, and it had not been regenerated, so the shipped binary kept the 0.5.3 program.
 The `.pio` source was also missing the `in pins, 1` capture that upstream's version of the same fix
 keeps, without which end-of-packet is never signalled. Both edge-detector programs now match
 upstream 0.7.2 instruction for instruction, and the checked-in header is regenerated from them.
+
+### Rewritten web config page
+
+Upstream's page is already a single page with Output A and Output B side by side, but each output is
+a flat list of raw fields, with a button column on the left and Common Config / Device Status
+underneath. This rewrite keeps the two output columns and groups each one into labelled
+sections: operating system, arrangement (screen count, side, monitor diagram, screen alignment),
+cursor (park preview, speed) and keep awake (mode preview, idle toggle, timers). All of it is
+driven by segmented pickers, steppers and toggles rather than bare inputs. Shared settings sit below both columns, the device
+buttons move into the header, and Save becomes a sticky footer with an unsaved-changes indicator.
+Same WebHID protocol and same 64 kB flash budget. See
+[Web configuration mode](#web-configuration-mode) for how to reach it.
+
+![The rewritten DeskHop Extended config page](img/config-page-extended.png)
+
+<p align="center"><em>The top of the page: both outputs side by side, down through Arrangement.
+Cursor, Keep awake and the shared settings continue below it. Values shown are a sample
+configuration.</em></p>
+
+Because upstream's README below is reproduced unchanged, its screenshots and its instruction to
+"click *exit* in the menu" still show upstream's page. On this build, Exit sits in the header.
+Everything else in those steps applies as written.
+
+### Both boards on one page
+
+The header shows the firmware version of the board you are connected to and of the other
+one, flagging it when the two differ. The version was already crossing the link once a
+second in the heartbeat and being discarded; it is now kept and exposed read-only. A dash
+means nothing has been heard from the other board: it is unpowered, or the link is down.
+
+Worth having because the boards push firmware at each other automatically when their
+versions differ, so a half-finished propagation is a state you want to be able to see.
+
+### Export and import settings
+
+Export saves every setting the page exposes to a `.txt` file; Import reads one back, either
+by picking the file or by pasting it in. Settings are keyed by the numbers in `api_field_map`
+(`src/protocol.c`), which name a field rather than a position in the config struct, so an
+export stays readable across firmware versions that add, drop or reorder fields. Unknown
+keys are reported and skipped rather than silently misapplied. Import only fills in the page;
+nothing reaches the device until you press Save.
+
+![Export and Import in the header, and the panel Export opens](img/config-backup.png)
+
+<p align="center"><em>Export writes the file and shows the same text in the panel, in case you
+would rather copy it than keep a download.</em></p>
+
+### Swapping the output columns
+
+Which output is drawn in the left-hand column is a saved setting, so the page can match how
+the boards actually sit on your desk. Output A is drawn first by default; the Swap control
+in the top right of the output bar flips it, and the choice is stored on the device.
+
+![The output bar with the Swap control](img/config-swap.png)
+
+It is stored in four bytes that were already reserved in `config_t`, which keeps
+`sizeof(config_t)` unchanged and the migration from pre-key-value configs intact.
 
 ### Edge double-tap to switch
 
@@ -70,32 +128,10 @@ configurable from the web config page or in `src/include/user_config.h`
 The keyboard keeps working in pre-boot environments that only speak the 8-byte HID boot protocol,
 such as UEFI setup and the BitLocker PIN prompt.
 
-### Rewritten web config page
-
-Upstream's page is already a single page with Output A and Output B side by side, but each output is
-a flat list of raw fields, with a button column on the left and Common Config / Device Status
-underneath. This rewrite keeps the two output columns and groups each one into labelled sections -
-operating system, arrangement (screen count, side, monitor diagram, screen alignment), cursor (park
-preview, speed) and keep awake (mode preview, idle toggle, timers) - driven by segmented pickers,
-steppers and toggles rather than bare inputs. Shared settings sit below both columns, the device
-buttons move into the header, and Save becomes a sticky footer with an unsaved-changes indicator.
-Same WebHID protocol and same 64 kB flash budget - see
-[Web configuration mode](#web-configuration-mode) for how to reach it.
-
-![The rewritten DeskHop Extended config page](img/config-page-extended.png)
-
-<p align="center"><em>The top of the page: both outputs side by side, down through Arrangement.
-Cursor, Keep awake and the shared settings continue below it. Values shown are a sample
-configuration.</em></p>
-
-Because upstream's README below is reproduced unchanged, its screenshots and its instruction to
-"click *exit* in the menu" still show upstream's page - on this build, Exit sits in the header.
-Everything else in those steps applies as written.
-
 ### Settings survive firmware changes
 
 Upstream stores the configuration as a dump of `config_t` and throws the whole thing away
-whenever `CURRENT_CONFIG_VERSION` moves, which it has to whenever a field is added - so
+whenever `CURRENT_CONFIG_VERSION` moves, which it has to whenever a field is added, so
 adding one setting costs you all of them. This build stores `{key, length, value}` triples
 keyed by the numbers in `api_field_map` (`src/protocol.c`), which name a field rather than a
 position in the struct. Fields can be added, removed or reordered without invalidating what
@@ -108,50 +144,15 @@ this version does not cost you your settings either. The format is exercised on 
 `misc/hosttest/run.sh`, which builds the real `src/config_store.c` against a byte array
 standing in for the flash page.
 
-### Both boards on one page
-
-The header shows the firmware version of the board you are connected to and of the other
-one, flagging it when the two differ. The version was already crossing the link once a
-second in the heartbeat and being discarded; it is now kept and exposed read-only. A dash
-means nothing has been heard from the other board - it is unpowered, or the link is down.
-
-Worth having because the boards push firmware at each other automatically when their
-versions differ, so a half-finished propagation is a state you want to be able to see.
-
-### Swapping the output columns
-
-Which output is drawn in the left-hand column is a saved setting, so the page can match how
-the boards actually sit on your desk. Output A is drawn first by default; the Swap control
-in the top right of the output bar flips it, and the choice is stored on the device.
-
-![The output bar with the Swap control](img/config-swap.png)
-
-It is stored in four bytes that were already reserved in `config_t`, which keeps
-`sizeof(config_t)` unchanged and the migration from pre-key-value configs intact.
-
-### Export and import settings
-
-Export saves every setting the page exposes to a `.txt` file; Import reads one back, either
-by picking the file or by pasting it in. Settings are keyed by the numbers in `api_field_map`
-(`src/protocol.c`), which name a field rather than a position in the config struct, so an
-export stays readable across firmware versions that add, drop or reorder fields - unknown
-keys are reported and skipped rather than silently misapplied. Import only fills in the page;
-nothing reaches the device until you press Save.
-
-![Export and Import in the header, and the panel Export opens](img/config-backup.png)
-
-<p align="center"><em>Export writes the file and shows the same text in the panel, in case you
-would rather copy it than keep a download.</em></p>
-
 ### Upgrading the firmware
 
 Press **Left Ctrl + Right Shift + C + O**. The board your keyboard is plugged into reboots
-as a USB drive called DESKHOP - the same drive this build's config page is served from.
+as a USB drive called DESKHOP, the same drive this build's config page is served from.
 Copy the `.uf2` onto it. The device verifies the image, flashes itself and reboots, then
 upgrades the other board, with the LED blinking throughout; once that finishes it writes
 flash and reboots to complete the operation.
 
-That second half - one board carrying the new firmware to the other - is what
+That second half, one board carrying the new firmware to the other, is what
 [#360](https://github.com/hrvach/deskhop/pull/360) repairs. If a board ends up in a state
 where none of this works, holding its on-board button while plugging it in always reaches
 the ROM bootloader, whatever the device is doing.
@@ -173,7 +174,7 @@ will not pick up the change.
 
 For the image, either `./create.sh` in `disk/`, which loop-mounts and so needs sudo, or
 `misc/rebuild-disk-image.py`, which edits the committed image in place and needs no root. The
-two produce the same bytes - `misc/rebuild-disk-image.py --selftest` rebuilds the committed
+two produce the same bytes: `misc/rebuild-disk-image.py --selftest` rebuilds the committed
 image from its own page and checks the result matches byte for byte.
 
 `make render` also writes `webconfig/config-test.htm`, which is not part of the image and never
@@ -185,12 +186,12 @@ the page without a board on the desk, and for seeing what a button actually puts
 
 ### Versioning
 
-This build numbers itself independently of upstream - starting at 1.0 rather than continuing
-upstream's 0.x - and the config page marks it **beta**. It is a small project's first
+This build numbers itself independently of upstream, starting at 1.0 rather than continuing
+upstream's 0.x, and the config page marks it **beta**. It is a small project's first
 release, so treat it as one. The current version is whatever `CMakeLists.txt` says; the
 config page shows it, and the board reports it over the link.
 
-Minor numbers read to two digits - v1.00, v1.01, v1.02 - and only the printed form is
+Minor numbers read to two digits (v1.00, v1.01, v1.02), and only the printed form is
 padded; the version the boards exchange is the same `major * 1000 + minor + 100` as ever.
 Note that a board only accepts firmware from the other one when that board reports a
 *higher* number, so installing a lower version than the pair is already running means
@@ -200,7 +201,7 @@ The number is deliberately above upstream's, and not only for labelling: a board
 firmware from the other one when the other reports a *higher* version
 (`handle_heartbeat_msg`), so being above upstream is what lets you flash one board and have
 the second follow, rather than the reverse. "beta" is a label rendered onto the config page
-from `VERSION_SUFFIX` in `CMakeLists.txt` - the version the boards exchange is a `uint16`
+from `VERSION_SUFFIX` in `CMakeLists.txt`; the version the boards exchange is a `uint16`
 with no room for a suffix.
 
 ------
