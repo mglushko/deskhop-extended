@@ -17,11 +17,12 @@ everything after it is upstream's own README, reproduced unchanged.
 
 ## What's extended
 
-### Version 1.0 beta
+### Versioning
 
-This build numbers itself independently of upstream - 1.0 rather than continuing upstream's
-0.x - and the config page marks it **beta**. It is a small project's first release, so treat
-it as one.
+This build numbers itself independently of upstream - starting at 1.0 rather than continuing
+upstream's 0.x - and the config page marks it **beta**. It is a small project's first
+release, so treat it as one. The current version is whatever `CMakeLists.txt` says; the
+config page shows it, and the board reports it over the link.
 
 The number is deliberately above upstream's, and not only for labelling: a board pulls
 firmware from the other one when the other reports a *higher* version
