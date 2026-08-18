@@ -85,9 +85,6 @@ configurable from the web config page or in `src/include/user_config.h`
 
 ![The edge double-tap settings on the config page](img/config-dtap.png)
 
-<p align="center"><em>The preview animates the sequence: push, hold, pull back, push again,
-cross. It runs only while the setting is on.</em></p>
-
 ### Boot-protocol keyboard support
 
 The keyboard keeps working in pre-boot environments that only speak the 8-byte HID boot protocol,
@@ -161,7 +158,7 @@ export stays readable across firmware versions that add, drop or reorder fields 
 keys are reported and skipped rather than silently misapplied. Import only fills in the page;
 nothing reaches the device until you press Save.
 
-![The export panel on the config page](img/config-backup.png)
+![Export and Import in the header, and the panel Export opens](img/config-backup.png)
 
 <p align="center"><em>Export writes the file and shows the same text in the panel, in case you
 would rather copy it than keep a download.</em></p>

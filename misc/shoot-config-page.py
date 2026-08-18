@@ -57,6 +57,17 @@ FIXED_TIME = "2026-08-18T12:00:00Z"
 # legible without dwarfing the prose they sit in.
 PAD = 14
 
+# Run between shots so each one is framed on a page in its resting state, whatever the
+# one before it did to get its picture taken. Keeps BOXES order-independent.
+RESET = """() => {
+    const injected = document.getElementById('shot-style');
+
+    if (injected)
+      injected.remove();
+    if (!el('backup').hidden)
+      closeBackupHandler();
+}"""
+
 BOXES = {
     # The card from the top down to the end of Arrangement. That boundary is the closest
     # section break to a third of the page, and it is the part worth showing: the header,
@@ -72,7 +83,23 @@ BOXES = {
                     height: band.getBoundingClientRect().bottom};
         }""",
     },
-    "config-swap": """() => document.querySelector('.obar').getBoundingClientRect()""",
+    # A ring drawn around the Swap button for the shot only. Without it the eye has to
+    # hunt a small control at the far end of a wide, otherwise empty bar.
+    "config-swap": {
+        "setup": """() => {
+            const style = document.createElement('style');
+
+            style.id = 'shot-style';
+            style.textContent = `.swap {
+                outline: 2px solid #d1495b;
+                outline-offset: 4px;
+                border-radius: 5px;
+                box-shadow: 0 0 0 7px rgba(209, 73, 91, .16);
+            }`;
+            document.head.appendChild(style);
+        }""",
+        "box": """() => document.querySelector('.obar').getBoundingClientRect()""",
+    },
     "config-dtap": """() => {
         const label = [...document.querySelectorAll('.shared-in .lbl')]
             .find(e => e.textContent === 'Edge double-tap');
@@ -80,9 +107,20 @@ BOXES = {
         const bottom = label.nextElementSibling.getBoundingClientRect();
         return {x: top.x, y: top.y, width: bottom.width, height: bottom.bottom - top.y};
     }""",
+    # The whole header down through the panel, so Export and Import are in the frame next
+    # to what pressing Export gets you. From the top of the header rather than the button
+    # row, which would saw the wordmark in half.
     "config-backup": {
         "setup": """() => exportHandler()""",
-        "box": """() => el('backup').getBoundingClientRect()""",
+        "box": """() => {
+            const header = document.querySelector('.hdr').getBoundingClientRect();
+            const panel = el('backup').getBoundingClientRect();
+            const left = Math.min(header.x, panel.x);
+
+            return {x: left, y: header.y,
+                    width: Math.max(header.right, panel.right) - left,
+                    height: panel.bottom - header.y};
+        }""",
     },
 }
 
@@ -194,6 +232,8 @@ def main() -> None:
         for name, spec in BOXES.items():
             spec = spec if isinstance(spec, dict) else {"box": spec}
             pad = spec.get("pad", PAD)
+
+            page.evaluate(RESET)
 
             if "setup" in spec:
                 page.evaluate(spec["setup"])
