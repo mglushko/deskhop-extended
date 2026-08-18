@@ -379,10 +379,11 @@
           <span class="lbl">Destructive</span>
           <p>Wipe Config erases the stored configuration and restores the compiled-in
             defaults. It cannot be undone from this page.</p>
-          <p class="hint">To reach firmware-flashing mode, press <b>Left Shift + Right Shift + A</b>
-            for the board your keyboard is plugged into, or <b>+ B</b> for the other one. Holding
-            the on-board button while plugging a board in always works too. The firmware refuses
-            flashing requests that arrive from a computer, so this page cannot do it for you.</p>
+          <p class="hint">To upgrade the firmware, copy a <b>.uf2</b> onto the DESKHOP drive
+            this page came from. The device verifies it, flashes and reboots, then carries the
+            new firmware over to the other board, blinking its LED throughout. The firmware
+            refuses flashing requests that arrive from a computer, so there is no button for it
+            here.</p>
           <div class="row-btn">
             <button class="btn btn-plain btn-danger online" data-handler="wipeConfigHandler">Wipe Config</button>
           </div>

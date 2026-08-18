@@ -102,27 +102,39 @@ export stays readable across firmware versions that add, drop or reorder fields 
 keys are reported and skipped rather than silently misapplied. Import only fills in the page;
 nothing reaches the device until you press Save.
 
-### Reaching firmware-flashing mode
+### Upgrading the firmware
 
-The firmware only accepts a short allowlist of packets from a connected computer
-(`validate_packet` in `src/utils.c`), and firmware upgrade is deliberately not on it -
-upstream's rule is that only a physical keyboard action may trigger flashing. Upstream's
-config page nonetheless ships a Bootloader button that sends exactly that packet, so it
-silently does nothing. This build drops the button rather than widen the allowlist.
+Press **Left Ctrl + Right Shift + C + O**. The board your keyboard is plugged into reboots
+as a USB drive called DESKHOP - the same drive this build's config page is served from.
+Copy the `.uf2` onto it. The device verifies the image, flashes itself and reboots, then
+upgrades the other board, with the LED blinking throughout; once that finishes it writes
+flash and reboots to complete the operation.
 
-Use the keyboard instead, which upstream's README does not mention:
+That second half - one board carrying the new firmware to the other - is what
+[#360](https://github.com/hrvach/deskhop/pull/360) repairs, and it is fixed here but not
+yet confirmed on hardware. If a board ends up in a state where none of this works, holding
+its on-board button while plugging it in always reaches the ROM bootloader, whatever the
+device is doing.
 
-- `Left Shift + Right Shift + A` - flashing mode for the board your keyboard is plugged into
-- `Left Shift + Right Shift + B` - flashing mode for the other board
-
-Holding the on-board button while plugging a board in always works as well, whatever state
-the device is in.
+The config page has no button for any of this. The firmware only accepts a short allowlist
+of packets from a connected computer (`validate_packet` in `src/utils.c`) and firmware
+upgrade is deliberately not on it, upstream's rule being that only a physical action may
+trigger flashing. Upstream's page ships a Bootloader button that sends exactly that packet,
+so it silently does nothing; this build drops the button rather than widen the allowlist.
+Two keyboard shortcuts upstream never documents reach the ROM bootloader directly if you
+want it: `Left Shift + Right Shift + A` for the board your keyboard is plugged into, and
+`+ B` for the other one.
 
 ### Building the config page
 
 The config page ships inside a small FAT image, so changing `webconfig/templates/` requires
-regenerating both: `make render` in `webconfig/`, then `./create.sh` in `disk/` (needs sudo for the
-loop mount). Rebuilding the firmware alone will not pick up the change.
+regenerating both: `make render` in `webconfig/`, then the image. Rebuilding the firmware alone
+will not pick up the change.
+
+For the image, either `./create.sh` in `disk/`, which loop-mounts and so needs sudo, or
+`misc/rebuild-disk-image.py`, which edits the committed image in place and needs no root. The
+two produce the same bytes - `misc/rebuild-disk-image.py --selftest` rebuilds the committed
+image from its own page and checks the result matches byte for byte.
 
 ------
 
