@@ -17,26 +17,6 @@ everything after it is upstream's own README, reproduced unchanged.
 
 ## What's extended
 
-### Versioning
-
-This build numbers itself independently of upstream - starting at 1.0 rather than continuing
-upstream's 0.x - and the config page marks it **beta**. It is a small project's first
-release, so treat it as one. The current version is whatever `CMakeLists.txt` says; the
-config page shows it, and the board reports it over the link.
-
-Minor numbers read to two digits - v1.00, v1.01, v1.02 - and only the printed form is
-padded; the version the boards exchange is the same `major * 1000 + minor + 100` as ever.
-Note that a board only accepts firmware from the other one when that board reports a
-*higher* number, so installing a lower version than the pair is already running means
-flashing each board over its on-board button with the other unplugged.
-
-The number is deliberately above upstream's, and not only for labelling: a board pulls
-firmware from the other one when the other reports a *higher* version
-(`handle_heartbeat_msg`), so being above upstream is what lets you flash one board and have
-the second follow, rather than the reverse. "beta" is a label rendered onto the config page
-from `VERSION_SUFFIX` in `CMakeLists.txt` - the version the boards exchange is a `uint16`
-with no room for a suffix.
-
 ### Pending upstream pull requests
 
 These are all open against [hrvach/deskhop](https://github.com/hrvach/deskhop) and are merged here
@@ -203,6 +183,26 @@ appended, so opening it in any browser gives a page that is already connected: C
 Save, Export, Import and Blink all work, and a panel in the corner logs every report the page
 sends with its decoded fields, its raw bytes and its checksum verified. Useful for working on
 the page without a board on the desk, and for seeing what a button actually puts on the wire.
+
+### Versioning
+
+This build numbers itself independently of upstream - starting at 1.0 rather than continuing
+upstream's 0.x - and the config page marks it **beta**. It is a small project's first
+release, so treat it as one. The current version is whatever `CMakeLists.txt` says; the
+config page shows it, and the board reports it over the link.
+
+Minor numbers read to two digits - v1.00, v1.01, v1.02 - and only the printed form is
+padded; the version the boards exchange is the same `major * 1000 + minor + 100` as ever.
+Note that a board only accepts firmware from the other one when that board reports a
+*higher* number, so installing a lower version than the pair is already running means
+flashing each board over its on-board button with the other unplugged.
+
+The number is deliberately above upstream's, and not only for labelling: a board pulls
+firmware from the other one when the other reports a *higher* version
+(`handle_heartbeat_msg`), so being above upstream is what lets you flash one board and have
+the second follow, rather than the reverse. "beta" is a label rendered onto the config page
+from `VERSION_SUFFIX` in `CMakeLists.txt` - the version the boards exchange is a `uint16`
+with no room for a suffix.
 
 ------
 
