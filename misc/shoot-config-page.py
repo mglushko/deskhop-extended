@@ -40,10 +40,12 @@ FINAL_WIDTH = 1520    # matches img/config-page-big.png; rendering at 2x then do
 # A plausible desk, not a capture of any particular device. Output A base 10,
 # output B base 40 - see webconfig/form.py for what each offset means.
 VALUES = {
-    # Output A - Linux, single screen on the left.
-    11: 1, 12: 16, 13: 16, 14: 0, 15: 0, 16: 1, 17: 1, 18: 0, 19: 0, 20: 0, 21: 0, 22: 0,
+    # Output A - Linux, single screen on the left. Border top/bottom (14, 15) span the
+    # whole edge, what the page's "Same height" link writes, so the diagram draws the
+    # accent line down the full crossing edge instead of a stub at the top.
+    11: 1, 12: 16, 13: 16, 14: 0, 15: 32767, 16: 1, 17: 1, 18: 0, 19: 0, 20: 0, 21: 0, 22: 0,
     # Output B - Windows, two screens on the right, Pong screensaver once idle.
-    41: 2, 42: 20, 43: 20, 44: 0, 45: 0, 46: 3, 47: 2, 48: 3, 49: 1, 50: 1,
+    41: 2, 42: 20, 43: 20, 44: 0, 45: 32767, 46: 3, 47: 2, 48: 3, 49: 1, 50: 1,
     51: 300_000_000, 52: 600_000_000,
     # Shared. 72 (boot-protocol keyboard) and 83 (edge double-tap) are this fork's additions;
     # 87 is which output the page draws on the left.
