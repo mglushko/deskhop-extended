@@ -17,6 +17,7 @@ INPUT_FILENAME = "main.html"
 PACKER_FILENAME = "packer.j2"
 OUTPUT_FILENAME = "config.htm"
 OUTPUT_UNPACKED = "config-unpacked.htm"
+OUTPUT_TEST = "config-test.htm"
 CMAKELISTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "CMakeLists.txt")
 
 
@@ -30,10 +31,28 @@ def build_version():
         found = re.search(r'set\(%s "?([^")]*)"?\)' % name, cmake)
         return found.group(1).strip() if found else default
 
+    major, minor = int(get("VERSION_MAJOR", "0")), int(get("VERSION_MINOR", "0"))
+
     return {
-        "version": "v%s.%s" % (get("VERSION_MAJOR", "0"), get("VERSION_MINOR", "0")),
+        "version": "v%d.%s" % (major, get("VERSION_MINOR", "0")),
         "suffix": get("VERSION_SUFFIX"),
+        # The uint16 the boards exchange, the form formatFwVersion() in script.js undoes.
+        "raw": major * 1000 + minor + 100,
     }
+
+
+def api_fields():
+    """key -> {name, default} for every field form.py exposes, for the test page's
+    emulated device. It seeds itself and labels packets from this, so config-test.htm
+    never carries a second copy of the field map."""
+    fields = {}
+
+    for item in output_A() + output_B() + output_status() + output_config():
+        if item["elem"] == "label":
+            continue
+        fields[item["key"]] = {"name": item["name"], "default": item["default"] or 0}
+
+    return fields
 
 def render(filename, *args, **kwargs):
     env = Environment(loader=FileSystemLoader(TEMPLATE_PATH))
@@ -57,15 +76,16 @@ def encode_file(payload):
 
 
 if __name__ == "__main__":
-    # Read main template contents
-    webpage = render(
-        INPUT_FILENAME,
+    context = dict(
         screen_A=output_A(),
         screen_B=output_B(),
         status=output_status(),
         config=output_config(),
         build=build_version(),
     )
+
+    # Read main template contents
+    webpage = render(INPUT_FILENAME, **context)
 
     # Compress file and encode to base64
     encoded_data = {'payload': encode_file(webpage)}
@@ -79,3 +99,9 @@ if __name__ == "__main__":
 
     # Write unpacked webpage
     write_file(webpage, OUTPUT_UNPACKED)
+
+    # The same page with an emulated device appended, so it can be opened and driven in
+    # any browser with no hardware. Never packed and never in the disk image - it is a
+    # test artifact, not something the device serves.
+    write_file(render(INPUT_FILENAME, mock=True, api_fields=api_fields(), **context),
+               OUTPUT_TEST)

@@ -340,14 +340,19 @@
       </div>
 
       <div class="shared-in">
-        {# Both knobs here gate crossing to the other computer and both are ignored
-           between screens on the same one, so they belong together. #}
+        {# Both of these gate crossing to the other computer and both are ignored between
+           screens on the same one. The double tap gets its own heading because it is a
+           mode rather than a number: it brings a preview and two knobs of its own, and
+           reads as a stray extra under a threshold slider. #}
         <span class="lbl">Switching</span>
         <div class="grp">
           {{ rng(C['Jump Threshold'], '', 'jump', 'Jump Threshold') }}
           <span class="hint">How far past the edge the pointer has to be pushed before it crosses to
             the other computer. Moving between screens on the same computer is unaffected.</span>
+        </div>
 
+        <span class="lbl">Edge double-tap</span>
+        <div class="grp">
           <div class="sw-row">
             <button type="button" class="sw" role="switch" aria-checked="false" data-for="k{{ C['Edge Double-Tap to Switch'].key }}"><span></span></button>
             {{ api(C['Edge Double-Tap to Switch'], '', 'dtap', 'checkbox', 'hidden') }}
@@ -359,6 +364,19 @@
             push, not many. Moving between screens on the same computer is unaffected.</span>
 
           <div class="dtap-part">
+            <div class="dtap-pv">
+              <div class="pv">
+                <div class="pv-scr dt-a"><i class="dt-edge"></i></div>
+                <div class="neck"></div>
+                <div class="foot"></div>
+              </div>
+              <div class="pv">
+                <div class="pv-scr dt-b"><i class="dt-edge"></i></div>
+                <div class="neck"></div>
+                <div class="foot"></div>
+              </div>
+              <svg class="cur dt-cur" viewBox="2.5 0.5 12 15.5"><path d="M3 1l11 8.4-4.7.5 2.6 5.2-2.2 1.1-2.6-5.2L3 14.6z"/></svg>
+            </div>
             {{ rng(C['Double-Tap Time (ms)'], '', 'dtapms', 'Double-tap window (ms)') }}
             {{ rng(C['Double-Tap Pull-Back Distance'], '', 'dtapmargin', 'Pull back at least', 'pctv') }}
           </div>
@@ -427,6 +445,11 @@
 <script>
 {% include "script.js" %}
 </script>
+{%- if mock %}
+<script>
+{% include "mock-device.js" %}
+</script>
+{%- endif %}
 </body>
 
 </html>

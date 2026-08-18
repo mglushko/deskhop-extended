@@ -83,6 +83,11 @@ switches when working near the edge. Virtual desktop switching is unaffected. Di
 configurable from the web config page or in `src/include/user_config.h`
 (`SWITCH_DOUBLE_TAP_ENABLE`, `SWITCH_DOUBLE_TAP_MS`, `SWITCH_DOUBLE_TAP_MARGIN`).
 
+![The edge double-tap settings on the config page](img/config-dtap.png)
+
+<p align="center"><em>The preview animates the sequence: push, hold, pull back, push again,
+cross. It runs only while the setting is on.</em></p>
+
 ### Boot-protocol keyboard support
 
 The keyboard keeps working in pre-boot environments that only speak the 8-byte HID boot protocol,
@@ -102,8 +107,9 @@ Same WebHID protocol and same 64 kB flash budget - see
 
 ![The rewritten DeskHop Extended config page](img/config-page-extended.png)
 
-<p align="center"><em>Output A and Output B side by side, shared settings below. Values shown are a
-sample configuration.</em></p>
+<p align="center"><em>The top of the page: both outputs side by side, down through Arrangement.
+Cursor, Keep awake and the shared settings continue below it. Values shown are a sample
+configuration.</em></p>
 
 Because upstream's README below is reproduced unchanged, its screenshots and its instruction to
 "click *exit* in the menu" still show upstream's page - on this build, Exit sits in the header.
@@ -141,6 +147,8 @@ Which output is drawn in the left-hand column is a saved setting, so the page ca
 the boards actually sit on your desk. Output A is drawn first by default; the Swap control
 in the top right of the output bar flips it, and the choice is stored on the device.
 
+![The output bar with the Swap control](img/config-swap.png)
+
 It is stored in four bytes that were already reserved in `config_t`, which keeps
 `sizeof(config_t)` unchanged and the migration from pre-key-value configs intact.
 
@@ -152,6 +160,11 @@ by picking the file or by pasting it in. Settings are keyed by the numbers in `a
 export stays readable across firmware versions that add, drop or reorder fields - unknown
 keys are reported and skipped rather than silently misapplied. Import only fills in the page;
 nothing reaches the device until you press Save.
+
+![The export panel on the config page](img/config-backup.png)
+
+<p align="center"><em>Export writes the file and shows the same text in the panel, in case you
+would rather copy it than keep a download.</em></p>
 
 ### Upgrading the firmware
 
@@ -186,6 +199,13 @@ For the image, either `./create.sh` in `disk/`, which loop-mounts and so needs s
 `misc/rebuild-disk-image.py`, which edits the committed image in place and needs no root. The
 two produce the same bytes - `misc/rebuild-disk-image.py --selftest` rebuilds the committed
 image from its own page and checks the result matches byte for byte.
+
+`make render` also writes `webconfig/config-test.htm`, which is not part of the image and never
+reaches the device. It is the same markup and the same `script.js` with an emulated device
+appended, so opening it in any browser gives a page that is already connected: Connect, Read,
+Save, Export, Import and Blink all work, and a panel in the corner logs every report the page
+sends with its decoded fields, its raw bytes and its checksum verified. Useful for working on
+the page without a board on the desk, and for seeing what a button actually puts on the wire.
 
 ------
 

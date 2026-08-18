@@ -253,7 +253,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 .dim { opacity: .45; }
 .dimmer { opacity: .35; }
 
-.pong .pv-x { animation: dh-pong-x 2.6s linear infinite alternate; }
+.pong .pv-x { animation: dh-pong-x 2.7s linear infinite alternate; }
 .pong .pv-y { animation: dh-pong-y 1.7s linear infinite alternate; }
 .jitter .pv-y { animation: dh-jitter 4s steps(1, end) infinite; }
 
@@ -266,9 +266,95 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   100% { box-shadow: 0 0 0 0 rgba(94, 159, 65, 0); }
 }
 
-/* The keep-awake previews still show which mode is picked, just held still. */
+/* ---- double-tap preview ----------------------------------------------
+   Two computers side by side, the pointer tapping its way across and back.
+   The row is a fixed 288px (140 + 8 gap + 140) so the cursor keyframes can be
+   written as plain offsets from its left edge: A runs 0-140, B runs 148-288.
+   Crossing runs the pointer over the gap in a fraction of the time a push takes,
+   fast enough to read as a hop between the two and slow enough to follow. All
+   five animations share the 7s cycle, so the fill, the edge flashes and the
+   pointer stay in step.
+
+   What matters is where the tip is - that is the pointer; the rest is glyph. So
+   every position on B is its opposite number on A mirrored about the middle of
+   the row: the two always sum to 288. Mirroring the box instead leaves the tip
+   sitting a cursor-width further into the left computer than into the right,
+   which reads as the pointer overshooting on the way back. Where it comes to
+   rest is a shade short of the middle of each screen - far enough in to have
+   clearly arrived, near enough to the centre that neither side looks overrun. */
+
+.dtap-pv { position: relative; width: 288px; margin: 4px auto 2px; display: flex; gap: 8px; }
+.dt-edge { position: absolute; top: 0; bottom: 0; width: 4px; background: var(--accent); opacity: 0; }
+.dt-a { background: var(--scr-main); }
+.dt-a .dt-edge { right: 0; }
+.dt-b .dt-edge { left: 0; }
+/* Nudged half a pixel left because the arrow's tip sits that far inside its own box,
+   which makes every translateX below the position of the tip itself. */
+.dtap-pv > .cur { position: absolute; left: -0.5px; top: 36px; z-index: 2; transform: translateX(67px); }
+
+/* Only runs on a live page with the setting on: a loop playing behind the greyed-out
+   controls of a disconnected page, or demonstrating behaviour that is switched off, is
+   noise. Off, it rests at its first frame - the pointer parked on the left computer.
+   The gate is wrapped in :where() so it adds no specificity and the reduced-motion
+   block below still wins with plain class selectors. */
+:where(body:not(.offline) .dtap-part:not(.off)) .dt-a { animation: dh-dtap-a 7s linear infinite; }
+:where(body:not(.offline) .dtap-part:not(.off)) .dt-b { animation: dh-dtap-b 7s linear infinite; }
+:where(body:not(.offline) .dtap-part:not(.off)) .dt-a .dt-edge { animation: dh-dtap-ea 7s linear infinite; }
+:where(body:not(.offline) .dtap-part:not(.off)) .dt-b .dt-edge { animation: dh-dtap-eb 7s linear infinite; }
+:where(body:not(.offline) .dtap-part:not(.off)) .dt-cur { animation: dh-dtap-cur 7s linear infinite; }
+
+/* Rest, push, hold, pull back, wait, push again. The second push does not stop at the
+   edge - landing on it is what crosses - and the crossing itself is a quick glide over
+   the gap rather than a jump, so the eye can follow the pointer from one to the other. */
+@keyframes dh-dtap-cur {
+  0%, 6% { transform: translateX(67px); }
+  14%, 20% { transform: translateX(137px); }
+  25%, 32% { transform: translateX(115px); }
+  37% { transform: translateX(137px); }
+  39% { transform: translateX(151px); }
+  45%, 56% { transform: translateX(221px); }
+  64%, 70% { transform: translateX(151px); }
+  75%, 82% { transform: translateX(173px); }
+  87% { transform: translateX(151px); }
+  89% { transform: translateX(137px); }
+  95%, 100% { transform: translateX(67px); }
+}
+
+/* Which computer the pointer is on. The fill changes over the same two percent the
+   pointer spends crossing, so the pair hands over rather than snapping. */
+@keyframes dh-dtap-a {
+  0%, 37% { background: var(--scr-main); }
+  39%, 87% { background: var(--scr); }
+  89%, 100% { background: var(--scr-main); }
+}
+@keyframes dh-dtap-b {
+  0%, 37% { background: var(--scr); }
+  39%, 87% { background: var(--scr-main); }
+  89%, 100% { background: var(--scr); }
+}
+
+/* The edge lights for as long as the pointer is held against it. The second tap is not
+   held, so there it swells into the contact and goes out as the pointer leaves. */
+@keyframes dh-dtap-ea {
+  0%, 13.9% { opacity: 0; }
+  14%, 20% { opacity: .85; }
+  24%, 34% { opacity: 0; }
+  37% { opacity: .85; }
+  39%, 100% { opacity: 0; }
+}
+@keyframes dh-dtap-eb {
+  0%, 63.9% { opacity: 0; }
+  64%, 70% { opacity: .85; }
+  74%, 84% { opacity: 0; }
+  87% { opacity: .85; }
+  89%, 100% { opacity: 0; }
+}
+
+/* The keep-awake previews still show which mode is picked, just held still.
+   The double-tap pair holds at its first frame too. */
 @media (prefers-reduced-motion: reduce) {
-  .btn-call, .pong .pv-x, .pong .pv-y, .jitter .pv-y { animation: none; }
+  .btn-call, .pong .pv-x, .pong .pv-y, .jitter .pv-y,
+  .dt-a, .dt-b, .dt-a .dt-edge, .dt-b .dt-edge, .dt-cur { animation: none; }
 }
 
 /* ---- keep awake ------------------------------------------------------ */
