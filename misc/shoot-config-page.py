@@ -47,7 +47,7 @@ VALUES = {
     51: 300_000_000, 52: 600_000_000,
     # Shared. 72 (boot-protocol keyboard) and 83 (edge double-tap) are this fork's additions;
     # 87 is which output the page draws on the left.
-    71: 0, 72: 1, 73: 1, 75: 0, 76: 0, 77: 0, 83: 1, 84: 300, 85: 1000, 87: 1,
+    71: 0, 72: 1, 73: 1, 75: 0, 76: 0, 77: 0, 83: 1, 84: 300, 85: 1000, 87: 0,
 }
 
 DRIVE = """

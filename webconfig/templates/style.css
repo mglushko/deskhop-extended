@@ -44,13 +44,12 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
 .hdr { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
 .brand { display: flex; align-items: center; gap: 14px; }
-.logo { width: 46px; height: 27px; align-self: center; stroke: var(--fg); stroke-width: 1px; fill: #fff; }
-.title { margin: 0; white-space: nowrap; font-size: 34px; font-weight: 300; line-height: 1.3; letter-spacing: -.11rem; }
+.logo { width: 78px; height: 46px; align-self: center; stroke: var(--fg); stroke-width: 1px; fill: #fff; }
+.title { margin: 0; font-size: 34px; font-weight: 300; line-height: 1.05; letter-spacing: -.11rem; }
 .title span { color: var(--accent); }
 
 .hdr-r { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; margin-left: auto; }
-.meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding: 8px 14px; background: var(--chip); border-radius: 4px; }
-.meta-row { display: flex; align-items: center; gap: 18px; }
+.meta { display: flex; align-items: center; gap: 18px; padding: 8px 14px; background: var(--chip); border-radius: 4px; }
 .meta-i { display: flex; align-items: baseline; gap: 7px; }
 .meta-k { font-size: 10px; font-weight: 700; letter-spacing: .09rem; text-transform: uppercase; }
 .meta-sep { width: 1px; height: 16px; background: rgba(56, 73, 85, .25); }

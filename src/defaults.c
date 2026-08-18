@@ -61,9 +61,9 @@ const config_t default_config = {
     .hotkey_toggle = HOTKEY_TOGGLE,
     .kbd_led_as_indicator = KBD_LED_AS_INDICATOR,
     .jump_threshold = JUMP_THRESHOLD,
-    /* Output A defaults to pos = RIGHT and B to LEFT, so the configuration already says B
-       is the left-hand output. Draw the columns that way round to match. */
-    .swap_columns = 1,
+    /* Which output the config page draws on the left. Output A by default; flip it from
+       the page if the boards sit the other way round on your desk. */
+    .swap_columns = 0,
     .switch_double_tap_enable = SWITCH_DOUBLE_TAP_ENABLE,
     .switch_double_tap_ms = SWITCH_DOUBLE_TAP_MS,
     .switch_double_tap_margin = SWITCH_DOUBLE_TAP_MARGIN,

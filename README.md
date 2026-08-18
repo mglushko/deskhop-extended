@@ -113,8 +113,8 @@ versions differ, so a half-finished propagation is a state you want to be able t
 ### Swapping the output columns
 
 Which output is drawn in the left-hand column is a saved setting, so the page can match how
-the boards actually sit on your desk. The default follows the shipped configuration, where
-Output A's screens are on the right and B's on the left, so B is drawn first.
+the boards actually sit on your desk. Output A is drawn first by default; the Swap control
+in the top right of the output bar flips it, and the choice is stored on the device.
 
 It is stored in four bytes that were already reserved in `config_t`, which keeps
 `sizeof(config_t)` unchanged and the migration from pre-key-value configs intact.

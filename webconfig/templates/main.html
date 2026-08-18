@@ -93,35 +93,32 @@
           <path d="m 104.01516,99.341366 a 1.8639801,1.8639801 0 0 0 -1.86329,1.863284 1.8639801,1.8639801 0 0 0 1.86329,1.86328 h 27.4375 a 1.8639801,1.8639801 0 0 0 1.86718,-1.86328 1.8639801,1.8639801 0 0 0 -1.86718,-1.863284 z" />
         </g>
       </svg>
-      <h1 class="title">Desk<span>Hop</span> Extended</h1>
+      <h1 class="title">Desk<span>Hop</span><br>Extended</h1>
     </div>
 
     <div class="hdr-r">
       <div class="meta">
-        <div class="meta-row">
-          <span class="meta-i">
-            <span class="meta-k">This board</span>
-            {{ api(S['Running FW version'], type='text', extra='data-fw-ver data-fw-self readonly', cls='meta-v') }}
-            {%- if build.suffix %}
-            <span class="meta-tag">{{ build.suffix }}</span>
-            {%- endif %}
-          </span>
-          <span class="meta-sep"></span>
-          <span class="meta-i">
-            <span class="meta-k">Other board</span>
-            {{ api(S['Other board FW version'], type='text', extra='data-fw-ver readonly', cls='meta-v') }}
-            {%- if build.suffix %}
-            <span class="meta-tag" id="other-tag" hidden>{{ build.suffix }}</span>
-            {%- endif %}
-            <span class="meta-tag meta-warn" id="ver-differ" hidden>differ</span>
-          </span>
-        </div>
-        <div class="meta-row">
-          <span class="meta-i">
-            <span class="meta-k">Checksum</span>
-            {{ api(S['Running FW checksum'], type='text', extra='data-hex readonly', cls='meta-v mono') }}
-          </span>
-        </div>
+        <span class="meta-i">
+          <span class="meta-k">This board</span>
+          {{ api(S['Running FW version'], type='text', extra='data-fw-ver data-fw-self readonly', cls='meta-v') }}
+          {%- if build.suffix %}
+          <span class="meta-tag">{{ build.suffix }}</span>
+          {%- endif %}
+        </span>
+        <span class="meta-sep"></span>
+        <span class="meta-i">
+          <span class="meta-k">Other board</span>
+          {{ api(S['Other board FW version'], type='text', extra='data-fw-ver readonly', cls='meta-v') }}
+          {%- if build.suffix %}
+          <span class="meta-tag" id="other-tag" hidden>{{ build.suffix }}</span>
+          {%- endif %}
+          <span class="meta-tag meta-warn" id="ver-differ" hidden>differ</span>
+        </span>
+        <span class="meta-sep"></span>
+        <span class="meta-i">
+          <span class="meta-k">Checksum</span>
+          {{ api(S['Running FW checksum'], type='text', extra='data-hex readonly', cls='meta-v mono') }}
+        </span>
       </div>
 
       <div class="acts menu-buttons" id="menu-buttons">
