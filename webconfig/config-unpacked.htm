@@ -90,6 +90,13 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 }
 .meta-v.mono { font-family: ui-monospace, Menlo, monospace; font-size: 15px; font-weight: 400; width: 76px; }
 .offline .meta-v { color: rgba(56, 73, 85, .45); }
+/* Release-stage label beside the firmware version. Rendered from VERSION_SUFFIX in
+   CMakeLists.txt, so it tracks the same source as the version number itself. */
+.meta-tag {
+  padding: 1px 6px; border: 1px solid var(--warn-bd); border-radius: 3px;
+  background: var(--warn-bg); color: var(--warn-fg);
+  font-size: 9.5px; font-weight: 700; letter-spacing: .08rem; text-transform: uppercase;
+}
 
 .acts { display: flex; align-items: center; gap: 6px; }
 
@@ -362,6 +369,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
         <span class="meta-i">
           <span class="meta-k">Firmware</span>
           <input class="api meta-v" type="text" id="k78" data-key="78" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-fw-ver readonly>
+          <span class="meta-tag">beta</span>
         </span>
         <span class="meta-sep"></span>
         <span class="meta-i">

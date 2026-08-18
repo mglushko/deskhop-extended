@@ -17,6 +17,19 @@ everything after it is upstream's own README, reproduced unchanged.
 
 ## What's extended
 
+### Version 1.0 beta
+
+This build numbers itself independently of upstream - 1.0 rather than continuing upstream's
+0.x - and the config page marks it **beta**. It is a small project's first release, so treat
+it as one.
+
+The number is deliberately above upstream's, and not only for labelling: a board pulls
+firmware from the other one when the other reports a *higher* version
+(`handle_heartbeat_msg`), so being above upstream is what lets you flash one board and have
+the second follow, rather than the reverse. "beta" is a label rendered onto the config page
+from `VERSION_SUFFIX` in `CMakeLists.txt` - the version the boards exchange is a `uint16`
+with no room for a suffix.
+
 ### Pending upstream pull requests
 
 These are all open against [hrvach/deskhop](https://github.com/hrvach/deskhop) and are merged here

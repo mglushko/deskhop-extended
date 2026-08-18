@@ -2,8 +2,11 @@ cmake_minimum_required(VERSION 3.6)
 
 ## Version Configuration.
 ## Define e.g. 0.72 as major 0 and minor 72
-set(VERSION_MAJOR 0)
-set(VERSION_MINOR 78)
+## VERSION_SUFFIX is a label only - it is not encoded in the uint16 the boards
+## exchange, it is rendered onto the config page by webconfig/render.py.
+set(VERSION_MAJOR 1)
+set(VERSION_MINOR 0)
+set(VERSION_SUFFIX "beta")
 
 ## Release Type Selection
 option(DH_DEBUG "Build a debug version" OFF)

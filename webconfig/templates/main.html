@@ -101,6 +101,9 @@
         <span class="meta-i">
           <span class="meta-k">Firmware</span>
           {{ api(S['Running FW version'], type='text', extra='data-fw-ver readonly', cls='meta-v') }}
+          {%- if build.suffix %}
+          <span class="meta-tag">{{ build.suffix }}</span>
+          {%- endif %}
         </span>
         <span class="meta-sep"></span>
         <span class="meta-i">

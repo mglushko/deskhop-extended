@@ -7,6 +7,8 @@
 from jinja2 import Environment, FileSystemLoader
 from form import *
 import base64
+import os
+import re
 import zlib
 
 # Input and output
@@ -15,6 +17,23 @@ INPUT_FILENAME = "main.html"
 PACKER_FILENAME = "packer.j2"
 OUTPUT_FILENAME = "config.htm"
 OUTPUT_UNPACKED = "config-unpacked.htm"
+CMAKELISTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "CMakeLists.txt")
+
+
+def build_version():
+    """Read the version out of CMakeLists.txt, so the label on the page and the number
+    the firmware reports can never drift apart. The suffix is a label only - it is not
+    part of the uint16 the boards exchange."""
+    cmake = open(CMAKELISTS, encoding="utf-8").read()
+
+    def get(name, default=""):
+        found = re.search(r'set\(%s "?([^")]*)"?\)' % name, cmake)
+        return found.group(1).strip() if found else default
+
+    return {
+        "version": "v%s.%s" % (get("VERSION_MAJOR", "0"), get("VERSION_MINOR", "0")),
+        "suffix": get("VERSION_SUFFIX"),
+    }
 
 def render(filename, *args, **kwargs):
     env = Environment(loader=FileSystemLoader(TEMPLATE_PATH))
@@ -45,6 +64,7 @@ if __name__ == "__main__":
         screen_B=output_B(),
         status=output_status(),
         config=output_config(),
+        build=build_version(),
     )
 
     # Compress file and encode to base64
