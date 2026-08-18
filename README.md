@@ -102,6 +102,22 @@ export stays readable across firmware versions that add, drop or reorder fields 
 keys are reported and skipped rather than silently misapplied. Import only fills in the page;
 nothing reaches the device until you press Save.
 
+### Reaching firmware-flashing mode
+
+The firmware only accepts a short allowlist of packets from a connected computer
+(`validate_packet` in `src/utils.c`), and firmware upgrade is deliberately not on it -
+upstream's rule is that only a physical keyboard action may trigger flashing. Upstream's
+config page nonetheless ships a Bootloader button that sends exactly that packet, so it
+silently does nothing. This build drops the button rather than widen the allowlist.
+
+Use the keyboard instead, which upstream's README does not mention:
+
+- `Left Shift + Right Shift + A` - flashing mode for the board your keyboard is plugged into
+- `Left Shift + Right Shift + B` - flashing mode for the other board
+
+Holding the on-board button while plugging a board in always works as well, whatever state
+the device is in.
+
 ### Building the config page
 
 The config page ships inside a small FAT image, so changing `webconfig/templates/` requires

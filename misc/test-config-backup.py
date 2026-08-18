@@ -11,6 +11,34 @@ def check(name, cond, detail=""):
     print(f"  {'PASS' if cond else 'FAIL'}  {name}{'' if cond else '  <- ' + str(detail)}")
     if not cond: fails.append(name)
 
+
+def check_packet_allowlist():
+    """Every packet type the page sends has to be one validate_packet() accepts.
+
+    The Bootloader button shipped for years in upstream sending FIRMWARE_UPGRADE_MSG,
+    which validate_packet drops - the page offered an action the firmware is designed to
+    refuse, and the only symptom was a button that did nothing. Compared by number, not
+    by name, since the two sides spell several of these differently."""
+    import re
+    js = open(f"{REPO}/webconfig/templates/script.js", encoding="utf-8").read()
+    proto = open(f"{REPO}/src/include/protocol.h", encoding="utf-8").read()
+    utils = open(f"{REPO}/src/utils.c", encoding="utf-8").read()
+
+    js_types = dict(re.findall(r"(\w+):\s*(\d+)", re.search(r"packetType = \{(.*?)\};", js, re.S).group(1)))
+    c_types = dict((n, int(v)) for n, v in re.findall(r"(\w+_MSG)\s*=\s*(\d+)", proto))
+    allowed_names = re.findall(r"(\w+_MSG)",
+                               re.search(r"ALLOWED_PACKETS\[\] = \{(.*?)\};", utils, re.S).group(1))
+    allowed = {c_types[n] for n in allowed_names if n in c_types}
+
+    used = set(re.findall(r"sendReport\(packetType\.(\w+)", js))
+    bad = sorted(u for u in used if int(js_types.get(u, -1)) not in allowed)
+
+    check("every packet the page sends is one the firmware accepts", not bad,
+          f"rejected by validate_packet: {bad}")
+
+
+check_packet_allowlist()
+
 with sync_playwright() as p:
     b = p.chromium.launch()
     ctx = b.new_context(accept_downloads=True)
@@ -110,27 +138,7 @@ with sync_playwright() as p:
           {k: (before[k], from_file[k]) for k in before if before[k] != from_file[k]})
     os.unlink(chosen)
 
-    # ---- device buttons that send raw reports --------------------------------
-    page.evaluate("""() => {
-        window.__sent = [];
-        window.device = { opened: true,
-            sendReport: async (id, data) => { window.__sent.push([...data]); } };
-    }""")
-    boot = page.evaluate("""async () => {
-        window.__sent = [];
-        try { await enterBootloaderHandler(); return {ok: true, sent: window.__sent}; }
-        catch (e) { return {ok: false, err: e.constructor.name + ': ' + e.message}; }
-    }""")
-    check("Bootloader sends without throwing", boot["ok"], boot.get("err"))
-    if boot["ok"]:
-        sent = boot["sent"]
-        check("Bootloader reaches both boards", len(sent) == 2, len(sent))
-        # proxied first, then local; byte 2 is the message type
-        check("proxied packet wraps the firmware-upgrade message",
-              len(sent) == 2 and sent[0][2] == 23 and sent[0][3] == 4, sent[0][:5] if sent else None)
-        check("local packet is the firmware-upgrade message",
-              len(sent) == 2 and sent[1][2] == 4, sent[1][:5] if len(sent) > 1 else None)
-
+    # ---- a throwing handler must not fail silently ---------------------------
     # A handler that throws must surface rather than leaving the button looking inert.
     page.evaluate("""() => {
         window.__throwingHandler = async () => { throw new Error('boom'); };

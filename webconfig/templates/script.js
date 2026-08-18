@@ -7,9 +7,6 @@ const packetType = {
   rebootMsg: 19, getValMsg: 20, setValMsg: 21, getValAllMsg: 22, proxyPacketMsg: 23
 };
 
-/* Matches ENABLE in src/include/constants.h */
-const ENABLE = 1;
-
 /* Matches MAX_SCREEN_COORD in src/include/screen.h */
 const MAX_SCREEN_COORD = 32767;
 
@@ -213,14 +210,6 @@ async function blinkHandler() {
 
 async function blinkBothHandler() {
   await sendReport(packetType.flashLedMsg, [], true);
-}
-
-async function enterBootloaderHandler() {
-  /* The payload has to be an array - makeReport spreads it, so anything else throws
-     before a report is sent. The firmware reads no payload here at all
-     (handle_fw_upgrade_msg goes straight to reset_usb_boot); ENABLE mirrors what the
-     keyboard shortcut sends in handlers.c. */
-  await sendReport(packetType.firmwareUpgradeMsg, [ENABLE], true);
 }
 
 async function wipeConfigHandler() {

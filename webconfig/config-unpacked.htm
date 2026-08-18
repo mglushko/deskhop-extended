@@ -845,12 +845,13 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
         <div class="box menu-buttons">
           <span class="lbl">Destructive</span>
-          <p>Bootloader reboots <em>both</em> boards into firmware-flashing mode, where each
-            appears as an RPI-RP2 drive to copy a .uf2 onto. Wipe Config erases the stored
-            configuration and restores the compiled-in defaults. Neither can be undone from
-            this page.</p>
+          <p>Wipe Config erases the stored configuration and restores the compiled-in
+            defaults. It cannot be undone from this page.</p>
+          <p class="hint">To reach firmware-flashing mode, press <b>Left Shift + Right Shift + A</b>
+            for the board your keyboard is plugged into, or <b>+ B</b> for the other one. Holding
+            the on-board button while plugging a board in always works too. The firmware refuses
+            flashing requests that arrive from a computer, so this page cannot do it for you.</p>
           <div class="row-btn">
-            <button class="btn btn-plain btn-danger online" data-handler="enterBootloaderHandler">Bootloader</button>
             <button class="btn btn-plain btn-danger online" data-handler="wipeConfigHandler">Wipe Config</button>
           </div>
         </div>
@@ -888,9 +889,6 @@ const packetType = {
   syncBordersMsg: 8, flashLedMsg: 9, wipeConfigMsg: 10, readConfigMsg: 16, writeConfigMsg: 17, saveConfigMsg: 18,
   rebootMsg: 19, getValMsg: 20, setValMsg: 21, getValAllMsg: 22, proxyPacketMsg: 23
 };
-
-/* Matches ENABLE in src/include/constants.h */
-const ENABLE = 1;
 
 /* Matches MAX_SCREEN_COORD in src/include/screen.h */
 const MAX_SCREEN_COORD = 32767;
@@ -1095,14 +1093,6 @@ async function blinkHandler() {
 
 async function blinkBothHandler() {
   await sendReport(packetType.flashLedMsg, [], true);
-}
-
-async function enterBootloaderHandler() {
-  /* The payload has to be an array - makeReport spreads it, so anything else throws
-     before a report is sent. The firmware reads no payload here at all
-     (handle_fw_upgrade_msg goes straight to reset_usb_boot); ENABLE mirrors what the
-     keyboard shortcut sends in handlers.c. */
-  await sendReport(packetType.firmwareUpgradeMsg, [ENABLE], true);
 }
 
 async function wipeConfigHandler() {
