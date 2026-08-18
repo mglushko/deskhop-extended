@@ -95,12 +95,12 @@ standing in for the flash page.
 
 ### Export and import settings
 
-The config page can serialise every setting it exposes to a block of text you can keep, and
-load one back later. Settings are keyed by the numbers in `api_field_map` (`src/protocol.c`),
-which name a field rather than a position in the config struct, so an export stays readable
-across firmware versions that add, drop or reorder fields - unknown keys are reported and
-skipped rather than silently misapplied. Import only fills in the page; nothing reaches the
-device until you press Save.
+Export saves every setting the page exposes to a `.txt` file; Import reads one back, either
+by picking the file or by pasting it in. Settings are keyed by the numbers in `api_field_map`
+(`src/protocol.c`), which name a field rather than a position in the config struct, so an
+export stays readable across firmware versions that add, drop or reorder fields - unknown
+keys are reported and skipped rather than silently misapplied. Import only fills in the page;
+nothing reaches the device until you press Save.
 
 ### Building the config page
 

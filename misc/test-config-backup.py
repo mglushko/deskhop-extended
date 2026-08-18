@@ -1,15 +1,20 @@
-"""Exercise export/import against the real shipped config.htm in headless Chromium."""
-import json, sys
+"""Exercise the shipped config.htm in headless Chromium.
+
+Covers settings export/import (including the file paths) and the device buttons that
+send raw reports, which are otherwise only testable with hardware attached."""
+import json, os, sys, tempfile
 from playwright.sync_api import sync_playwright
 
-REPO = "/home/dgurion/deskhop-extended"
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 fails = []
 def check(name, cond, detail=""):
     print(f"  {'PASS' if cond else 'FAIL'}  {name}{'' if cond else '  <- ' + str(detail)}")
     if not cond: fails.append(name)
 
 with sync_playwright() as p:
-    b = p.chromium.launch(); page = b.new_page()
+    b = p.chromium.launch()
+    ctx = b.new_context(accept_downloads=True)
+    page = ctx.new_page()
     errs = []; page.on("pageerror", lambda e: errs.append(str(e)))
     page.goto(f"file://{REPO}/webconfig/config.htm")
     page.wait_for_selector("#panel", timeout=15000)
@@ -69,6 +74,41 @@ with sync_playwright() as p:
     page.evaluate("() => applyImportHandler()")
     check("malformed input rejected cleanly",
           "not valid JSON" in page.eval_on_selector("#backup-m", "e => e.textContent"))
+
+    # ---- export hands over a file -------------------------------------------
+    page.evaluate("() => closeBackupHandler()")
+    try:
+        with page.expect_download(timeout=8000) as info:
+            page.evaluate("() => exportHandler()")
+        download = info.value
+        saved = open(download.path(), encoding="utf-8").read()
+        check("export downloads a file",
+              download.suggested_filename.startswith("deskhop-extended-settings-")
+              and download.suggested_filename.endswith(".txt"),
+              download.suggested_filename)
+        check("downloaded file holds the same settings as the panel",
+              json.loads(saved) == json.loads(page.eval_on_selector("#backup-text", "e => e.value")))
+    except Exception as e:
+        check("export downloads a file", False, f"{type(e).__name__}: {str(e)[:90]}")
+        check("fallback: panel still shows the text to copy",
+              "deskhop-extended-settings" in page.eval_on_selector("#backup-text", "e => e.value"))
+
+    # ---- import reads a chosen file ------------------------------------------
+    with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as fh:
+        json.dump(exported, fh)
+        chosen = fh.name
+
+    page.evaluate("() => document.querySelectorAll('.api:not([readonly])')"
+                  ".forEach(e => setValue(e, e.type === 'checkbox' ? 0 : 1))")
+    page.evaluate("() => { markClean(); importHandler(); }")
+    page.set_input_files("#backup-input", chosen)
+    page.wait_for_function("() => el('backup-text').value.length > 0", timeout=5000)
+    page.evaluate("() => applyImportHandler()")
+    from_file = page.evaluate("() => { const o = {}; document.querySelectorAll('.api:not([readonly])')"
+                              ".forEach(e => o[e.dataset.key] = getValue(e)); return o; }")
+    check("import from a chosen file restores every value", from_file == before,
+          {k: (before[k], from_file[k]) for k in before if before[k] != from_file[k]})
+    os.unlink(chosen)
 
     # ---- device buttons that send raw reports --------------------------------
     page.evaluate("""() => {

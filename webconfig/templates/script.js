@@ -304,6 +304,7 @@ function showBackup(title, message, text, editable) {
   el('backup-t').textContent = title;
   el('backup-m').textContent = message;
   el('backup-apply').hidden = !editable;
+  el('backup-file').hidden = !editable;
 
   const box = el('backup-text');
   box.value = text;
@@ -318,6 +319,33 @@ function showBackup(title, message, text, editable) {
 function closeBackupHandler() {
   el('backup').hidden = true;
   el('backup-text').value = '';
+  el('backup-input').value = '';
+}
+
+function backupFilename() {
+  return `deskhop-extended-settings-${new Date().toISOString().slice(0, 10)}.txt`;
+}
+
+/* Hand the text over as a file. The page is opened from the device's own USB drive over
+   file://, where a download is not guaranteed to be allowed, so this is best-effort and
+   the same text always lands in the textarea to copy either way. */
+function offerDownload(text, filename) {
+  try {
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    /* Give the download a moment to start before the blob goes away. */
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 function exportHandler() {
@@ -328,20 +356,47 @@ function exportHandler() {
 
   const payload = {
     [BACKUP_TAG]: 1,
-    firmware: el('backup') && document.querySelector('[data-fw-ver]').value,
+    firmware: document.querySelector('[data-fw-ver]').value,
     exported: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
     settings: settings,
   };
 
+  const text = JSON.stringify(payload, null, 2);
+  const filename = backupFilename();
+  const saved = offerDownload(text, filename);
+
   showBackup('Settings exported',
-             'Copy this and keep it. Import it here later to restore these settings.',
-             JSON.stringify(payload, null, 2), false);
+             saved ? `Saved as ${filename}. The same text is below if you would rather copy it.`
+                   : 'Your browser would not save a file, so copy the text below and keep it.',
+             text, false);
 }
 
 function importHandler() {
   showBackup('Import settings',
-             'Paste a block exported earlier, then press Apply. Nothing reaches the device until you Save.',
+             'Choose a file you exported earlier, or paste one below, then press Apply. ' +
+             'Nothing reaches the device until you Save.',
              '', true);
+}
+
+function chooseFileHandler() {
+  el('backup-input').click();
+}
+
+async function backupFileChosen(event) {
+  const file = event.target.files && event.target.files[0];
+
+  if (!file)
+    return;
+
+  try {
+    el('backup-text').value = await file.text();
+    el('backup-m').textContent = `Loaded ${file.name}. Press Apply to put it into the page.`;
+  } catch (e) {
+    el('backup-m').textContent = `Could not read ${file.name}: ${e.message}`;
+  }
+
+  /* Let the same file be picked again after a Close. */
+  event.target.value = '';
 }
 
 /* Set a control from imported text. Deliberately does not touch fetched-value:
@@ -761,6 +816,8 @@ window.addEventListener('load', function () {
   document.querySelectorAll('.menu-buttons').forEach(function (container) {
     container.addEventListener('click', menuClick);
   });
+
+  el('backup-input').addEventListener('change', backupFileChosen);
 
   const panel = el('panel');
 

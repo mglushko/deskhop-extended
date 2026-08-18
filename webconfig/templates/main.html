@@ -115,8 +115,8 @@
       <div class="acts menu-buttons" id="menu-buttons">
         <button id="btn-connect" class="btn btn-wide btn-call" data-handler="connectHandler" title="Pair with the device over WebHID">Connect</button>
         <button class="btn online" data-handler="readHandler" title="Reload the configuration from the device" disabled>Read</button>
-        <button class="btn online" data-handler="exportHandler" title="Copy the current settings out as text" disabled>Export</button>
-        <button class="btn online" data-handler="importHandler" title="Paste settings exported earlier" disabled>Import</button>
+        <button class="btn online" data-handler="exportHandler" title="Save the current settings to a file" disabled>Export</button>
+        <button class="btn online" data-handler="importHandler" title="Load settings from a file you exported earlier" disabled>Import</button>
         <button class="btn online" data-handler="exitHandler" title="Leaves config mode and reboots" disabled>Exit</button>
       </div>
     </div>
@@ -138,10 +138,12 @@
     <div class="strip-r">
       <span class="strip-t" id="backup-t">Settings</span>
       <span class="strip-m" id="backup-m"></span>
+      <button class="btn btn-quiet" id="backup-file" data-handler="chooseFileHandler" hidden>Choose file</button>
       <button class="btn btn-quiet" id="backup-apply" data-handler="applyImportHandler" hidden>Apply</button>
       <button class="btn btn-quiet" data-handler="closeBackupHandler">Close</button>
     </div>
     <textarea id="backup-text" class="backup-tx" spellcheck="false" autocomplete="off"></textarea>
+    <input type="file" id="backup-input" accept=".txt,.json,application/json,text/plain" hidden>
   </div>
 
   <div class="card">
