@@ -40,6 +40,7 @@ so they can be used before (and regardless of whether) they land upstream:
 - [#357](https://github.com/hrvach/deskhop/pull/357) - fixes the cursor jumping when a pointing device is attached to each board ([#263](https://github.com/hrvach/deskhop/issues/263))
 - [#358](https://github.com/hrvach/deskhop/pull/358) - fixes media keys on keyboards that don't use HID report IDs ([#236](https://github.com/hrvach/deskhop/issues/236))
 - [#359](https://github.com/hrvach/deskhop/pull/359) - keeps all key sections on keyboards that use more than one
+- [#360](https://github.com/hrvach/deskhop/pull/360) - lets the board-to-board firmware upgrade finish instead of hanging one request short of the end
 - [#361](https://github.com/hrvach/deskhop/pull/361) - fixes an out-of-bounds write when a HID descriptor has a large report count ([#332](https://github.com/hrvach/deskhop/issues/332))
 
 ### Edge double-tap to switch
