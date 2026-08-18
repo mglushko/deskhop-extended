@@ -167,10 +167,10 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 .rail { position: relative; }
 .rail:before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 0; border-left: 1px dashed var(--rail); }
 
-.obar { position: sticky; top: 0; z-index: 5; background: #fff; border-bottom: 1px solid var(--chip); margin: 0 -24px 20px; padding: 14px 24px 10px; }
+.obar { position: sticky; top: 0; z-index: 5; background: #fff; border-bottom: 1px solid var(--chip); margin: 0 -24px 20px; padding: 12px 24px; }
 .obar .duo { position: relative; }
-.obar .duo:before { content: ''; position: absolute; left: 50%; top: -14px; bottom: -11px; width: 0; border-left: 1px dashed var(--rail); }
-.out { min-width: 0; display: flex; align-items: baseline; gap: 9px; }
+.obar .duo:before { content: ''; position: absolute; left: 50%; top: -12px; bottom: -13px; width: 0; border-left: 1px dashed var(--rail); }
+.out { min-width: 0; display: flex; align-items: center; gap: 9px; }
 .out-n { font-size: 22px; font-weight: 300; line-height: 1.3; letter-spacing: -.05rem; }
 .out-chip { font-size: 10px; font-weight: 700; letter-spacing: .1rem; text-transform: uppercase; padding: 5px 7px; border-radius: 4px; background: rgba(56, 73, 85, .08); }
 .out-chip.on { color: var(--accent-dk); background: rgba(94, 159, 65, .16); }
@@ -186,7 +186,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 .swapped .duo > *:last-child  { order: 1; }
 
 .swap {
-  position: absolute; right: 24px; top: 10px; z-index: 6;
+  position: absolute; right: 24px; top: 50%; transform: translateY(-50%); z-index: 6;
   display: flex; align-items: center; gap: 6px;
   padding: 3px 9px; border: 1px solid var(--bd-soft); border-radius: 4px;
   background: #fff; color: var(--muted);
@@ -1222,9 +1222,9 @@ function showBackup(title, message, text, editable) {
   box.readOnly = !editable;
   el('backup').hidden = false;
 
-  box.focus();
-  if (!editable)
-    box.select();
+  /* Only the import box wants the caret; an export is there to be read, not replaced. */
+  if (editable)
+    box.focus();
 }
 
 function closeBackupHandler() {

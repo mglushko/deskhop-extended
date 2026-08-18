@@ -308,9 +308,9 @@ function showBackup(title, message, text, editable) {
   box.readOnly = !editable;
   el('backup').hidden = false;
 
-  box.focus();
-  if (!editable)
-    box.select();
+  /* Only the import box wants the caret; an export is there to be read, not replaced. */
+  if (editable)
+    box.focus();
 }
 
 function closeBackupHandler() {

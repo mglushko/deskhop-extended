@@ -101,7 +101,14 @@ int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t *
 
     /* Provide some visual indication that fw is being uploaded */
     toggle_led();
-    watchdog_update();
+
+    /* Kicking here is what keeps the watchdog quiet while the host streams pages in, but
+       once the reboot is requested it would work against it: the host keeps writing (FAT
+       metadata after the image, for one), and every write would push the reset out by
+       another WATCHDOG_TIMEOUT. kick_watchdog_task already stands down for the same
+       reason, so stand down with it and let the reset land. */
+    if (!global_state.reboot_requested)
+        watchdog_update();
 
     return (int32_t)bufsize;
 }
