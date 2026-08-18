@@ -13,8 +13,8 @@
 {% set S = {} %}{% for i in status %}{% set _ = S.update({i.name: i}) %}{% endfor %}
 
 {% set outputs = [
-  {'id': 'A', 'f': A, 'chip': 'keyboard here', 'main': true},
-  {'id': 'B', 'f': B, 'chip': 'powered', 'main': false}
+  {'id': 'A', 'f': A},
+  {'id': 'B', 'f': B}
 ] %}
 
 {# MAX_SCREEN_COORD, from src/include/screen.h #}
@@ -170,7 +170,6 @@
         {%- for o in outputs %}
           <div class="out">
             <span class="out-n">Output {{ o.id }}</span>
-            <span class="out-chip{% if o.main %} on{% endif %}">{{ o.chip }}</span>
           </div>
         {%- endfor %}
         </div>
