@@ -109,6 +109,14 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 .strip-t { font-size: 12px; font-weight: 700; letter-spacing: .08rem; text-transform: uppercase; color: var(--warn-fg); white-space: nowrap; }
 .strip-m { flex: 1; font-size: 13px; color: var(--warn-tx); }
 .strip .btn { flex: 0 0 auto; }
+.strip-col { flex-direction: column; align-items: stretch; gap: 10px; }
+.strip-r { display: flex; align-items: center; gap: 14px; }
+.backup-tx {
+  width: 100%; height: 108px; resize: vertical;
+  padding: 8px 10px; border: 1px solid var(--warn-bd); border-radius: 3px;
+  background: #fff; color: var(--fg);
+  font-family: ui-monospace, Menlo, monospace; font-size: 12px; line-height: 1.5;
+}
 
 /* #warning is switched on with display:block by script.js, so it must not
    depend on flex layout. */

@@ -280,6 +280,116 @@ function setPlaceholders() {
   if (sum) sum.value = '————————';
 }
 
+/* ------------------------------------------------------- export / import
+
+   Settings are keyed by the numbers in api_field_map (src/protocol.c), which name
+   a field rather than a position in the config struct. An export therefore stays
+   readable across firmware versions that add, drop or reorder fields - unknown keys
+   are reported and skipped rather than corrupting anything. */
+
+const BACKUP_TAG = 'deskhop-extended-settings';
+
+function backupFields() {
+  return document.querySelectorAll('.api:not([readonly])');
+}
+
+function showBackup(title, message, text, editable) {
+  el('backup-t').textContent = title;
+  el('backup-m').textContent = message;
+  el('backup-apply').hidden = !editable;
+
+  const box = el('backup-text');
+  box.value = text;
+  box.readOnly = !editable;
+  el('backup').hidden = false;
+
+  box.focus();
+  if (!editable)
+    box.select();
+}
+
+function closeBackupHandler() {
+  el('backup').hidden = true;
+  el('backup-text').value = '';
+}
+
+function exportHandler() {
+  const settings = {};
+
+  for (const element of backupFields())
+    settings[element.dataset.key] = Number(getValue(element));
+
+  const payload = {
+    [BACKUP_TAG]: 1,
+    firmware: el('backup') && document.querySelector('[data-fw-ver]').value,
+    exported: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
+    settings: settings,
+  };
+
+  showBackup('Settings exported',
+             'Copy this and keep it. Import it here later to restore these settings.',
+             JSON.stringify(payload, null, 2), false);
+}
+
+function importHandler() {
+  showBackup('Import settings',
+             'Paste a block exported earlier, then press Apply. Nothing reaches the device until you Save.',
+             '', true);
+}
+
+/* Set a control from imported text. Deliberately does not touch fetched-value:
+   saveHandler decides what to write by comparing against it, so an imported value
+   has to stay visibly different from what the device last reported. Dispatching
+   input (not change) redraws the proxy controls and marks the page dirty without
+   pushing anything to the device. */
+function applyImported(element, value) {
+  if (element.type === 'checkbox')
+    element.checked = Number(value) !== 0;
+  else
+    element.value = value;
+
+  element.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function applyImportHandler() {
+  let payload;
+
+  try {
+    payload = JSON.parse(el('backup-text').value);
+  } catch (e) {
+    el('backup-m').textContent = 'That is not valid JSON - paste the whole exported block.';
+    return;
+  }
+
+  if (!payload || typeof payload.settings !== 'object' || payload.settings === null) {
+    el('backup-m').textContent = 'No settings found in that block - paste the whole export.';
+    return;
+  }
+
+  const unknown = [];
+  let applied = 0;
+
+  for (const [key, value] of Object.entries(payload.settings)) {
+    const element = document.querySelector(`.api:not([readonly])[data-key="${CSS.escape(key)}"]`);
+
+    if (!element) {
+      unknown.push(key);
+      continue;
+    }
+
+    applyImported(element, value);
+    applied++;
+  }
+
+  el('backup-apply').hidden = true;
+  el('backup-text').readOnly = true;
+  el('backup-t').textContent = 'Import applied';
+  el('backup-m').textContent =
+    `${applied} setting${applied === 1 ? '' : 's'} loaded into the page` +
+    (unknown.length ? `, ${unknown.length} unknown and skipped (${unknown.join(', ')})` : '') +
+    '. Review them, then press Save to device.';
+}
+
 /* ------------------------------------------------------- dirty behaviour */
 
 function markDirty() {

@@ -115,6 +115,8 @@
       <div class="acts menu-buttons" id="menu-buttons">
         <button id="btn-connect" class="btn btn-wide btn-call" data-handler="connectHandler" title="Pair with the device over WebHID">Connect</button>
         <button class="btn online" data-handler="readHandler" title="Reload the configuration from the device" disabled>Read</button>
+        <button class="btn online" data-handler="exportHandler" title="Copy the current settings out as text" disabled>Export</button>
+        <button class="btn online" data-handler="importHandler" title="Paste settings exported earlier" disabled>Import</button>
         <button class="btn online" data-handler="exitHandler" title="Leaves config mode and reboots" disabled>Exit</button>
       </div>
     </div>
@@ -130,6 +132,16 @@
     <span class="strip-m" id="guard-msg"></span>
     <button class="btn btn-quiet" data-handler="keepEditingHandler">Keep editing</button>
     <button class="btn btn-quiet btn-danger" id="guard-confirm" data-handler="discardHandler">Discard</button>
+  </div>
+
+  <div class="strip strip-col menu-buttons" id="backup" hidden>
+    <div class="strip-r">
+      <span class="strip-t" id="backup-t">Settings</span>
+      <span class="strip-m" id="backup-m"></span>
+      <button class="btn btn-quiet" id="backup-apply" data-handler="applyImportHandler" hidden>Apply</button>
+      <button class="btn btn-quiet" data-handler="closeBackupHandler">Close</button>
+    </div>
+    <textarea id="backup-text" class="backup-tx" spellcheck="false" autocomplete="off"></textarea>
   </div>
 
   <div class="card">

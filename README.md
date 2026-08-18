@@ -77,6 +77,15 @@ Because upstream's README below is reproduced unchanged, its screenshots and its
 "click *exit* in the menu" still show upstream's page - on this build, Exit sits in the header.
 Everything else in those steps applies as written.
 
+### Export and import settings
+
+The config page can serialise every setting it exposes to a block of text you can keep, and
+load one back later. Settings are keyed by the numbers in `api_field_map` (`src/protocol.c`),
+which name a field rather than a position in the config struct, so an export stays readable
+across firmware versions that add, drop or reorder fields - unknown keys are reported and
+skipped rather than silently misapplied. Import only fills in the page; nothing reaches the
+device until you press Save.
+
 ### Building the config page
 
 The config page ships inside a small FAT image, so changing `webconfig/templates/` requires
