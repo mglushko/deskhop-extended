@@ -73,13 +73,16 @@ function packValue(element, key, dataType, buffer) {
   return new Uint8Array(buffer);
 }
 
-/* u16 version = major * 1000 + minor + 100. Zero means nothing has been heard from that
-   board - for the other one that is an unpowered board or a link that is down. */
+/* u16 version = major * 1000 + minor + 100. Minor prints to two digits, so releases read
+   v1.00, v1.01, v1.02. Zero means nothing has been heard from that board - for the other
+   one that is an unpowered board or a link that is down. */
 function formatFwVersion(value) {
   if (!value)
     return '—';
 
-  return `v${Math.floor((value - 100) / 1000)}.${(value - 100) % 1000}`;
+  const minor = String((value - 100) % 1000).padStart(2, '0');
+
+  return `v${Math.floor((value - 100) / 1000)}.${minor}`;
 }
 
 function getValue(element) {
@@ -634,8 +637,14 @@ function refreshVersions() {
   const self = document.querySelector('[data-fw-self]');
   const other = document.querySelector('[data-fw-ver]:not([data-fw-self])');
   const known = other && other.value && other.value !== '—';
+  const tag = el('other-tag');
 
   el('ver-differ').hidden = !(known && self && self.value !== other.value);
+
+  /* The stage label is baked in from this build, so only claim it for the other board
+     once that board has actually reported a version. */
+  if (tag)
+    tag.hidden = !known;
 }
 
 function refreshOutput(output) {

@@ -110,6 +110,9 @@
           <span class="meta-i">
             <span class="meta-k">Other board</span>
             {{ api(S['Other board FW version'], type='text', extra='data-fw-ver readonly', cls='meta-v') }}
+            {%- if build.suffix %}
+            <span class="meta-tag" id="other-tag" hidden>{{ build.suffix }}</span>
+            {%- endif %}
             <span class="meta-tag meta-warn" id="ver-differ" hidden>differ</span>
           </span>
         </div>
@@ -163,7 +166,7 @@
       <div class="obar">
         <button type="button" class="swap" data-for="k{{ C['Swap Columns'].key }}"
                 title="Draw the outputs the other way round, to match how they sit on your desk">
-          <span class="swap-i" aria-hidden="true">&#8646;</span> Swap sides
+          <span class="swap-i" aria-hidden="true">&#8644;</span> Swap
         </button>
         {{- api(C['Swap Columns']) }}
         <div class="duo">

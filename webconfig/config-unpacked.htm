@@ -75,8 +75,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
 .hdr { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
 .brand { display: flex; align-items: center; gap: 14px; }
-.logo { width: 68px; height: 40px; align-self: center; stroke: var(--fg); stroke-width: 1px; fill: #fff; }
-.title { margin: 0; white-space: nowrap; font-size: 52px; font-weight: 300; line-height: 1.3; letter-spacing: -.18rem; }
+.logo { width: 46px; height: 27px; align-self: center; stroke: var(--fg); stroke-width: 1px; fill: #fff; }
+.title { margin: 0; white-space: nowrap; font-size: 34px; font-weight: 300; line-height: 1.3; letter-spacing: -.11rem; }
 .title span { color: var(--accent); }
 
 .hdr-r { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; margin-left: auto; }
@@ -98,6 +98,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   padding: 1px 6px; border: 1px solid var(--warn-bd); border-radius: 3px;
   background: var(--warn-bg); color: var(--warn-fg);
   font-size: 9.5px; font-weight: 700; letter-spacing: .08rem; text-transform: uppercase;
+  align-self: center;
 }
 .meta-warn { border-color: var(--danger); color: var(--danger); background: #fff; }
 
@@ -405,6 +406,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           <span class="meta-i">
             <span class="meta-k">Other board</span>
             <input class="api meta-v" type="text" id="k86" data-key="86" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-fw-ver readonly>
+            <span class="meta-tag" id="other-tag" hidden>beta</span>
             <span class="meta-tag meta-warn" id="ver-differ" hidden>differ</span>
           </span>
         </div>
@@ -458,7 +460,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
       <div class="obar">
         <button type="button" class="swap" data-for="k87"
                 title="Draw the outputs the other way round, to match how they sit on your desk">
-          <span class="swap-i" aria-hidden="true">&#8646;</span> Swap sides
+          <span class="swap-i" aria-hidden="true">&#8644;</span> Swap
         </button><input class="api " type="hidden" id="k87" data-key="87" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" >
         <div class="duo">
           <div class="out">
@@ -989,13 +991,16 @@ function packValue(element, key, dataType, buffer) {
   return new Uint8Array(buffer);
 }
 
-/* u16 version = major * 1000 + minor + 100. Zero means nothing has been heard from that
-   board - for the other one that is an unpowered board or a link that is down. */
+/* u16 version = major * 1000 + minor + 100. Minor prints to two digits, so releases read
+   v1.00, v1.01, v1.02. Zero means nothing has been heard from that board - for the other
+   one that is an unpowered board or a link that is down. */
 function formatFwVersion(value) {
   if (!value)
     return '—';
 
-  return `v${Math.floor((value - 100) / 1000)}.${(value - 100) % 1000}`;
+  const minor = String((value - 100) % 1000).padStart(2, '0');
+
+  return `v${Math.floor((value - 100) / 1000)}.${minor}`;
 }
 
 function getValue(element) {
@@ -1550,8 +1555,14 @@ function refreshVersions() {
   const self = document.querySelector('[data-fw-self]');
   const other = document.querySelector('[data-fw-ver]:not([data-fw-self])');
   const known = other && other.value && other.value !== '—';
+  const tag = el('other-tag');
 
   el('ver-differ').hidden = !(known && self && self.value !== other.value);
+
+  /* The stage label is baked in from this build, so only claim it for the other board
+     once that board has actually reported a version. */
+  if (tag)
+    tag.hidden = !known;
 }
 
 function refreshOutput(output) {

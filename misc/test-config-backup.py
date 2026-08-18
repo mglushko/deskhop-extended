@@ -147,17 +147,17 @@ with sync_playwright() as p:
             setValue(document.querySelector('[data-fw-ver]:not([data-fw-self])'), formatFwVersion(b));
         }""", [local, other])
 
-    show_versions(1102, 1102)
+    show_versions(1100, 1100)
     shown = page.evaluate("() => [...document.querySelectorAll('[data-fw-ver]')].map(e => e.value)")
-    check("both version fields format from the raw uint16", shown == ["v1.2", "v1.2"], shown)
+    check("both version fields format from the raw uint16", shown == ["v1.00", "v1.00"], shown)
     check("matching versions raise no warning",
           page.eval_on_selector("#ver-differ", "e => e.hidden"))
 
-    show_versions(1102, 1101)
+    show_versions(1100, 1101)
     check("differing versions are flagged",
           page.eval_on_selector("#ver-differ", "e => !e.hidden"))
 
-    show_versions(1102, 0)
+    show_versions(1100, 0)
     other_val = page.eval_on_selector("[data-fw-ver]:not([data-fw-self])", "e => e.value")
     check("a board that never reported shows a dash", other_val == "—", other_val)
     check("a board that never reported is not a mismatch",

@@ -77,7 +77,7 @@ def firmware_version() -> str:
     cmake = (REPO / "CMakeLists.txt").read_text()
     major = re.search(r"set\(VERSION_MAJOR (\d+)\)", cmake).group(1)
     minor = re.search(r"set\(VERSION_MINOR (\d+)\)", cmake).group(1)
-    return f"v{major}.{minor}"
+    return f"v{major}.{int(minor):02d}"
 
 
 def firmware_checksum() -> str:
