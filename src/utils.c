@@ -30,21 +30,6 @@ bool verify_checksum(const uart_packet_t *packet) {
     return checksum == packet->checksum;
 }
 
-uint32_t crc32_iter(uint32_t crc, const uint8_t byte) {
-    return crc32_lookup_table[(byte ^ crc) & 0xff] ^ (crc >> 8);
-}
-
-/* TODO - use DMA sniffer's built-in CRC32 */
-uint32_t calc_crc32(const uint8_t *s, size_t n) {
-    uint32_t crc = 0xffffffff;
-
-    for(size_t i=0; i < n; i++) {
-        crc = crc32_iter(crc, s[i]);
-    }
-
-    return ~crc;
-}
-
 uint32_t calculate_firmware_crc32(void) {
     return calc_crc32(ADDR_FW_RUNNING, STAGING_IMAGE_SIZE - FLASH_SECTOR_SIZE);
 }
@@ -72,41 +57,20 @@ void write_flash_page(uint32_t target_addr, uint8_t *buffer) {
 }
 
 void load_config(device_t *state) {
-    const config_t *config   = ADDR_CONFIG;
-    config_t *running_config = &state->config;
+    const uint8_t *stored = (const uint8_t *)ADDR_CONFIG;
 
-    /* Load the flash config first, including the checksum */
-    memcpy(running_config, config, sizeof(config_t));
+    /* Whatever the stored page turns out to be, start from a known-good config, so
+       every path out of here leaves the device usable. */
+    memcpy(&state->config, &default_config, sizeof(config_t));
 
-    /* Calculate and update checksum, size without checksum */
-    uint32_t checksum = calc_crc32((uint8_t *)running_config, sizeof(config_t) - sizeof(uint32_t));
-
-    /* We expect a certain byte to start the config header */
-    bool magic_header_fail = (running_config->magic_header != 0xB00B1E5);
-
-    /* We expect the checksum to match */
-    bool checksum_fail = (running_config->checksum != checksum);
-
-    /* We expect the config version to match exactly, to avoid erroneous values */
-    bool version_fail = (running_config->version != CURRENT_CONFIG_VERSION);
-
-    /* On any condition failing, we fall back to default config */
-    if (magic_header_fail || checksum_fail || version_fail)
-        memcpy(running_config, &default_config, sizeof(config_t));
+    /* Field map offsets are into device_t, the same base handle_api_msgs writes
+       through - not into state->config. */
+    if (config_store_unpack(stored, FLASH_PAGE_SIZE, (uint8_t *)state) == CONFIG_STORE_LEGACY)
+        config_store_load_legacy(stored, FLASH_PAGE_SIZE, &state->config);
 }
 
 void save_config(device_t *state) {
-    uint8_t *raw_config = (uint8_t *)&state->config;
-
-    /* Calculate and update checksum, size without checksum */
-    uint32_t checksum       = calc_crc32(raw_config, sizeof(config_t) - sizeof(uint32_t));
-    state->config.checksum = checksum;
-
-    /* Copy the config to buffer and pad the rest with zeros */
-    memcpy(state->page_buffer, raw_config, sizeof(config_t));
-    memset(state->page_buffer + sizeof(config_t), 0, FLASH_PAGE_SIZE - sizeof(config_t));
-
-    /* Write the new config to flash */
+    config_store_pack(state->page_buffer, FLASH_PAGE_SIZE, (const uint8_t *)state);
     write_flash_page((uint32_t)ADDR_CONFIG - XIP_BASE, state->page_buffer);
 }
 

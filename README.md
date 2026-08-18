@@ -77,6 +77,22 @@ Because upstream's README below is reproduced unchanged, its screenshots and its
 "click *exit* in the menu" still show upstream's page - on this build, Exit sits in the header.
 Everything else in those steps applies as written.
 
+### Settings survive firmware changes
+
+Upstream stores the configuration as a dump of `config_t` and throws the whole thing away
+whenever `CURRENT_CONFIG_VERSION` moves, which it has to whenever a field is added - so
+adding one setting costs you all of them. This build stores `{key, length, value}` triples
+keyed by the numbers in `api_field_map` (`src/protocol.c`), which name a field rather than a
+position in the struct. Fields can be added, removed or reordered without invalidating what
+is already in flash: keys the firmware no longer knows are skipped, keys it has gained keep
+their default, and a bad magic header or checksum still falls back to defaults exactly as
+before.
+
+A config written by an older build is recognised and migrated on first boot, so upgrading to
+this version does not cost you your settings either. The format is exercised on the host by
+`misc/hosttest/run.sh`, which builds the real `src/config_store.c` against a byte array
+standing in for the flash page.
+
 ### Export and import settings
 
 The config page can serialise every setting it exposes to a block of text you can keep, and

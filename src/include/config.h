@@ -15,7 +15,30 @@
 #include "misc.h"
 #include "screen.h"
 
+/* Only still used to recognise a config written in the pre key-value layout, where a
+   uint32 version sat where CONFIG_STORE_FORMAT sits now. Nothing is discarded for
+   failing to match it any more. */
 #define CURRENT_CONFIG_VERSION 9
+
+#define CONFIG_MAGIC_HEADER 0xB00B1E5
+
+/* Settings are stored as {key, length, value} triples keyed by api_field_map
+   (src/protocol.c), which names a field rather than a position in config_t. Adding,
+   removing or reordering struct fields therefore no longer invalidates what is already
+   in flash: keys that are gone are skipped, keys that are new keep their default. */
+#define CONFIG_STORE_FORMAT 0x4B560001  /* 'KV', format 1 */
+
+/* config.version is writable over the API but must never be restored from storage -
+   it describes the layout, not a user setting. */
+#define CONFIG_VERSION_KEY  70
+
+typedef struct {
+    uint32_t magic_header;
+    uint32_t format;
+    uint16_t length;   /* bytes of entries following this header */
+    uint8_t count;     /* how many entries those bytes hold */
+    uint8_t _pad;
+} config_store_header_t;
 
 /*==============================================================================
  *  Configuration Data

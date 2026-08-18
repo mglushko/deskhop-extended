@@ -9,6 +9,7 @@
  * See the file LICENSE for the full license text.
  */
 #pragma once
+#include <stddef.h>
 #include <stdint.h>
 
 /*==============================================================================
@@ -62,3 +63,6 @@
 #define _TOP()  0
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #define CURRENT_BOARD_IS_ACTIVE_OUTPUT (global_state.active_output == global_state.board_role)
+
+uint32_t crc32_iter(uint32_t crc, const uint8_t byte);
+uint32_t calc_crc32(const uint8_t *s, size_t n);

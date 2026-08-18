@@ -45,3 +45,20 @@ const uint32_t crc32_lookup_table[] = {
     0xbdbdf21c, 0xcabac28a, 0x53b39330, 0x24b4a3a6, 0xbad03605, 0xcdd70693, 0x54de5729, 0x23d967bf,
     0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
+
+/* Kept beside the lookup table it walks, and out of utils.c, so config_store.c can
+   be compiled on the host without dragging in the hardware headers. */
+uint32_t crc32_iter(uint32_t crc, const uint8_t byte) {
+    return crc32_lookup_table[(byte ^ crc) & 0xff] ^ (crc >> 8);
+}
+
+/* TODO - use DMA sniffer's built-in CRC32 */
+uint32_t calc_crc32(const uint8_t *s, size_t n) {
+    uint32_t crc = 0xffffffff;
+
+    for(size_t i=0; i < n; i++) {
+        crc = crc32_iter(crc, s[i]);
+    }
+
+    return ~crc;
+}

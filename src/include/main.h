@@ -24,6 +24,7 @@
 #include "misc.h"
 #include "structs.h"
 #include "config.h"
+#include "config_store.h"
 
 #include "pio_usb.h"
 #include "tusb.h"
