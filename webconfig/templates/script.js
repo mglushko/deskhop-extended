@@ -7,6 +7,9 @@ const packetType = {
   rebootMsg: 19, getValMsg: 20, setValMsg: 21, getValAllMsg: 22, proxyPacketMsg: 23
 };
 
+/* Matches ENABLE in src/include/constants.h */
+const ENABLE = 1;
+
 /* Matches MAX_SCREEN_COORD in src/include/screen.h */
 const MAX_SCREEN_COORD = 32767;
 
@@ -213,7 +216,11 @@ async function blinkBothHandler() {
 }
 
 async function enterBootloaderHandler() {
-  await sendReport(packetType.firmwareUpgradeMsg, true, true);
+  /* The payload has to be an array - makeReport spreads it, so anything else throws
+     before a report is sent. The firmware reads no payload here at all
+     (handle_fw_upgrade_msg goes straight to reset_usb_boot); ENABLE mirrors what the
+     keyboard shortcut sends in handlers.c. */
+  await sendReport(packetType.firmwareUpgradeMsg, [ENABLE], true);
 }
 
 async function wipeConfigHandler() {
@@ -647,8 +654,28 @@ function useFullEdge(output) {
 function menuClick(event) {
   const button = event.target.closest('[data-handler]');
 
-  if (button && !button.disabled)
-    window[button.dataset.handler]();
+  if (!button || button.disabled)
+    return;
+
+  /* Handlers are async, so a throw becomes an unhandled rejection that goes nowhere
+     unless devtools happen to be open - the button simply looks inert. Surface it
+     instead; that is exactly how the Bootloader button stayed broken. */
+  const label = (button.textContent || button.dataset.handler).trim();
+
+  try {
+    Promise.resolve(window[button.dataset.handler]())
+      .catch(error => reportHandlerError(label, error));
+  } catch (error) {
+    reportHandlerError(label, error);
+  }
+}
+
+function reportHandlerError(label, error) {
+  const message = (error && error.message) ? error.message : String(error);
+
+  showBackup(`${label} failed`,
+             'The page hit an error carrying that out. Details below.',
+             String((error && error.stack) ? error.stack : message), false);
 }
 
 function panelClick(event) {

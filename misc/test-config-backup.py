@@ -70,6 +70,41 @@ with sync_playwright() as p:
     check("malformed input rejected cleanly",
           "not valid JSON" in page.eval_on_selector("#backup-m", "e => e.textContent"))
 
+    # ---- device buttons that send raw reports --------------------------------
+    page.evaluate("""() => {
+        window.__sent = [];
+        window.device = { opened: true,
+            sendReport: async (id, data) => { window.__sent.push([...data]); } };
+    }""")
+    boot = page.evaluate("""async () => {
+        window.__sent = [];
+        try { await enterBootloaderHandler(); return {ok: true, sent: window.__sent}; }
+        catch (e) { return {ok: false, err: e.constructor.name + ': ' + e.message}; }
+    }""")
+    check("Bootloader sends without throwing", boot["ok"], boot.get("err"))
+    if boot["ok"]:
+        sent = boot["sent"]
+        check("Bootloader reaches both boards", len(sent) == 2, len(sent))
+        # proxied first, then local; byte 2 is the message type
+        check("proxied packet wraps the firmware-upgrade message",
+              len(sent) == 2 and sent[0][2] == 23 and sent[0][3] == 4, sent[0][:5] if sent else None)
+        check("local packet is the firmware-upgrade message",
+              len(sent) == 2 and sent[1][2] == 4, sent[1][:5] if len(sent) > 1 else None)
+
+    # A handler that throws must surface rather than leaving the button looking inert.
+    page.evaluate("""() => {
+        window.__throwingHandler = async () => { throw new Error('boom'); };
+        const b = document.createElement('button');
+        b.dataset.handler = '__throwingHandler';
+        b.textContent = 'Explode';
+        document.getElementById('menu-buttons').appendChild(b);
+        b.click();
+    }""")
+    page.wait_for_function("() => !el('backup').hidden && /Explode/.test(el('backup-t').textContent)",
+                           timeout=5000)
+    check("a throwing handler is reported instead of failing silently",
+          "boom" in page.eval_on_selector("#backup-text", "e => e.value"))
+
     b.close()
 
 check("no page errors", not errs, errs)
