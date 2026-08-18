@@ -114,21 +114,27 @@ void request_byte(device_t *state, uint32_t address) {
 }
 
 void reboot(void) {
-    /* Every other way this firmware restarts - entering config mode, finishing a uf2
-       write, finishing an upgrade - stops kicking the watchdog and lets it fire, which
-       resets the whole chip: _watchdog_enable points psm_hw->wdsel at every subsystem
-       bar the oscillators, so USB and PIO come back clean.
+    /* Ask for a reboot rather than taking one here.
 
-       Writing SYSRESETREQ to AIRCR, as this used to, resets the processors and leaves
-       the peripherals holding whatever state they were in. On the way out of config
-       mode that means the USB controller keeps the config-mode enumeration - a
-       different VID/PID and an extra MSC interface - and the host is never shown a
-       detach. Use the same full reset as everywhere else.
+       Every path that restarts reliably - entering config mode, finishing a uf2 write,
+       finishing an upgrade - sets this flag and lets kick_watchdog_task stop kicking
+       (tasks.c), so the watchdog fires within WATCHDOG_TIMEOUT and resets the whole chip:
+       _watchdog_enable points psm_hw->wdsel at every subsystem bar the oscillators, so USB
+       and PIO come back clean.
 
-       pc = 0 makes watchdog_reboot touch only scratch[4]; the config mode flag lives in
-       scratch[5] and scratch[6] and survives, which is what lets the reboot on the way
-       *into* config mode work. */
-    watchdog_reboot(0, 0, 0);
+       Resetting on the spot is what the two callers here used to do, and neither form of
+       it worked. Writing SYSRESETREQ to AIRCR reset the processors but left the peripherals
+       holding the config-mode enumeration. watchdog_reboot(0, 0, 0) does reset the
+       peripherals, but delay_ms of 0 makes _watchdog_enable set WATCHDOG_CTRL_TRIGGER,
+       which resets immediately and synchronously - and handle_reboot_msg runs inside
+       tud_hid_set_report_cb, so Exit tore the USB controller down in the middle of the
+       transfer that asked for it, and the host was left with a device that never came back.
+
+       Deferring costs up to WATCHDOG_TIMEOUT. In exchange the USB transaction completes,
+       keyboard input stops being accepted (keyboard.c checks the same flag), and the reset
+       is the one this hardware is known to survive. It is also fail-safe: if the task loop
+       stops running the watchdog is starved anyway, and the reset still happens. */
+    global_state.reboot_requested = true;
 }
 
 bool is_start_of_packet(device_t *state) {
