@@ -92,7 +92,7 @@ char const *string_desc_arr[] = {
     "DeskHop Switch",           // 2: Product
     "0",                        // 3: Serials, should use chip ID
     "DeskHop Helper",           // 4: Mouse Helper Interface
-    "DeskHop Config",           // 5: Vendor Interface
+    "DeskHop Extended Config",  // 5: Vendor Interface
     "DeskHop Disk",             // 6: Disk Interface
 #ifdef DH_DEBUG
     "DeskHop Debug",            // 7: Debug Interface
