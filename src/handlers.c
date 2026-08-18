@@ -375,6 +375,10 @@ void handle_response_byte_msg(uart_packet_t *packet, device_t *state) {
 void handle_heartbeat_msg(uart_packet_t *packet, device_t *state) {
     uint16_t other_running_version = packet->data16[0];
 
+    /* Keep it before any early return, so the config page still shows a live value while
+       an upgrade is in flight - that is exactly when you want to watch it. */
+    state->other_fw_version = other_running_version;
+
     if (state->fw.upgrade_in_progress)
         return;
 

@@ -24,6 +24,7 @@ SHORTCUTS = {
 STATUS_ = [
     FormField(78, "Running FW version", None, {}, "uint16", elem="fw_version"),
     FormField(79, "Running FW checksum", None, {}, "uint32", elem="hex_info"),
+    FormField(86, "Other board FW version", None, {}, "uint16", elem="fw_version"),
 ]
 
 CONFIG_ = [
@@ -44,6 +45,9 @@ CONFIG_ = [
     FormField(73, "KBD LED as Indicator", None, {}, "uint8", "checkbox"),
 
     FormField(76, "Enforce Ports", None, {}, "uint8", "checkbox"),
+
+    # Config page layout only - which output is drawn in the left-hand column.
+    FormField(87, "Swap Columns", 1, {}, "uint8", "checkbox"),
 ]
 
 OUTPUT_ = [

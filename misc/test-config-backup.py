@@ -52,9 +52,9 @@ with sync_playwright() as p:
                   "  setValue(e, e.type === 'checkbox' ? (i % 2) : (i + 3))); markClean(); }")
 
     writable = page.evaluate("() => document.querySelectorAll('.api:not([readonly])').length")
-    # 33 of the firmware's 37 writable fields; the page deliberately does not expose
+    # 34 of the firmware's 38 writable fields; the page deliberately does not expose
     # output[].number (x2), config.version or hotkey_toggle.
-    check("page exposes 33 writable fields", writable == 33, writable)
+    check("page exposes 34 writable fields", writable == 34, writable)
 
     page.evaluate("() => exportHandler()")
     exported = json.loads(page.eval_on_selector("#backup-text", "e => e.value"))
@@ -137,6 +137,52 @@ with sync_playwright() as p:
     check("import from a chosen file restores every value", from_file == before,
           {k: (before[k], from_file[k]) for k in before if before[k] != from_file[k]})
     os.unlink(chosen)
+
+    # ---- both board versions -------------------------------------------------
+    def show_versions(local, other):
+        # Through the page's own formatter, the one handleInputReport uses on the
+        # values the device reports.
+        page.evaluate("""([a, b]) => {
+            setValue(document.querySelector('[data-fw-self]'), formatFwVersion(a));
+            setValue(document.querySelector('[data-fw-ver]:not([data-fw-self])'), formatFwVersion(b));
+        }""", [local, other])
+
+    show_versions(1102, 1102)
+    shown = page.evaluate("() => [...document.querySelectorAll('[data-fw-ver]')].map(e => e.value)")
+    check("both version fields format from the raw uint16", shown == ["v1.2", "v1.2"], shown)
+    check("matching versions raise no warning",
+          page.eval_on_selector("#ver-differ", "e => e.hidden"))
+
+    show_versions(1102, 1101)
+    check("differing versions are flagged",
+          page.eval_on_selector("#ver-differ", "e => !e.hidden"))
+
+    show_versions(1102, 0)
+    other_val = page.eval_on_selector("[data-fw-ver]:not([data-fw-self])", "e => e.value")
+    check("a board that never reported shows a dash", other_val == "—", other_val)
+    check("a board that never reported is not a mismatch",
+          page.eval_on_selector("#ver-differ", "e => e.hidden"))
+
+    # ---- column order ---------------------------------------------------------
+    def set_swap(on):
+        page.evaluate("v => setValue(document.querySelector('[data-key=\"87\"]'), v)", 1 if on else 0)
+
+    set_swap(True)
+    check("swap on puts output B in the left-hand column",
+          page.evaluate("() => { const d = document.querySelector('.obar .duo');"
+                        " return el('panel').classList.contains('swapped')"
+                        " && getComputedStyle(d.firstElementChild).order === '2'; }"))
+    set_swap(False)
+    check("swap off restores output A to the left",
+          page.evaluate("() => !el('panel').classList.contains('swapped')"))
+
+    # Screen side is correct as shipped and has been mistaken for a bug once; pin it so a
+    # later change cannot quietly invert it.
+    page.evaluate("() => { setValue(document.querySelector('[data-key=\"17\"]'), 1);"
+                  " refreshOutput('A'); }")
+    cap = page.eval_on_selector(".cap[data-o='A']", "e => e.textContent")
+    check("Left pairs with crossing off the right edge",
+          "on the left" in cap and "right edge" in cap, cap)
 
     # ---- a throwing handler must not fail silently ---------------------------
     # A handler that throws must surface rather than leaving the button looking inert.

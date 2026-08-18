@@ -93,6 +93,25 @@ this version does not cost you your settings either. The format is exercised on 
 `misc/hosttest/run.sh`, which builds the real `src/config_store.c` against a byte array
 standing in for the flash page.
 
+### Both boards on one page
+
+The header shows the firmware version of the board you are connected to and of the other
+one, flagging it when the two differ. The version was already crossing the link once a
+second in the heartbeat and being discarded; it is now kept and exposed read-only. A dash
+means nothing has been heard from the other board - it is unpowered, or the link is down.
+
+Worth having because the boards push firmware at each other automatically when their
+versions differ, so a half-finished propagation is a state you want to be able to see.
+
+### Swapping the output columns
+
+Which output is drawn in the left-hand column is a saved setting, so the page can match how
+the boards actually sit on your desk. The default follows the shipped configuration, where
+Output A's screens are on the right and B's on the left, so B is drawn first.
+
+It is stored in four bytes that were already reserved in `config_t`, which keeps
+`sizeof(config_t)` unchanged and the migration from pre-key-value configs intact.
+
 ### Export and import settings
 
 Export saves every setting the page exposes to a `.txt` file; Import reads one back, either

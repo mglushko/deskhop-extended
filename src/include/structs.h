@@ -86,7 +86,13 @@ typedef struct {
     uint16_t switch_double_tap_margin;  // How far (screen coords) to pull back before re-tapping
 
     output_t output[NUM_SCREENS];
-    uint32_t _reserved;
+
+    /* Carved out of what used to be a uint32 _reserved. Same four bytes in the same place,
+       so sizeof(config_t) and every offset after it are unchanged and config_store's
+       legacy path still reads pre key-value pages byte for byte. Those bytes were zero,
+       so a migrated config reads swap_columns = 0. */
+    uint8_t swap_columns;   /* Draw output B in the left-hand column of the config page */
+    uint8_t _reserved[3];
 
     // Keep checksum at the end of the struct
     uint32_t checksum;
@@ -138,6 +144,7 @@ typedef struct {
     /* Firmware */
     fw_upgrade_state_t fw;           // State of the firmware upgrader
     firmware_metadata_t _running_fw; // RAM copy of running fw metadata
+    uint16_t other_fw_version;       // Version the other board reports in its heartbeat
     bool reboot_requested;           // If set, stop updating watchdog
     uint64_t config_mode_timer;      // Counts how long are we to remain in config mode
 

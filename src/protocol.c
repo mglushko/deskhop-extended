@@ -61,6 +61,7 @@ const field_map_t api_field_map[] = {
     { 83, false, UINT8,  1, offsetof(device_t, config.switch_double_tap_enable) },
     { 84, false, UINT16, 2, offsetof(device_t, config.switch_double_tap_ms) },
     { 85, false, UINT16, 2, offsetof(device_t, config.switch_double_tap_margin) },
+    { 87, false, UINT8,  1, offsetof(device_t, config.swap_columns) },
 
     /* Firmware */
     { 78, true,  UINT16, 2, offsetof(device_t, _running_fw.version) },
@@ -69,6 +70,7 @@ const field_map_t api_field_map[] = {
     { 80, true,  UINT8,  1, offsetof(device_t, keyboard_connected) },
     { 81, true,  UINT8,  1, offsetof(device_t, switch_lock) },
     { 82, true,  UINT8,  1, offsetof(device_t, relative_mouse) },
+    { 86, true,  UINT16, 2, offsetof(device_t, other_fw_version) },
 };
 
 const field_map_t* get_field_map_entry(uint32_t index) {

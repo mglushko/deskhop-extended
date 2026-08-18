@@ -50,6 +50,14 @@ static int writable_fields_match(const device_t *x, const device_t *y, int skip_
 int main(void) {
     char detail[128];
 
+    /* ---- layout the legacy path depends on ------------------------------ */
+    /* config_store_load_legacy memcpys sizeof(config_t) out of a pre key-value page and
+       checksums sizeof(config_t) - 4. Grow the struct and every such page silently stops
+       validating, so pin the size rather than trusting that nobody appends to it. */
+    snprintf(detail, sizeof(detail), "sizeof(config_t) = %zu", sizeof(config_t));
+    check("config_t is still the 144 bytes the legacy format was written at",
+          sizeof(config_t) == 144, detail);
+
     /* ---- round trip ---------------------------------------------------- */
     fill(&device_a, 11);
     size_t used = config_store_pack(page, sizeof(page), (const uint8_t *)&device_a);

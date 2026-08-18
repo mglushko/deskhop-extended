@@ -73,6 +73,15 @@ function packValue(element, key, dataType, buffer) {
   return new Uint8Array(buffer);
 }
 
+/* u16 version = major * 1000 + minor + 100. Zero means nothing has been heard from that
+   board - for the other one that is an unpowered board or a link that is down. */
+function formatFwVersion(value) {
+  if (!value)
+    return '—';
+
+  return `v${Math.floor((value - 100) / 1000)}.${(value - 100) % 1000}`;
+}
+
 function getValue(element) {
   if (element.type === 'checkbox')
     return element.checked ? 1 : 0;
@@ -123,12 +132,8 @@ function updateElement(key, event) {
     if (element.hasAttribute('data-hex'))
       setValue(element, parseInt(value).toString(16));
 
-    if (element.hasAttribute('data-fw-ver')) {
-      /* u16 version = major * 1000 + minor + 100; */
-      const major = Math.floor((value - 100) / 1000);
-      const minor = (value - 100) % 1000;
-      setValue(element, `v${major}.${minor}`);
-    }
+    if (element.hasAttribute('data-fw-ver'))
+      setValue(element, formatFwVersion(value));
   }
 }
 
@@ -269,11 +274,11 @@ function setConnected(on) {
 }
 
 function setPlaceholders() {
-  const fw = document.querySelector('[data-fw-ver]');
   const sum = document.querySelector('[data-hex]');
 
-  if (fw) fw.value = '—';
+  document.querySelectorAll('[data-fw-ver]').forEach(fw => { fw.value = '—'; });
   if (sum) sum.value = '————————';
+  el('ver-differ').hidden = true;
 }
 
 /* ------------------------------------------------------- export / import
@@ -345,7 +350,7 @@ function exportHandler() {
 
   const payload = {
     [BACKUP_TAG]: 1,
-    firmware: document.querySelector('[data-fw-ver]').value,
+    firmware: document.querySelector('[data-fw-self]').value,
     exported: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
     settings: settings,
   };
@@ -570,6 +575,12 @@ function syncControl(element) {
     refreshOutput(element.dataset.o);
   else if (element.dataset.n === 'dtap')
     refreshSwitching();
+
+  if (element.hasAttribute('data-fw-ver'))
+    refreshVersions();
+
+  if (element.dataset.key === SWAP_COLUMNS_KEY)
+    refreshColumnOrder();
 }
 
 function renderView(view, element) {
@@ -590,6 +601,8 @@ function renderView(view, element) {
     view.setAttribute('aria-checked', element.checked);
   } else if (list.contains('sec')) {
     view.value = Math.round((parseInt(value, 10) || 0) / 1000000);
+  } else if (list.contains('swap')) {
+    view.setAttribute('aria-pressed', value != 0);
   } else if (list.contains('pctv')) {
     /* Raw screen coordinates mean little on their own, so the share of the screen
        is spelled out beside them. One decimal, because the bottom of the range
@@ -603,6 +616,27 @@ function renderView(view, element) {
 }
 
 /* --------------------------------------------------- per-output redrawing */
+
+/* Key 87, config.swap_columns - which output is drawn on the left. */
+const SWAP_COLUMNS_KEY = '87';
+
+function refreshColumnOrder() {
+  const input = document.querySelector(`[data-key="${SWAP_COLUMNS_KEY}"]`);
+
+  /* One class on the container; .duo children carry order, and every lookup below is by
+     data-o rather than position, so nothing else needs to know which way round it is. */
+  el('panel').classList.toggle('swapped', !!(input && getValue(input) != 0));
+}
+
+/* Flag the boards running different firmware. Only meaningful once the other board has
+   actually reported in - a dash means nothing has been heard from it. */
+function refreshVersions() {
+  const self = document.querySelector('[data-fw-self]');
+  const other = document.querySelector('[data-fw-ver]:not([data-fw-self])');
+  const known = other && other.value && other.value !== '—';
+
+  el('ver-differ').hidden = !(known && self && self.value !== other.value);
+}
 
 function refreshOutput(output) {
   const count = Math.max(1, Math.min(3, apiNumber(output, 'count', 1)));
@@ -746,6 +780,12 @@ function panelClick(event) {
     return setApi(element, !element.checked);
   }
 
+  if (button.classList.contains('swap')) {
+    const element = el(button.dataset.for);
+
+    return setApi(element, getValue(element) != 0 ? 0 : 1);
+  }
+
   if (button.dataset.full)
     return useFullEdge(button.dataset.full);
 }
@@ -835,6 +875,8 @@ window.addEventListener('load', function () {
     });
 
   document.querySelectorAll('.api').forEach(syncControl);
+  refreshColumnOrder();
+  refreshVersions();
   refreshOutput('A');
   refreshOutput('B');
   refreshSwitching();

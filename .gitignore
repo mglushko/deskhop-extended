@@ -3,3 +3,5 @@ build
 .idea/
 build-release/
 dist/
+misc/venv/
+webconfig/venv/

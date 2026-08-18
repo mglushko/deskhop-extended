@@ -80,7 +80,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 .title span { color: var(--accent); }
 
 .hdr-r { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; margin-left: auto; }
-.meta { display: flex; align-items: center; gap: 18px; padding: 8px 14px; background: var(--chip); border-radius: 4px; }
+.meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding: 8px 14px; background: var(--chip); border-radius: 4px; }
+.meta-row { display: flex; align-items: center; gap: 18px; }
 .meta-i { display: flex; align-items: baseline; gap: 7px; }
 .meta-k { font-size: 10px; font-weight: 700; letter-spacing: .09rem; text-transform: uppercase; }
 .meta-sep { width: 1px; height: 16px; background: rgba(56, 73, 85, .25); }
@@ -90,13 +91,15 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 }
 .meta-v.mono { font-family: ui-monospace, Menlo, monospace; font-size: 15px; font-weight: 400; width: 76px; }
 .offline .meta-v { color: rgba(56, 73, 85, .45); }
-/* Release-stage label beside the firmware version. Rendered from VERSION_SUFFIX in
-   CMakeLists.txt, so it tracks the same source as the version number itself. */
+/* Small label beside a version: the release stage, rendered from VERSION_SUFFIX in
+   CMakeLists.txt so it tracks the same source as the number, or a warning that the two
+   boards are not running the same firmware. */
 .meta-tag {
   padding: 1px 6px; border: 1px solid var(--warn-bd); border-radius: 3px;
   background: var(--warn-bg); color: var(--warn-fg);
   font-size: 9.5px; font-weight: 700; letter-spacing: .08rem; text-transform: uppercase;
 }
+.meta-warn { border-color: var(--danger); color: var(--danger); background: #fff; }
 
 .acts { display: flex; align-items: center; gap: 6px; }
 
@@ -175,6 +178,24 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
 .duo > * { min-width: 0; }
 .duo-wide { gap: 48px; }
+
+/* Which output is drawn on the left. Every .duo holds exactly two children in A,B order,
+   so flipping their order flips the whole page at once; all lookups in script.js go
+   through data-o rather than position, so nothing else has to know. */
+.swapped .duo > *:first-child { order: 2; }
+.swapped .duo > *:last-child  { order: 1; }
+
+.swap {
+  position: absolute; right: 24px; top: 10px; z-index: 6;
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border: 1px solid var(--bd-soft); border-radius: 4px;
+  background: #fff; color: var(--muted);
+  font-size: 11px; font-weight: 700; letter-spacing: .06rem; text-transform: uppercase;
+  cursor: pointer;
+}
+.swap:hover { border-color: var(--accent); color: var(--accent-dk); }
+.swap-i { font-size: 14px; line-height: 1; }
+.gate[inert] .swap { opacity: .42; pointer-events: none; }
 
 .sect { position: relative; display: flex; align-items: center; gap: 12px; margin: 14px 0 0; }
 .sect-t { font-size: 12px; font-weight: 700; letter-spacing: .09rem; text-transform: uppercase; color: var(--muted); }
@@ -374,16 +395,25 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
     <div class="hdr-r">
       <div class="meta">
-        <span class="meta-i">
-          <span class="meta-k">Firmware</span>
-          <input class="api meta-v" type="text" id="k78" data-key="78" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-fw-ver readonly>
-          <span class="meta-tag">beta</span>
-        </span>
-        <span class="meta-sep"></span>
-        <span class="meta-i">
-          <span class="meta-k">Checksum</span>
-          <input class="api meta-v mono" type="text" id="k79" data-key="79" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" data-hex readonly>
-        </span>
+        <div class="meta-row">
+          <span class="meta-i">
+            <span class="meta-k">This board</span>
+            <input class="api meta-v" type="text" id="k78" data-key="78" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-fw-ver data-fw-self readonly>
+            <span class="meta-tag">beta</span>
+          </span>
+          <span class="meta-sep"></span>
+          <span class="meta-i">
+            <span class="meta-k">Other board</span>
+            <input class="api meta-v" type="text" id="k86" data-key="86" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-fw-ver readonly>
+            <span class="meta-tag meta-warn" id="ver-differ" hidden>differ</span>
+          </span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-i">
+            <span class="meta-k">Checksum</span>
+            <input class="api meta-v mono" type="text" id="k79" data-key="79" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" data-hex readonly>
+          </span>
+        </div>
       </div>
 
       <div class="acts menu-buttons" id="menu-buttons">
@@ -426,6 +456,10 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
     <div class="rail">
 
       <div class="obar">
+        <button type="button" class="swap" data-for="k87"
+                title="Draw the outputs the other way round, to match how they sit on your desk">
+          <span class="swap-i" aria-hidden="true">&#8646;</span> Swap sides
+        </button><input class="api " type="hidden" id="k87" data-key="87" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" >
         <div class="duo">
           <div class="out">
             <span class="out-n">Output A</span>
@@ -955,6 +989,15 @@ function packValue(element, key, dataType, buffer) {
   return new Uint8Array(buffer);
 }
 
+/* u16 version = major * 1000 + minor + 100. Zero means nothing has been heard from that
+   board - for the other one that is an unpowered board or a link that is down. */
+function formatFwVersion(value) {
+  if (!value)
+    return '—';
+
+  return `v${Math.floor((value - 100) / 1000)}.${(value - 100) % 1000}`;
+}
+
 function getValue(element) {
   if (element.type === 'checkbox')
     return element.checked ? 1 : 0;
@@ -1005,12 +1048,8 @@ function updateElement(key, event) {
     if (element.hasAttribute('data-hex'))
       setValue(element, parseInt(value).toString(16));
 
-    if (element.hasAttribute('data-fw-ver')) {
-      /* u16 version = major * 1000 + minor + 100; */
-      const major = Math.floor((value - 100) / 1000);
-      const minor = (value - 100) % 1000;
-      setValue(element, `v${major}.${minor}`);
-    }
+    if (element.hasAttribute('data-fw-ver'))
+      setValue(element, formatFwVersion(value));
   }
 }
 
@@ -1151,11 +1190,11 @@ function setConnected(on) {
 }
 
 function setPlaceholders() {
-  const fw = document.querySelector('[data-fw-ver]');
   const sum = document.querySelector('[data-hex]');
 
-  if (fw) fw.value = '—';
+  document.querySelectorAll('[data-fw-ver]').forEach(fw => { fw.value = '—'; });
   if (sum) sum.value = '————————';
+  el('ver-differ').hidden = true;
 }
 
 /* ------------------------------------------------------- export / import
@@ -1227,7 +1266,7 @@ function exportHandler() {
 
   const payload = {
     [BACKUP_TAG]: 1,
-    firmware: document.querySelector('[data-fw-ver]').value,
+    firmware: document.querySelector('[data-fw-self]').value,
     exported: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
     settings: settings,
   };
@@ -1452,6 +1491,12 @@ function syncControl(element) {
     refreshOutput(element.dataset.o);
   else if (element.dataset.n === 'dtap')
     refreshSwitching();
+
+  if (element.hasAttribute('data-fw-ver'))
+    refreshVersions();
+
+  if (element.dataset.key === SWAP_COLUMNS_KEY)
+    refreshColumnOrder();
 }
 
 function renderView(view, element) {
@@ -1472,6 +1517,8 @@ function renderView(view, element) {
     view.setAttribute('aria-checked', element.checked);
   } else if (list.contains('sec')) {
     view.value = Math.round((parseInt(value, 10) || 0) / 1000000);
+  } else if (list.contains('swap')) {
+    view.setAttribute('aria-pressed', value != 0);
   } else if (list.contains('pctv')) {
     /* Raw screen coordinates mean little on their own, so the share of the screen
        is spelled out beside them. One decimal, because the bottom of the range
@@ -1485,6 +1532,27 @@ function renderView(view, element) {
 }
 
 /* --------------------------------------------------- per-output redrawing */
+
+/* Key 87, config.swap_columns - which output is drawn on the left. */
+const SWAP_COLUMNS_KEY = '87';
+
+function refreshColumnOrder() {
+  const input = document.querySelector(`[data-key="${SWAP_COLUMNS_KEY}"]`);
+
+  /* One class on the container; .duo children carry order, and every lookup below is by
+     data-o rather than position, so nothing else needs to know which way round it is. */
+  el('panel').classList.toggle('swapped', !!(input && getValue(input) != 0));
+}
+
+/* Flag the boards running different firmware. Only meaningful once the other board has
+   actually reported in - a dash means nothing has been heard from it. */
+function refreshVersions() {
+  const self = document.querySelector('[data-fw-self]');
+  const other = document.querySelector('[data-fw-ver]:not([data-fw-self])');
+  const known = other && other.value && other.value !== '—';
+
+  el('ver-differ').hidden = !(known && self && self.value !== other.value);
+}
 
 function refreshOutput(output) {
   const count = Math.max(1, Math.min(3, apiNumber(output, 'count', 1)));
@@ -1628,6 +1696,12 @@ function panelClick(event) {
     return setApi(element, !element.checked);
   }
 
+  if (button.classList.contains('swap')) {
+    const element = el(button.dataset.for);
+
+    return setApi(element, getValue(element) != 0 ? 0 : 1);
+  }
+
   if (button.dataset.full)
     return useFullEdge(button.dataset.full);
 }
@@ -1717,6 +1791,8 @@ window.addEventListener('load', function () {
     });
 
   document.querySelectorAll('.api').forEach(syncControl);
+  refreshColumnOrder();
+  refreshVersions();
   refreshOutput('A');
   refreshOutput('B');
   refreshSwitching();
