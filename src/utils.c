@@ -114,7 +114,21 @@ void request_byte(device_t *state, uint32_t address) {
 }
 
 void reboot(void) {
-    *((volatile uint32_t*)(PPB_BASE + 0x0ED0C)) = 0x5FA0004;
+    /* Every other way this firmware restarts - entering config mode, finishing a uf2
+       write, finishing an upgrade - stops kicking the watchdog and lets it fire, which
+       resets the whole chip: _watchdog_enable points psm_hw->wdsel at every subsystem
+       bar the oscillators, so USB and PIO come back clean.
+
+       Writing SYSRESETREQ to AIRCR, as this used to, resets the processors and leaves
+       the peripherals holding whatever state they were in. On the way out of config
+       mode that means the USB controller keeps the config-mode enumeration - a
+       different VID/PID and an extra MSC interface - and the host is never shown a
+       detach. Use the same full reset as everywhere else.
+
+       pc = 0 makes watchdog_reboot touch only scratch[4]; the config mode flag lives in
+       scratch[5] and scratch[6] and survives, which is what lets the reboot on the way
+       *into* config mode work. */
+    watchdog_reboot(0, 0, 0);
 }
 
 bool is_start_of_packet(device_t *state) {
