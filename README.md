@@ -85,6 +85,27 @@ sits was enough to route every report down the NKRO path, which never reads the 
 Such a keyboard kept its modifiers and lost every keycode. Deciding on the summed width of all
 blocks keeps both cases: eight bits is padding, a Wooting's four ranges are not.
 
+### Boot-protocol reports route by the interface
+
+`tuh_hid_report_received_cb` chose between its two dispatch branches on `uses_report_id`, which the
+parser sets from the descriptor at enumeration and nothing ever revises. It never looked at the
+interface protocol. So once a keyboard was put into boot protocol the device stopped sending a
+report ID, but dispatch kept reading `report[0]` as one, and in a boot report `report[0]` is the
+modifier byte: every keystroke was routed by which modifiers were held. Of the three affected
+devices in [deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests)' corpus, one had its
+keystrokes discarded, one routed only on modifier `0x07`, and one sent keyboard reports to the paths
+that carry Power and Sleep. `extract_kbd_data`'s boot branch was unreachable for every keyboard
+declaring a report ID, which is exactly the set of devices it exists for. The mouse side had the
+same mistake through `force_mouse_boot_mode`, where `report[0]` is the button byte.
+
+The rule was already in the codebase one level down, since `extract_kbd_data` and
+`extract_report_values` both test `HID_PROTOCOL_BOOT` before they consult `uses_report_id`: the boot
+layout is fixed and carries no ID whatever the descriptor said. Routing now applies it too, in
+`pick_receiver()`, a pure function of the interface, the protocol and the report bytes that the
+harness lifts verbatim rather than keeping its own copy of the rules, which is how this went unseen.
+Dispatch goes from 13/20 to 20/20, with no case passing because `report[0]` happened to equal a
+bound report ID. Nothing outside boot protocol changes.
+
 ### Rewritten web config page
 
 Upstream's page is already a single page with Output A and Output B side by side, but each output is
