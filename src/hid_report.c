@@ -31,8 +31,11 @@ int32_t get_report_value(uint8_t *report, int len, report_val_t *val) {
     /* Initialize the result value with the bits from the first byte */
     int32_t result = report[byte_offset] >> offset_in_bits;
 
-    /* Move to the next byte and continue fetching bits until the desired length is reached */
-    while (val->size > remaining_bits && byte_offset < len) {
+    /* Move to the next byte and continue fetching bits until the desired length is reached.
+       The test covers the byte about to be read, not the one already read - testing
+       byte_offset before the increment let a field still short of bits at len - 1 read
+       report[len]. */
+    while (val->size > remaining_bits && byte_offset + 1 < len) {
         result |= report[++byte_offset] << remaining_bits;
         remaining_bits += 8;
     }
@@ -324,14 +327,21 @@ int32_t _extract_kbd_other(uint8_t *raw_report, int len, hid_interface_t *iface,
     keyboard_t *kb = get_keyboard(iface, raw_report[0]);
     uint8_t *src = raw_report;
 
-    if (iface->uses_report_id)
+    /* Shrink len with the pointer, so the guards below measure the payload src actually
+       points at rather than the report that carried it. */
+    if (iface->uses_report_id) {
         src++;
+        len--;
+    }
 
     if (kb->modifier.offset_idx >= len)
         return -1;
 
     report->modifier = src[kb->modifier.offset_idx];
-    for (int i=0, j=0; i < MAX_KEYS && j < KEYS_IN_USB_REPORT; i++) {
+
+    /* key_array is indexed by byte offset from the descriptor, which says nothing about
+       how many bytes actually arrived - stop at whichever runs out first. */
+    for (int i=0, j=0; i < MAX_KEYS && i < len && j < KEYS_IN_USB_REPORT; i++) {
         if(kb->key_array[i])
             report->keycode[j++] = src[i];
     }

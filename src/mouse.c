@@ -369,9 +369,14 @@ void do_screen_switch(device_t *state, int direction) {
 }
 
 static inline bool extract_value(bool uses_id, int32_t *dst, report_val_t *src, uint8_t *raw_report, int len) {
-    /* If HID Report ID is used, the report is prefixed by the report ID so we have to move by 1 byte */
-    if (uses_id && (*raw_report++ != src->report_id))
-        return false;
+    /* If HID Report ID is used, the report is prefixed by the report ID so we have to move by 1 byte.
+       len has to move with it: descriptor offsets are relative to the payload, so handing
+       get_report_value the unshifted length leaves its bound off by one in this frame. */
+    if (uses_id) {
+        if (*raw_report++ != src->report_id)
+            return false;
+        len--;
+    }
 
     *dst = get_report_value(raw_report, len, src);
     return true;
@@ -382,11 +387,17 @@ void extract_report_values(uint8_t *raw_report, int len, device_t *state, mouse_
     if (iface->protocol == HID_PROTOCOL_BOOT) {
         hid_mouse_report_t *mouse_report = (hid_mouse_report_t *)raw_report;
 
+        /* hid_mouse_report_t is five bytes, but the boot report is only defined as far as
+           buttons/x/y and plenty of mice stop there or after the wheel. Take what arrived
+           instead of reading the whole struct out of a shorter buffer. */
+        if (len < MOUSE_BOOT_REPORT_LEN - 1)
+            return;
+
+        values->buttons = mouse_report->buttons;
         values->move_x  = mouse_report->x;
         values->move_y  = mouse_report->y;
-        values->wheel   = mouse_report->wheel;
-        values->pan     = mouse_report->pan;
-        values->buttons = mouse_report->buttons;
+        values->wheel   = (len >= MOUSE_BOOT_REPORT_LEN) ? mouse_report->wheel : 0;
+        values->pan     = (len > MOUSE_BOOT_REPORT_LEN) ? mouse_report->pan : 0;
         return;
     }
     mouse_t *mouse = &iface->mouse;
