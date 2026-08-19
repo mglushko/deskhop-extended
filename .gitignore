@@ -5,3 +5,4 @@ build-release/
 dist/
 misc/venv/
 webconfig/venv/
+__pycache__/

@@ -7,6 +7,7 @@
 from jinja2 import Environment, FileSystemLoader
 from form import *
 import base64
+import importlib.util
 import os
 import re
 import zlib
@@ -18,7 +19,25 @@ PACKER_FILENAME = "packer.j2"
 OUTPUT_FILENAME = "config.htm"
 OUTPUT_UNPACKED = "config-unpacked.htm"
 OUTPUT_TEST = "config-test.htm"
-CMAKELISTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "CMakeLists.txt")
+HERE = os.path.dirname(os.path.abspath(__file__))
+CMAKELISTS = os.path.join(HERE, "..", "CMakeLists.txt")
+DISK_REBUILDER = os.path.join(HERE, "..", "misc", "rebuild-disk-image.py")
+
+
+def disk_capacity():
+    """Bytes available to config.htm inside the 64 kB FAT image.
+
+    Taken from misc/rebuild-disk-image.py rather than restated here, so the geometry lives
+    in one place. That script raises when the page does not fit, but disk/create.sh - what
+    CI actually runs - does not: mkdosfs writes the file across as many clusters as it
+    needs and the trailing `dd` then cuts the image back to 128 sectors, silently
+    truncating the page. Checking at render time is what turns that into a build failure.
+    """
+    spec = importlib.util.spec_from_file_location("rebuild_disk_image", DISK_REBUILDER)
+    disk = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(disk)
+
+    return disk.IMAGE_LEN - (disk.DATA + (disk.FIRST_CLUSTER - 2) * disk.CLUSTER)
 
 
 def build_version():
@@ -87,15 +106,32 @@ if __name__ == "__main__":
     # Read main template contents
     webpage = render(INPUT_FILENAME, **context)
 
-    # Compress file and encode to base64
-    encoded_data = {'payload': encode_file(webpage)}
+    # Compress file and encode to base64. The decompressed length goes with it: the packer
+    # inflates into a fixed-size Uint8Array and tiny-inflate does not bounds check its
+    # destination, so a buffer that no longer fits the page corrupts it in the browser
+    # rather than failing here. Sizing it from the page removes the cliff instead of
+    # moving it, and stops the trailing slack being decoded into the document.
+    encoded_data = {
+        'payload': encode_file(webpage),
+        'decoded_len': len(webpage.encode('utf-8')),
+    }
 
     # Tiny Inflate JS decoder (https://github.com/foliojs/tiny-inflate)
     # Decompress the data and replace existing HTML with the decoded version
     self_extracting_webpage = render(PACKER_FILENAME, encoded_data)
 
+    capacity = disk_capacity()
+    packed = len(self_extracting_webpage.encode('utf-8'))
+
+    if packed > capacity:
+        raise SystemExit(f"config.htm is {packed} bytes, {packed - capacity} over the "
+                         f"{capacity} available in the disk image - the page has outgrown it")
+
     # Write data to output filename
     write_file(self_extracting_webpage)
+
+    print(f"{OUTPUT_FILENAME}: {packed} bytes of {capacity} available "
+          f"({encoded_data['decoded_len']} unpacked)")
 
     # Write unpacked webpage
     write_file(webpage, OUTPUT_UNPACKED)
