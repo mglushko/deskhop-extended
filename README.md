@@ -106,6 +106,42 @@ harness lifts verbatim rather than keeping its own copy of the rules, which is h
 Dispatch goes from 13/20 to 20/20, with no case passing because `report[0]` happened to equal a
 bound report ID. Nothing outside boot protocol changes.
 
+### Every keyboard collection on an interface gets its own keyboard_t
+
+`get_keyboard()` short-circuited on `num_keyboards == 1` before it could reach a second slot, so an
+interface using report IDs could never hold more than one keyboard and `MAX_KEYBOARDS` was dead
+code. A keyboard declaring a 6KRO collection for BIOS compatibility alongside an NKRO bitmap for
+everything else, which is the ordinary shape of a modern keyboard, had both collections written onto
+`keyboards[0]`, last one wins. It takes one keyboard, not two.
+
+What that costs depends on the descriptor. On a Keychron Ultra-Link the NKRO block sits at
+`offset_idx` 1 and is VARIABLE, and `handle_keyboard_descriptor_values` assigns
+`key_array[offset_idx] = (data_type == ARRAY)` unconditionally, so it cleared the flag the 6KRO
+collection had set on its first key slot: hold `a` alone and nothing came out. On an 8BitDo Retro
+Mechanical Keyboard, whose two NKRO blocks map one usage per bit over 120 bits and so pass every
+test the parser applies, `is_nkro` ends up set on the shared entry and a 6KRO report is decoded as
+though its bytes were bitmap bits. That keyboard does not lose one key, it types different ones:
+`abcdef` arrives as `gmovw3`.
+
+The knot was that `get_keyboard()` served two callers wanting different things. At parse time an
+unseen report ID should claim a slot; at decode time it must not, or a stray ID would consume one.
+`get_or_add_keyboard()` now does the allocating and `handle_keyboard_descriptor_values` calls it,
+leaving `get_keyboard()` a pure lookup. `get_next_keyboard_id()` is retired, since the map stamped
+`report_id` before the handler ran and could not find-or-allocate by ID anyway. Overflow past
+`MAX_KEYBOARDS` falls back to the primary, which is what happened before.
+
+Three upstream reports share this shape: [#57](https://github.com/hrvach/deskhop/issues/57), open
+since March 2024, [#211](https://github.com/hrvach/deskhop/issues/211), closed but reported as
+returning, and [#295](https://github.com/hrvach/deskhop/issues/295), closed only because the
+reporter hard-coded a mapping for their own keyboard. All three read "keyboard not working", which
+is what the collapse produces. Of the 42 keyboard interfaces dumped across 220 upstream issues,
+three declare more than one keyboard collection and all three use report IDs.
+
+[deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests) asserts the whole corpus against
+this now: every report ID bound to a keyboard must resolve, through the firmware's own
+`get_keyboard()`, to a slot claiming that ID. It also carries an RP2040 emulator of the 8BitDo, so
+the fix can be confirmed on hardware without owning one of the affected keyboards.
+
 ### Rewritten web config page
 
 Upstream's page is already a single page with Output A and Output B side by side, but each output is

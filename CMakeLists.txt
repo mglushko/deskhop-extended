@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.6)
 ## VERSION_SUFFIX is a label only - it is not encoded in the uint16 the boards
 ## exchange, it is rendered onto the config page by webconfig/render.py.
 set(VERSION_MAJOR 1)
-set(VERSION_MINOR 4)
+set(VERSION_MINOR 5)
 set(VERSION_SUFFIX "beta")
 
 ## Release Type Selection
