@@ -88,7 +88,12 @@ void handle_system_control_values(report_val_t *src, report_val_t *dst, hid_inte
 /* After processing the descriptor, assign the values so we can later use them to interpret reports */
 void handle_keyboard_descriptor_values(report_val_t *src, report_val_t *dst, hid_interface_t *iface) {
     const int LEFT_CTRL = 0xE0;
-    keyboard_t *keyboard = get_keyboard(iface, src->report_id);
+
+    /* Parse time, so claim a slot for a report ID we have not seen. An interface can
+       carry several keyboard collections - a 6KRO one for the boot protocol and one or
+       more NKRO bitmaps is the usual arrangement - and each needs its own keyboard_t or
+       the later ones write over the earlier. */
+    keyboard_t *keyboard = get_or_add_keyboard(iface, src->report_id);
 
     /* Constants are normally used for padding, so skip'em */
     if (src->item_type == CONSTANT)
@@ -195,14 +200,6 @@ static uint8_t *get_system_id(hid_interface_t *iface) {
     return &iface->system.report_id;
 }
 
-static uint8_t *get_next_keyboard_id(hid_interface_t *iface) {
-    if (iface->num_keyboards < MAX_KEYBOARDS)
-        return &iface->keyboards[iface->num_keyboards].report_id;
-
-    /* In case we are out of bounds, return the last keyboard's ID */
-    return &iface->keyboards[MAX_KEYBOARDS - 1].report_id;
-}
-
 
 void extract_data(hid_interface_t *iface, report_val_t *val) {
     const usage_map_t map[] = {
@@ -248,8 +245,7 @@ void extract_data(hid_interface_t *iface, report_val_t *val) {
         {.usage_page   = HID_USAGE_PAGE_KEYBOARD,
          .global_usage = HID_USAGE_DESKTOP_KEYBOARD,
          .handler      = handle_keyboard_descriptor_values,
-         .receiver     = process_keyboard_report,
-         .get_id       = get_next_keyboard_id},
+         .receiver     = process_keyboard_report},
 
         {.usage_page   = HID_USAGE_PAGE_CONSUMER,
          .global_usage = HID_USAGE_CONSUMER_CONTROL,
@@ -276,7 +272,11 @@ void extract_data(hid_interface_t *iface, report_val_t *val) {
         bool usage_pages_match   = (val->usage_page == hay->usage_page) || (hay->usage_page == 0);
 
         if (global_usages_match && usages_match && usage_pages_match) {
-            *(hay->get_id(iface)) = val->report_id;
+            /* Keyboards have no get_id: which slot a collection belongs to depends on
+               the report ID, which this cannot see, so get_or_add_keyboard does it in
+               the handler instead. */
+            if (hay->get_id != NULL)
+                *(hay->get_id(iface)) = val->report_id;
 
             hay->handler(val, hay->dst, iface);
 
