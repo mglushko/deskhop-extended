@@ -56,6 +56,35 @@ The `.pio` source was also missing the `in pins, 1` capture that upstream's vers
 keeps, without which end-of-packet is never signalled. Both edge-detector programs now match
 upstream 0.7.2 instruction for instruction, and the checked-in header is regenerated from them.
 
+### Short reports no longer read past the end
+
+A HID descriptor arrives once at enumeration; the reports it describes arrive thousands of times a
+second. Nothing checked either against the length the other implied, so a device free to declare a
+thirty-byte key bitmap and then send eight bytes had every derived offset pointing past the end of
+the buffer. Four places, one mistake:
+
+- `get_report_value` tested the byte offset before incrementing it, so a field still short of bits
+  at the last byte read one past the end.
+- `extract_value` stepped past the report ID and handed on the unshifted length, leaving that same
+  bound off by one in the shifted frame - and stacking with the above for up to two bytes.
+- `_extract_kbd_other` had the same unshifted length, and walked its key array to `MAX_KEYS` with no
+  bound on the report at all: up to thirty-two bytes read out of an eight-byte report.
+- the boot-protocol path read a five-byte mouse report out of whatever it was handed, which can be
+  one byte. It now takes what arrived - buttons, X and Y are the defined part, wheel and pan only if
+  the device sent them.
+
+Measured with [deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests), whose `shortreport`
+target replays every decode case at every truncated length under ASan: 774 of 1159 truncated reports
+overread before this, none after.
+
+The same harness found a defect in [#359](https://github.com/hrvach/deskhop/pull/359) as it stood,
+fixed there and here. Recognising a key bitmap by its usage range mapping one usage per bit is
+right, but flagging the keyboard NKRO on the strength of a single such block is not - any
+keyboard-page bit field qualifies, and eight bits of function keys where the reserved byte usually
+sits was enough to route every report down the NKRO path, which never reads the ordinary key array.
+Such a keyboard kept its modifiers and lost every keycode. Deciding on the summed width of all
+blocks keeps both cases: eight bits is padding, a Wooting's four ranges are not.
+
 ### Rewritten web config page
 
 Upstream's page is already a single page with Output A and Output B side by side, but each output is
