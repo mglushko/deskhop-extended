@@ -13,8 +13,8 @@ all of the firmware are upstream's work. This repository exists to run upstream 
 that are still waiting on review there, plus two features and a rewritten config page that suit
 how I use the device day to day. Upstream remains the canonical project and is the better
 starting point for most people; this build is here for anyone who would rather not wait for those
-fixes to land. [What's extended](#whats-extended) is the exact delta; everything after it is
-upstream's own README, reproduced unchanged.
+fixes to land. [What's extended](#whats-extended) is the complete list of what differs from
+upstream; everything after it is upstream's own README, reproduced unchanged.
 
 ## What's extended
 
