@@ -142,6 +142,7 @@ configuration.</em></p>
   default, and config mode's blink is exempt, since it is the only sign the device is in it.
   Reuses the same `last_activity` timestamp the keep-awake modes run on, which the inter-board link
   already keeps current for input arriving from the other board.
+  [7e2f1b4](https://github.com/mglushko/deskhop-extended/commit/7e2f1b4)
 
 - **Every shortcut can be changed** - all thirteen of them, `Right Shift + F12 + D` included, are
   stored per action and set from the page by clicking one and pressing the combination you want.
@@ -151,6 +152,7 @@ configuration.</em></p>
   stores it, defaults it and lets the config API write it, but nothing has ever read it - the
   switch combination has always been the compile-time one - so a value other than the compiled-in
   key now takes effect instead of being discarded.
+  [0215c72](https://github.com/mglushko/deskhop-extended/commit/0215c72)
 
 Upstream's README below is reproduced unchanged, so its screenshots and its instruction to "click
 *exit* in the menu" still show upstream's page; on this build Exit sits in the header. See
