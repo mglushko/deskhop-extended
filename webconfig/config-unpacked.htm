@@ -419,6 +419,15 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 /* ---- shared settings ------------------------------------------------- */
 
 .shared { margin: 0 -24px -24px; padding: 0 24px 28px; }
+/* The same bar Output A and Output B get, pinned the same way. Both sit at the top rather
+   than stacking, because .obar is sticky inside the outputs section and lets go as that
+   section ends - which is exactly where this one arrives. */
+.sbar {
+  position: sticky; top: 0; z-index: 4;
+  display: flex; align-items: baseline; justify-content: center; gap: 12px;
+  margin: 0 -24px 20px; padding: 12px 24px;
+  background: #fff; border-bottom: 1px solid var(--chip);
+}
 /* Centred under its heading, rather than hugging the left edge below two columns. */
 .shared-in { margin: 16px auto 0; max-width: 520px; }
 .shared .lbl { margin-bottom: 10px; }
@@ -953,11 +962,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
     
     <div class="shared">
       
-      <div class="sect">
-        <span class="sect-l"></span>
-        <span class="sect-t">Shared settings</span>
+      <div class="sbar">
+        <span class="out-n">Shared settings</span>
         <span class="sect-s">apply to both outputs</span>
-        <span class="sect-l"></span>
       </div>
 
       <div class="shared-in">
