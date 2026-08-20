@@ -83,7 +83,7 @@ below was read off a screen.
   [04c397d](https://github.com/mglushko/deskhop-extended/commit/04c397d),
   [6bd6035](https://github.com/mglushko/deskhop-extended/commit/6bd6035)
 
-![The rewritten DeskHop Extended config page](img/config-page-extended.png)
+<p align="center"><img src="img/config-page-extended.png" alt="The rewritten DeskHop Extended config page"></p>
 
 <p align="center"><em>The top of the page: both outputs side by side, down through Arrangement.
 Cursor, Keep awake and the shared settings continue below it. Values shown are a sample
@@ -102,14 +102,14 @@ configuration.</em></p>
   [e8ef624](https://github.com/mglushko/deskhop-extended/commit/e8ef624),
   [de5e03c](https://github.com/mglushko/deskhop-extended/commit/de5e03c)
 
-![Export and Import in the header, and the panel Export opens](img/config-backup.png)
+<p align="center"><img src="img/config-backup.png" alt="Export and Import in the header, and the panel Export opens"></p>
 
 - **Swapping the output columns** - which output is drawn on the left is a saved setting, so the
   page can match how the boards sit on your desk. Stored in four bytes already reserved in
   `config_t`, which keeps `sizeof(config_t)` unchanged.
   [e057fda](https://github.com/mglushko/deskhop-extended/commit/e057fda)
 
-![The output bar with the Swap control](img/config-swap.png)
+<p align="center"><img src="img/config-swap.png" alt="The output bar with the Swap control"></p>
 
 - **Edge double-tap to switch** - optional: crossing between the two physical outputs requires
   pushing the cursor against the edge, pulling away and pushing again within a short window. Off by
@@ -117,7 +117,7 @@ configuration.</em></p>
   `src/include/user_config.h`. [7eda6f1](https://github.com/mglushko/deskhop-extended/commit/7eda6f1),
   [ca8b12c](https://github.com/mglushko/deskhop-extended/commit/ca8b12c)
 
-![The edge double-tap settings on the config page](img/config-dtap.png)
+<p align="center"><img src="img/config-dtap.png" alt="The edge double-tap settings on the config page"></p>
 
 - **The status LED can be told to go dark** - the LED marking the active board, a light on all
   night if your desk shares a room with a bed, can now put itself out after a set idle time, a set
@@ -125,12 +125,16 @@ configuration.</em></p>
   mode's blink is exempt, since it is the only sign the device is in it.
   [7e2f1b4](https://github.com/mglushko/deskhop-extended/commit/7e2f1b4)
 
+<p align="center"><img src="img/config-led.png" alt="The status LED modes and their two timers"></p>
+
 - **Every shortcut can be changed** - all thirteen, `Right Shift + F12 + D` included, are set from
   the page by clicking one and pressing the combination you want, read as the physical key so a
   custom layout picks the right one. Combinations the browser keeps for itself, `Ctrl + W` among
   them, are assembled by hand under Pick instead, and `config.hotkey_toggle` - stored, defaulted
   and writable upstream but never read - finally takes effect.
   [0215c72](https://github.com/mglushko/deskhop-extended/commit/0215c72)
+
+<p align="center"><img src="img/config-hotkeys.png" alt="The thirteen shortcuts, each with Pick and Default"></p>
 
 Upstream's README below is reproduced unchanged, so its screenshots and its instruction to "click
 *exit* in the menu" still show upstream's page; on this build Exit sits in the header. See
