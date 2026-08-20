@@ -12,7 +12,7 @@ other; the keyboard follows the mouse, so it feels like one machine. Nothing is 
 either computer; both just see ordinary USB HID devices, so it works across Linux, macOS and
 Windows.
 
-DeskHop Extended is a downstream integration build of
+DeskHop EX is a downstream integration build of
 [hrvach/deskhop](https://github.com/hrvach/deskhop). All the hardware, the design and effectively
 all of the firmware are upstream's work. This repository exists to run upstream *plus* the fixes
 that are still waiting on review there, plus two features and a rewritten config page that suit
@@ -83,7 +83,7 @@ below was read off a screen.
   [04c397d](https://github.com/mglushko/deskhop-extended/commit/04c397d),
   [6bd6035](https://github.com/mglushko/deskhop-extended/commit/6bd6035)
 
-<p align="center"><img src="img/config-page-extended.png" alt="The rewritten DeskHop Extended config page"></p>
+<p align="center"><img src="img/config-page-extended.png" alt="The rewritten DeskHop EX config page"></p>
 
 <p align="center"><em>The top of the page: both outputs side by side, down through Arrangement.
 Cursor, Keep awake and the shared settings continue below it. Values shown are a sample
