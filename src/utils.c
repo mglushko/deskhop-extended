@@ -65,13 +65,23 @@ void load_config(device_t *state) {
 
     /* Field map offsets are into device_t, the same base handle_api_msgs writes
        through - not into state->config. */
-    if (config_store_unpack(stored, FLASH_PAGE_SIZE, (uint8_t *)state) == CONFIG_STORE_LEGACY)
-        config_store_load_legacy(stored, FLASH_PAGE_SIZE, &state->config);
+    if (config_store_unpack(stored, CONFIG_STORE_SIZE, (uint8_t *)state) == CONFIG_STORE_LEGACY)
+        config_store_load_legacy(stored, CONFIG_STORE_SIZE, &state->config);
 }
 
 void save_config(device_t *state) {
-    config_store_pack(state->page_buffer, FLASH_PAGE_SIZE, (const uint8_t *)state);
-    write_flash_page((uint32_t)ADDR_CONFIG - XIP_BASE, state->page_buffer);
+    /* Static rather than on the stack: this runs from a USB callback, and it is written
+       whole every time, so there is nothing to keep between calls. */
+    static uint8_t buffer[CONFIG_STORE_SIZE];
+
+    config_store_pack(buffer, sizeof(buffer), (const uint8_t *)state);
+
+    /* Page 0 sits at the start of the sector, so it carries the erase; the rest are
+       programmed into the space it just cleared and must follow it. */
+    for (int page = 0; page < CONFIG_STORE_PAGES; page++) {
+        uint32_t offset = page * FLASH_PAGE_SIZE;
+        write_flash_page((uint32_t)ADDR_CONFIG - XIP_BASE + offset, buffer + offset);
+    }
 }
 
 void reset_config_timer(device_t *state) {

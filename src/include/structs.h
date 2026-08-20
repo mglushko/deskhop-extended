@@ -94,6 +94,11 @@ typedef struct {
     uint8_t led_off_mode;   /* led_off_mode_e */
     uint16_t led_off_sec;   /* How long before it goes dark, in seconds */
 
+    /* One packed combo per entry in hotkeys[] (keyboard.c), in that order.
+       See HOTKEY_PACK in keyboard.h for the layout. Zero means "keep the compiled-in
+       default", which is what a config from before this field reads as. */
+    uint32_t hotkey_cfg[NUM_HOTKEYS];
+
     /* Nothing pins the end of this struct any more: what is already in flash is a
        key-value page keyed by api_field_map (config_store.c), and a page from before
        that format is read as config_v9_t (config.h), which is frozen. Fields may be

@@ -164,6 +164,10 @@ VALUES = {
     71: 0, 72: 1, 73: 1, 75: 0, 76: 0, 77: 0, 83: 1, 84: 300, 85: 1000, 87: 0,
     # Status LED: dark after a minute of no input on the computer being driven.
     88: 1, 89: 60,
+    # Shortcuts, 90-102, one per entry in hotkeys[]. Zero is what a device that has never
+    # had one changed holds, and the page draws the compiled-in combo for it - which is
+    # what the shots should show.
+    **{key: 0 for key in range(90, 103)},
 }
 
 DRIVE = """

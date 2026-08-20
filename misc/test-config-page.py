@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+"""Drive webconfig/config.htm in a headless browser and check the controls that carry
+their own logic - the ones a rendered page cannot be eyeballed for.
+
+Runs against the shipped self-extracting artifact, not the unpacked source, so it also
+proves the page survives being packed. Nothing pairs over WebHID from a build machine,
+so the page is put into its connected state by hand and values are pushed in the way an
+incoming report would.
+
+Setup, from misc/:
+
+    python3 -m venv venv
+    ./venv/bin/pip install -r requirements.txt
+    ./venv/bin/playwright install chromium
+
+Usage: misc/venv/bin/python misc/test-config-page.py  (after `make` in webconfig/)
+"""
+import subprocess
+import sys
+from pathlib import Path
+
+from playwright.sync_api import sync_playwright
+
+REPO = Path(subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=Path(__file__).parent,
+                           capture_output=True, text=True, check=True).stdout.strip())
+
+fails = []
+
+
+def check(name, ok, detail=""):
+    print(f"  {'PASS' if ok else 'FAIL'}  {name}{'' if ok else '  <- ' + str(detail)}")
+    if not ok:
+        fails.append(name)
+
+with sync_playwright() as p:
+    browser = p.chromium.launch()
+    page = browser.new_context(viewport={"width": 1140, "height": 1200}).new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto((REPO / "webconfig/config.htm").as_uri())
+    page.wait_for_selector("#panel", timeout=15000)
+    page.evaluate("() => setConnected(true)")
+
+    check("page loads without errors", not errors, errors)
+
+    # ---- status LED --------------------------------------------------------
+    check("LED group is present", page.locator("#led-note").count() == 1)
+    page.evaluate("() => setValue(document.querySelector('[data-key=\"88\"]'), 0)")
+    check("seconds field is disabled while the LED is always on",
+          page.eval_on_selector('.led-part input.sec', "e => e.disabled"))
+
+    page.evaluate("() => setValue(document.querySelector('[data-key=\"88\"]'), 1)")
+    check("seconds field wakes up with a timeout mode",
+          not page.eval_on_selector('.led-part input.sec', "e => e.disabled"))
+
+    page.evaluate("() => setValue(document.querySelector('[data-key=\"89\"]'), 45)")
+    check("led_off_sec renders 1:1 as seconds",
+          page.eval_on_selector('.led-part input.sec', "e => e.value") == "45",
+          page.eval_on_selector('.led-part input.sec', "e => e.value"))
+
+    page.fill('.led-part input.sec', '90')
+    page.dispatch_event('.led-part input.sec', 'change')
+    check("typing seconds writes seconds",
+          page.eval_on_selector('[data-key="89"]', "e => e.value") == "90",
+          page.eval_on_selector('[data-key="89"]', "e => e.value"))
+
+    # ---- screensaver seconds still scale by a million ----------------------
+    # The timers follow the keep-awake mode, so give output A one first.
+    page.evaluate("() => setValue(document.querySelector('[data-key=\"19\"]'), 1)")
+    page.evaluate("() => setValue(document.querySelector('[data-key=\"21\"]'), 300000000)")
+    check("screensaver idle still renders as seconds",
+          page.eval_on_selector('[data-for="k21"]', "e => e.value") == "300",
+          page.eval_on_selector('[data-for="k21"]', "e => e.value"))
+
+    page.fill('[data-for="k21"]', '120')
+    page.dispatch_event('[data-for="k21"]', 'change')
+    check("screensaver idle still writes microseconds",
+          page.eval_on_selector('[data-key="21"]', "e => e.value") == "120000000",
+          page.eval_on_selector('[data-key="21"]', "e => e.value"))
+
+    # ---- shortcuts ---------------------------------------------------------
+    rows = page.locator(".hk-row")
+    check("one row per hotkey", rows.count() == 13, rows.count())
+
+    first = page.locator('.hk[data-for="k90"]')
+    check("an unset shortcut shows the compiled-in default",
+          first.text_content() == "Left Ctrl + Caps Lock", first.text_content())
+    check("its Default button is disabled while nothing is stored",
+          page.eval_on_selector('.hk-x[data-for="k90"]', "e => e.disabled"))
+
+    wipe = page.locator('.hk[data-for="k98"]')
+    check("a two-key default reads back whole",
+          wipe.text_content() == "Right Shift + F12 + D", wipe.text_content())
+
+    slow = page.locator('.hk[data-for="k91"]')
+    # Listed in bit order, which is not the order src/keyboard.c happens to write them.
+    check("a modifier-only default reads back whole",
+          slow.text_content() == "Right Ctrl + Right Alt", slow.text_content())
+
+    # Record Left Ctrl + F5 into the switch shortcut.
+    first.click()
+    check("clicking a shortcut starts recording", "hk-cap" in (first.get_attribute("class") or ""))
+    page.keyboard.down("Control")
+    page.keyboard.down("F5")
+    page.keyboard.up("F5")
+    page.keyboard.up("Control")
+
+    packed = page.eval_on_selector('[data-key="90"]', "e => e.value")
+    check("the combination is stored packed", packed == str(0x01 | (0x3e << 8)), packed)
+    check("and shown back", first.text_content() == "Left Ctrl + F5", first.text_content())
+    check("recording stops", "hk-cap" not in (first.get_attribute("class") or ""))
+    check("the row now reads as set", "hk-set" in (first.get_attribute("class") or ""))
+    check("Default is offered once something is stored",
+          not page.eval_on_selector('.hk-x[data-for="k90"]', "e => e.disabled"))
+
+    # Two keys, and Escape backing out.
+    cfg = page.locator('.hk[data-for="k100"]')
+    cfg.click()
+    page.keyboard.down("Shift")
+    page.keyboard.down("KeyQ")
+    page.keyboard.down("KeyW")
+    page.keyboard.up("KeyW")
+    page.keyboard.up("KeyQ")
+    page.keyboard.up("Shift")
+    check("two keys and a modifier are recorded",
+          page.eval_on_selector('[data-key="100"]', "e => e.value")
+          == str(0x02 | (0x14 << 8) | (0x1a << 16)),
+          page.eval_on_selector('[data-key="100"]', "e => e.value"))
+
+    lock = page.locator('.hk[data-for="k92"]')
+    before = page.eval_on_selector('[data-key="92"]', "e => e.value")
+    lock.click()
+    page.keyboard.press("Escape")
+    check("Escape leaves the shortcut alone",
+          page.eval_on_selector('[data-key="92"]', "e => e.value") == before)
+    check("and puts the label back", lock.text_content() == "Right Ctrl + K", lock.text_content())
+
+    page.click('.hk-x[data-for="k90"]')
+    check("Default clears what was stored",
+          page.eval_on_selector('[data-key="90"]', "e => e.value") == "0")
+    check("and the label goes back to the compiled-in one",
+          first.text_content() == "Left Ctrl + Caps Lock", first.text_content())
+
+    # ---- export carries the new fields -------------------------------------
+    keys = page.evaluate("() => [...backupFields()].map(e => e.dataset.key)")
+    missing = [k for k in ["88", "89", "90", "96", "102"] if k not in keys]
+    check("export covers the new settings", not missing, missing)
+
+    check("no errors raised while driving it", not errors, errors)
+    browser.close()
+
+print("\n" + ("FAILURES: " + ", ".join(fails) if fails else "ALL PASS"))
+sys.exit(1 if fails else 0)

@@ -65,6 +65,22 @@ const field_map_t api_field_map[] = {
     { 88, false, UINT8,  1, offsetof(device_t, config.led_off_mode) },
     { 89, false, UINT16, 2, offsetof(device_t, config.led_off_sec) },
 
+    /* Hotkeys, one packed combo per entry in hotkeys[] (keyboard.c) and in that order.
+       HOTKEY_CFG_FIRST_KEY (keyboard.h) has to stay pointing at the first of them. */
+    { 90,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[0])  },  /* Switch output */
+    { 91,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[1])  },  /* Slow mouse */
+    { 92,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[2])  },  /* Switch lock */
+    { 93,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[3])  },  /* Lock both screens */
+    { 94,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[4])  },  /* Gaming mode */
+    { 95,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[5])  },  /* Keep awake: pong */
+    { 96,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[6])  },  /* Keep awake: jitter */
+    { 97,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[7])  },  /* Keep awake: off */
+    { 98,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[8])  },  /* Wipe config */
+    { 99,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[9])  },  /* Record screen alignment */
+    { 100, false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[10]) },  /* Config mode */
+    { 101, false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[11]) },  /* Firmware upgrade, board A */
+    { 102, false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[12]) },  /* Firmware upgrade, board B */
+
     /* Firmware */
     { 78, true,  UINT16, 2, offsetof(device_t, _running_fw.version) },
     { 79, true,  UINT32, 4, offsetof(device_t, _running_fw.checksum) },

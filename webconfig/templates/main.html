@@ -58,6 +58,20 @@
 {{- api(item, o, n) }}
 {%- endmacro %}
 
+{# One row of the shortcut list: what it does, the combo, and a way back to the
+   default. Both buttons point at the same hidden field; renderView draws them. #}
+{% macro hotkey(item) -%}
+<div class="hk-row">
+  <span class="hk-n">{{ item.name }}</span>
+  <button type="button" class="hk" data-for="k{{ item.key }}"
+          data-def="{{ item['values'].combo }}"
+          aria-label="Shortcut for {{ item.name }}"></button>
+  <button type="button" class="hk-x" data-for="k{{ item.key }}"
+          aria-label="Restore the default shortcut for {{ item.name }}">Default</button>
+</div>
+{{- api(item, '', '') }}
+{%- endmacro %}
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -247,9 +261,10 @@
               </div>
               <span class="note">Easier from the keyboard: park the pointer on the larger screen at
                 the height of the smaller screen's top edge and press <b class="kbd">Right Shift</b>
-                <b class="kbd">F12</b> <b class="kbd">Y</b> &mdash; the LED and caps lock flash to
-                confirm. Repeat at the bottom edge; the device picks top or bottom from which half
-                the pointer is in. It saves straight away, so press Read to pull the values in here.</span>
+                <b class="kbd">F12</b> <b class="kbd">Y</b>, or whatever that is set to under
+                Shortcuts &mdash; the LED and caps lock flash to confirm. Repeat at the bottom edge;
+                the device picks top or bottom from which half the pointer is in. It saves straight
+                away, so press Read to pull the values in here.</span>
             </div>
 
           </div>
@@ -410,6 +425,21 @@
 
           <div class="led-part">
             {{ secs(C['Status LED Off After'], '', 'ledsec', 'Goes dark after', scale=1, min=1) }}
+          </div>
+        </div>
+
+        <span class="lbl">Shortcuts</span>
+        <div class="grp">
+          <span class="hint">Press a shortcut to change it: click it, hold the combination, let go.
+            Up to two keys besides the modifiers, and Esc on its own cancels. A few combinations
+            are reserved by the browser and never reach this page - pick another one for those.
+            Shortcuts are read on the board the keyboard is plugged into, so they work whichever
+            computer you are on.</span>
+
+          <div class="hk-list">
+          {%- for item in hotkeys %}
+            {{ hotkey(item) }}
+          {%- endfor %}
           </div>
         </div>
 

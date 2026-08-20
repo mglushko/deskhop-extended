@@ -28,6 +28,14 @@
    in flash: keys that are gone are skipped, keys that are new keep their default. */
 #define CONFIG_STORE_FORMAT 0x4B560001  /* 'KV', format 1 */
 
+/* How much of the config sector a stored page may use. Two flash pages rather than one:
+   the entries are {key, length, value} and the field map outgrew 256 bytes, at which
+   point config_store_pack starts dropping settings off the end rather than overrunning.
+   FLASH_CONFIG is 4 kB (misc/memory_map.ld) and ADDR_CONFIG is sector-aligned, so the
+   first page still carries the erase and the rest follow it. */
+#define CONFIG_STORE_PAGES 2
+#define CONFIG_STORE_SIZE  (CONFIG_STORE_PAGES * FLASH_PAGE_SIZE)
+
 /* config.version is writable over the API but must never be restored from storage -
    it describes the layout, not a user setting. */
 #define CONFIG_VERSION_KEY  70

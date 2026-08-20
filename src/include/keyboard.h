@@ -27,7 +27,22 @@ keyboard_t *get_or_add_keyboard(hid_interface_t *iface, uint8_t report_id);
  *  Hotkey Handling
  *==============================================================================*/
 
+/* A combo packed into the uint32 that config_t stores and the config API carries:
+   byte 0 the modifier mask, byte 1 the first key, byte 2 the second key, byte 3 unused.
+   All zero means nothing is stored and the combo compiled into hotkeys[] stands. */
+#define HOTKEY_PACK(mod, k1, k2) \
+    ((uint32_t)(uint8_t)(mod) | ((uint32_t)(uint8_t)(k1) << 8) | ((uint32_t)(uint8_t)(k2) << 16))
+#define HOTKEY_MOD(packed)  ((uint8_t)((packed) & 0xff))
+#define HOTKEY_KEY1(packed) ((uint8_t)(((packed) >> 8) & 0xff))
+#define HOTKEY_KEY2(packed) ((uint8_t)(((packed) >> 16) & 0xff))
+
+/* api_field_map index of hotkey_cfg[0]; the rest follow it in order (protocol.c). */
+#define HOTKEY_CFG_FIRST_KEY 90
+
+extern hotkey_combo_t hotkeys[];
+
 bool check_specific_hotkey(hotkey_combo_t, const hid_keyboard_report_t *);
+void hotkeys_apply_config(device_t *);
 
 /*==============================================================================
  *  Keyboard State Management

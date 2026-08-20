@@ -19,7 +19,7 @@ static void check(const char *name, int ok, const char *detail) {
 /* api_field_map offsets are into device_t, so that is what pack and unpack read and
    write through - exactly as handle_api_msgs does. */
 static device_t device_a, device_b;
-static uint8_t page[FLASH_PAGE_SIZE];
+static uint8_t page[CONFIG_STORE_SIZE];
 
 /* Give every writable field a distinct value so a mix-up cannot go unnoticed. */
 static void fill(device_t *state, uint8_t seed) {
@@ -62,8 +62,8 @@ int main(void) {
     fill(&device_a, 11);
     size_t used = config_store_pack(page, sizeof(page), (const uint8_t *)&device_a);
 
-    snprintf(detail, sizeof(detail), "%zu bytes of %d", used, FLASH_PAGE_SIZE);
-    check("worst case payload fits one flash page", used > 0 && used <= FLASH_PAGE_SIZE, detail);
+    snprintf(detail, sizeof(detail), "%zu bytes of %d", used, CONFIG_STORE_SIZE);
+    check("worst case payload fits the stored config", used > 0 && used <= CONFIG_STORE_SIZE, detail);
 
     /* Printed either way: config_store_pack stops rather than overrun, so a field map
        that outgrows the page loses settings silently. This is the headroom left. */
@@ -159,7 +159,7 @@ int main(void) {
         config_store_pack(page, sizeof(page), (const uint8_t *)&device_a);
         config_store_header_t h;
         memcpy(&h, page, sizeof(h));
-        h.length = FLASH_PAGE_SIZE;
+        h.length = CONFIG_STORE_SIZE;
         memcpy(page, &h, sizeof(h));
         check("an oversized length is rejected",
               config_store_unpack(page, sizeof(page), (uint8_t *)&device_b) == CONFIG_STORE_NONE, "");
@@ -186,12 +186,13 @@ int main(void) {
         config_t out;
         memset(&out, 0, sizeof(out));
         out.led_off_sec = 42;
+        out.hotkey_cfg[0] = 0xABCDEF;
 
         check("legacy page loads", config_store_load_legacy(page, sizeof(page), &out), "");
         check("legacy values survive the migration",
               out.jump_threshold == 1234 && out.output[1].screen_count == 3, "");
         check("fields added after the legacy layout keep their defaults",
-              out.led_off_sec == 42, "");
+              out.led_off_sec == 42 && out.hotkey_cfg[0] == 0xABCDEF, "");
 
         legacy.checksum ^= 0xFF;
         memcpy(page, &legacy, sizeof(legacy));

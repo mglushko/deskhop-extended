@@ -258,6 +258,7 @@ void handle_flash_led_msg(uart_packet_t *packet, device_t *state) {
 void handle_wipe_config_msg(uart_packet_t *packet, device_t *state) {
     wipe_config();
     load_config(state);
+    hotkeys_apply_config(state);
 }
 
 /* Update screensaver state after received message */
@@ -308,6 +309,10 @@ void handle_api_msgs(uart_packet_t *packet, device_t *state) {
             return;
 
         memcpy(ptr, &packet->data[1], map->len);
+
+        /* hotkeys[] is a copy of the stored combos, so it has to be told. */
+        if (value_idx >= HOTKEY_CFG_FIRST_KEY && value_idx < HOTKEY_CFG_FIRST_KEY + NUM_HOTKEYS)
+            hotkeys_apply_config(state);
     }
     else if (packet->type == GET_VAL_MSG) {
         uart_packet_t response = {.type=GET_VAL_MSG, .data={[0] = value_idx}};

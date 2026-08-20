@@ -123,6 +123,15 @@ configuration.</em></p>
   Reuses the same `last_activity` timestamp the keep-awake modes run on, which the inter-board link
   already keeps current for input arriving from the other board.
 
+- **Every shortcut can be changed** - all thirteen of them, `Right Shift + F12 + D` included, are
+  stored per action and set from the page by clicking one and pressing the combination you want.
+  The page reads the physical key rather than what the host layout makes of it, so a custom layout
+  picks the right one; a shortcut left alone keeps whatever the firmware was built with, and
+  Default puts it back. This also gives `config.hotkey_toggle` something to do at last: upstream
+  stores it, defaults it and lets the config API write it, but nothing has ever read it - the
+  switch combination has always been the compile-time one - so a value other than the compiled-in
+  key now takes effect instead of being discarded.
+
 Upstream's README below is reproduced unchanged, so its screenshots and its instruction to "click
 *exit* in the menu" still show upstream's page; on this build Exit sits in the header. See
 [Web configuration mode](#web-configuration-mode) for how to reach the page.
@@ -147,8 +156,10 @@ Upstream's README below is reproduced unchanged, so its screenshots and its inst
   `api_field_map`, so fields can be added, removed or reordered without invalidating flash, and a
   config written by an older build is migrated on first boot. Exercised on the host by
   `misc/hosttest/run.sh`. [7c8fe38](https://github.com/mglushko/deskhop-extended/commit/7c8fe38)
-  The pre key-value layout it migrates from is frozen as its own struct, so `config_t` can grow
-  without invalidating what is already in anyone's flash.
+  The stored page spans two flash pages rather than one, since the field map outgrew 256 bytes and
+  `config_store_pack` drops settings off the end rather than overrun; the pre key-value layout it
+  migrates from is frozen as its own struct, so `config_t` can grow without invalidating what is
+  already in anyone's flash.
 
 ### Notes
 

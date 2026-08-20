@@ -395,6 +395,30 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
 /* Same idea, following the status LED mode. */
 .led-part { display: flex; flex-direction: column; gap: 11px; max-width: 190px; }
+
+/* ---- shortcuts ------------------------------------------------------- */
+
+/* One row per action: what it does, the combination it answers to, and a way back
+   to the combination the firmware was built with. */
+.hk-list { display: flex; flex-direction: column; gap: 6px; }
+.hk-row { display: flex; align-items: center; gap: 8px; }
+.hk-n { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--fg); }
+.hk {
+  flex: 0 0 auto; min-width: 140px; max-width: 268px; height: 28px; padding: 0 10px;
+  border: 1px solid var(--bd-soft); border-radius: 4px;
+  background: #fff; color: var(--muted); font-size: 12px; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hk:hover { border-color: var(--accent); color: var(--accent-dk); }
+/* Set on this device, rather than left at what the firmware was built with. */
+.hk-set { border-color: var(--bd); color: var(--fg); font-weight: 700; }
+.hk-cap { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
+.hk-x {
+  flex: 0 0 auto; height: 28px; padding: 0 6px;
+  border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer;
+}
+.hk-x:hover { color: var(--accent-dk); }
+.hk-x[disabled] { color: var(--bd-lock); cursor: default; }
 .row-btn { display: flex; gap: 8px; margin-bottom: 24px; }
 .box { padding: 16px; background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: 4px; }
 .box .lbl { color: var(--warn-fg); margin-bottom: 6px; }

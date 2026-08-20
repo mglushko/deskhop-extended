@@ -23,6 +23,9 @@
 
 
 
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -427,6 +430,30 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
 /* Same idea, following the status LED mode. */
 .led-part { display: flex; flex-direction: column; gap: 11px; max-width: 190px; }
+
+/* ---- shortcuts ------------------------------------------------------- */
+
+/* One row per action: what it does, the combination it answers to, and a way back
+   to the combination the firmware was built with. */
+.hk-list { display: flex; flex-direction: column; gap: 6px; }
+.hk-row { display: flex; align-items: center; gap: 8px; }
+.hk-n { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--fg); }
+.hk {
+  flex: 0 0 auto; min-width: 140px; max-width: 268px; height: 28px; padding: 0 10px;
+  border: 1px solid var(--bd-soft); border-radius: 4px;
+  background: #fff; color: var(--muted); font-size: 12px; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hk:hover { border-color: var(--accent); color: var(--accent-dk); }
+/* Set on this device, rather than left at what the firmware was built with. */
+.hk-set { border-color: var(--bd); color: var(--fg); font-weight: 700; }
+.hk-cap { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
+.hk-x {
+  flex: 0 0 auto; height: 28px; padding: 0 6px;
+  border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer;
+}
+.hk-x:hover { color: var(--accent-dk); }
+.hk-x[disabled] { color: var(--bd-lock); cursor: default; }
 .row-btn { display: flex; gap: 8px; margin-bottom: 24px; }
 .box { padding: 16px; background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: 4px; }
 .box .lbl { color: var(--warn-fg); margin-bottom: 6px; }
@@ -645,9 +672,10 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
               </div>
               <span class="note">Easier from the keyboard: park the pointer on the larger screen at
                 the height of the smaller screen's top edge and press <b class="kbd">Right Shift</b>
-                <b class="kbd">F12</b> <b class="kbd">Y</b> &mdash; the LED and caps lock flash to
-                confirm. Repeat at the bottom edge; the device picks top or bottom from which half
-                the pointer is in. It saves straight away, so press Read to pull the values in here.</span>
+                <b class="kbd">F12</b> <b class="kbd">Y</b>, or whatever that is set to under
+                Shortcuts &mdash; the LED and caps lock flash to confirm. Repeat at the bottom edge;
+                the device picks top or bottom from which half the pointer is in. It saves straight
+                away, so press Read to pull the values in here.</span>
             </div>
 
           </div>
@@ -710,9 +738,10 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
               </div>
               <span class="note">Easier from the keyboard: park the pointer on the larger screen at
                 the height of the smaller screen's top edge and press <b class="kbd">Right Shift</b>
-                <b class="kbd">F12</b> <b class="kbd">Y</b> &mdash; the LED and caps lock flash to
-                confirm. Repeat at the bottom edge; the device picks top or bottom from which half
-                the pointer is in. It saves straight away, so press Read to pull the values in here.</span>
+                <b class="kbd">F12</b> <b class="kbd">Y</b>, or whatever that is set to under
+                Shortcuts &mdash; the LED and caps lock flash to confirm. Repeat at the bottom edge;
+                the device picks top or bottom from which half the pointer is in. It saves straight
+                away, so press Read to pull the values in here.</span>
             </div>
 
           </div>
@@ -988,6 +1017,122 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
     <span class="num-u">sec</span>
   </span>
 </label><input class="api " type="hidden" id="k89" data-key="89" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-n="ledsec" >
+          </div>
+        </div>
+
+        <span class="lbl">Shortcuts</span>
+        <div class="grp">
+          <span class="hint">Press a shortcut to change it: click it, hold the combination, let go.
+            Up to two keys besides the modifiers, and Esc on its own cancels. A few combinations
+            are reserved by the browser and never reach this page - pick another one for those.
+            Shortcuts are read on the board the keyboard is plugged into, so they work whichever
+            computer you are on.</span>
+
+          <div class="hk-list">
+            <div class="hk-row">
+  <span class="hk-n">Switch output</span>
+  <button type="button" class="hk" data-for="k90"
+          data-def="14593"
+          aria-label="Shortcut for Switch output"></button>
+  <button type="button" class="hk-x" data-for="k90"
+          aria-label="Restore the default shortcut for Switch output">Default</button>
+</div><input class="api " type="hidden" id="k90" data-key="90" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+            <div class="hk-row">
+  <span class="hk-n">Slow mouse</span>
+  <button type="button" class="hk" data-for="k91"
+          data-def="80"
+          aria-label="Shortcut for Slow mouse"></button>
+  <button type="button" class="hk-x" data-for="k91"
+          aria-label="Restore the default shortcut for Slow mouse">Default</button>
+</div><input class="api " type="hidden" id="k91" data-key="91" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+            <div class="hk-row">
+  <span class="hk-n">Lock switching</span>
+  <button type="button" class="hk" data-for="k92"
+          data-def="3600"
+          aria-label="Shortcut for Lock switching"></button>
+  <button type="button" class="hk-x" data-for="k92"
+          aria-label="Restore the default shortcut for Lock switching">Default</button>
+</div><input class="api " type="hidden" id="k92" data-key="92" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+            <div class="hk-row">
+  <span class="hk-n">Lock both screens</span>
+  <button type="button" class="hk" data-for="k93"
+          data-def="3856"
+          aria-label="Shortcut for Lock both screens"></button>
+  <button type="button" class="hk-x" data-for="k93"
+          aria-label="Restore the default shortcut for Lock both screens">Default</button>
+</div><input class="api " type="hidden" id="k93" data-key="93" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+            <div class="hk-row">
+  <span class="hk-n">Gaming mode</span>
+  <button type="button" class="hk" data-for="k94"
+          data-def="2593"
+          aria-label="Shortcut for Gaming mode"></button>
+  <button type="button" class="hk-x" data-for="k94"
+          aria-label="Restore the default shortcut for Gaming mode">Default</button>
+</div><input class="api " type="hidden" id="k94" data-key="94" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+            <div class="hk-row">
+  <span class="hk-n">Keep awake: pong</span>
+  <button type="button" class="hk" data-for="k95"
+          data-def="5665"
+          aria-label="Shortcut for Keep awake: pong"></button>
+  <button type="button" class="hk-x" data-for="k95"
+          aria-label="Restore the default shortcut for Keep awake: pong">Default</button>
+</div><input class="api " type="hidden" id="k95" data-key="95" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+            <div class="hk-row">
+  <span class="hk-n">Keep awake: jitter</span>
+  <button type="button" class="hk" data-for="k96"
+          data-def="3361"
+          aria-label="Shortcut for Keep awake: jitter"></button>
+  <button type="button" class="hk-x" data-for="k96"
+          aria-label="Restore the default shortcut for Keep awake: jitter">Default</button>
+</div><input class="api " type="hidden" id="k96" data-key="96" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+            <div class="hk-row">
+  <span class="hk-n">Keep awake: off</span>
+  <button type="button" class="hk" data-for="k97"
+          data-def="6945"
+          aria-label="Shortcut for Keep awake: off"></button>
+  <button type="button" class="hk-x" data-for="k97"
+          aria-label="Restore the default shortcut for Keep awake: off">Default</button>
+</div><input class="api " type="hidden" id="k97" data-key="97" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+            <div class="hk-row">
+  <span class="hk-n">Wipe config</span>
+  <button type="button" class="hk" data-for="k98"
+          data-def="476448"
+          aria-label="Shortcut for Wipe config"></button>
+  <button type="button" class="hk-x" data-for="k98"
+          aria-label="Restore the default shortcut for Wipe config">Default</button>
+</div><input class="api " type="hidden" id="k98" data-key="98" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+            <div class="hk-row">
+  <span class="hk-n">Record screen alignment</span>
+  <button type="button" class="hk" data-for="k99"
+          data-def="1852704"
+          aria-label="Shortcut for Record screen alignment"></button>
+  <button type="button" class="hk-x" data-for="k99"
+          aria-label="Restore the default shortcut for Record screen alignment">Default</button>
+</div><input class="api " type="hidden" id="k99" data-key="99" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+            <div class="hk-row">
+  <span class="hk-n">Config mode</span>
+  <button type="button" class="hk" data-for="k100"
+          data-def="1181217"
+          aria-label="Shortcut for Config mode"></button>
+  <button type="button" class="hk-x" data-for="k100"
+          aria-label="Restore the default shortcut for Config mode">Default</button>
+</div><input class="api " type="hidden" id="k100" data-key="100" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+            <div class="hk-row">
+  <span class="hk-n">Firmware upgrade, board A</span>
+  <button type="button" class="hk" data-for="k101"
+          data-def="1058"
+          aria-label="Shortcut for Firmware upgrade, board A"></button>
+  <button type="button" class="hk-x" data-for="k101"
+          aria-label="Restore the default shortcut for Firmware upgrade, board A">Default</button>
+</div><input class="api " type="hidden" id="k101" data-key="101" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+            <div class="hk-row">
+  <span class="hk-n">Firmware upgrade, board B</span>
+  <button type="button" class="hk" data-for="k102"
+          data-def="1314"
+          aria-label="Shortcut for Firmware upgrade, board B"></button>
+  <button type="button" class="hk-x" data-for="k102"
+          aria-label="Restore the default shortcut for Firmware upgrade, board B">Default</button>
+</div><input class="api " type="hidden" id="k102" data-key="102" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
           </div>
         </div>
 
@@ -1642,6 +1787,15 @@ function renderView(view, element) {
     view.setAttribute('aria-checked', element.checked);
   } else if (list.contains('sec')) {
     view.value = Math.round((parseInt(value, 10) || 0) / (Number(view.dataset.scale) || 1));
+  } else if (list.contains('hk')) {
+    /* Nothing stored means the combo the firmware was built with, which the page knows
+       from form.py rather than from the device - the device only reports the zero. */
+    const stored = parseInt(value, 10) || 0;
+
+    view.textContent = comboLabel(stored || (parseInt(view.dataset.def, 10) || 0));
+    view.classList.toggle('hk-set', !!stored);
+  } else if (list.contains('hk-x')) {
+    view.disabled = !(parseInt(value, 10) || 0);
   } else if (list.contains('swap')) {
     view.setAttribute('aria-pressed', value != 0);
   } else if (list.contains('pctv')) {
@@ -1795,6 +1949,170 @@ function useFullEdge(output) {
   setApi(apiValue(output, 'bb'), MAX_SCREEN_COORD);
 }
 
+/* --------------------------------------------------------------- shortcuts */
+
+/* event.code -> HID usage. The firmware matches the usage the keyboard sends, so what
+   counts is the physical key and not what the host layout makes of it - which is the
+   point for anyone typing on a custom one. A key missing from here cannot go into a
+   shortcut, because there would be no number to store for it. */
+const KEY_CODES = {
+  Enter: 0x28, Escape: 0x29, Backspace: 0x2a, Tab: 0x2b, Space: 0x2c, Minus: 0x2d,
+  Equal: 0x2e, BracketLeft: 0x2f, BracketRight: 0x30, Backslash: 0x31, Semicolon: 0x33,
+  Quote: 0x34, Backquote: 0x35, Comma: 0x36, Period: 0x37, Slash: 0x38, CapsLock: 0x39,
+  PrintScreen: 0x46, ScrollLock: 0x47, Pause: 0x48, Insert: 0x49, Home: 0x4a,
+  PageUp: 0x4b, Delete: 0x4c, End: 0x4d, PageDown: 0x4e, ArrowRight: 0x4f,
+  ArrowLeft: 0x50, ArrowDown: 0x51, ArrowUp: 0x52, NumLock: 0x53,
+};
+
+/* The runs the HID tables lay out consecutively, rather than 60 more lines of them. */
+for (let i = 0; i < 26; i++)
+  KEY_CODES['Key' + String.fromCharCode(65 + i)] = 0x04 + i;
+
+for (let i = 1; i <= 9; i++)
+  KEY_CODES['Digit' + i] = 0x1d + i;
+
+KEY_CODES.Digit0 = 0x27;
+
+for (let i = 1; i <= 12; i++) {
+  KEY_CODES['F' + i] = 0x39 + i;         /* F1 - F12  are 0x3a - 0x45 */
+  KEY_CODES['F' + (i + 12)] = 0x67 + i;  /* F13 - F24 are 0x68 - 0x73 */
+}
+
+/* Modifier bits, matching KEYBOARD_MODIFIER_* in TinyUSB and the mask config_t stores. */
+const MOD_CODES = {
+  ControlLeft: 0x01, ShiftLeft: 0x02, AltLeft: 0x04, MetaLeft: 0x08,
+  ControlRight: 0x10, ShiftRight: 0x20, AltRight: 0x40, MetaRight: 0x80,
+};
+
+const MOD_NAMES = ['Left Ctrl', 'Left Shift', 'Left Alt', 'Left Gui',
+                   'Right Ctrl', 'Right Shift', 'Right Alt', 'Right Gui'];
+
+const KEY_NAMES = {
+  0x28: 'Enter', 0x29: 'Esc', 0x2a: 'Backspace', 0x2b: 'Tab', 0x2c: 'Space', 0x2d: '-',
+  0x2e: '=', 0x2f: '[', 0x30: ']', 0x31: '\\', 0x33: ';', 0x34: "'", 0x35: '`',
+  0x36: ',', 0x37: '.', 0x38: '/', 0x39: 'Caps Lock', 0x46: 'Print Screen',
+  0x47: 'Scroll Lock', 0x48: 'Pause', 0x49: 'Insert', 0x4a: 'Home', 0x4b: 'Page Up',
+  0x4c: 'Delete', 0x4d: 'End', 0x4e: 'Page Down', 0x4f: 'Right', 0x50: 'Left',
+  0x51: 'Down', 0x52: 'Up', 0x53: 'Num Lock',
+};
+
+function keyLabel(usage) {
+  if (KEY_NAMES[usage])
+    return KEY_NAMES[usage];
+
+  if (usage >= 0x04 && usage <= 0x1d)
+    return String.fromCharCode(65 + usage - 0x04);
+
+  if (usage >= 0x1e && usage <= 0x26)
+    return String(usage - 0x1d);
+
+  if (usage === 0x27)
+    return '0';
+
+  if (usage >= 0x3a && usage <= 0x45)
+    return 'F' + (usage - 0x39);
+
+  if (usage >= 0x68 && usage <= 0x73)
+    return 'F' + (usage - 0x67 + 12);
+
+  /* Something the device holds that this page has no name for - show it as it is
+     stored rather than pretending the shortcut is unset. */
+  return '0x' + usage.toString(16);
+}
+
+/* A combo packed the way config_t stores it: modifier mask, then up to two keys.
+   See HOTKEY_PACK in src/include/keyboard.h. */
+function comboLabel(packed) {
+  const parts = [];
+
+  MOD_NAMES.forEach((name, bit) => {
+    if (packed & (1 << bit))
+      parts.push(name);
+  });
+
+  [(packed >> 8) & 0xff, (packed >> 16) & 0xff].forEach(usage => {
+    if (usage)
+      parts.push(keyLabel(usage));
+  });
+
+  return parts.length ? parts.join(' + ') : 'Not set';
+}
+
+var capturing = null;
+var captureMods = 0;
+var captureKeys = [];
+
+function packCapture() {
+  return captureMods | ((captureKeys[0] || 0) << 8) | ((captureKeys[1] || 0) << 16);
+}
+
+function startCapture(button) {
+  stopCapture(false);
+
+  capturing = button;
+  captureMods = 0;
+  captureKeys = [];
+
+  button.classList.add('hk-cap');
+  button.textContent = 'Press the combination';
+}
+
+function stopCapture(commit) {
+  const button = capturing;
+
+  if (!button)
+    return;
+
+  capturing = null;
+  button.classList.remove('hk-cap');
+
+  if (commit && (captureMods || captureKeys.length))
+    setApi(el(button.dataset.for), packCapture());
+
+  /* Unconditionally, because setApi says nothing when the combo has not changed and
+     the button would be left reading "Press the combination". */
+  renderView(button, el(button.dataset.for));
+}
+
+function captureKeydown(event) {
+  if (!capturing)
+    return;
+
+  event.preventDefault();
+
+  /* Esc on its own backs out. Held with anything else it is just another key. */
+  if (event.code === 'Escape' && !captureMods && !captureKeys.length)
+    return stopCapture(false);
+
+  const bit = MOD_CODES[event.code];
+
+  if (bit)
+    captureMods |= bit;
+  else {
+    const usage = KEY_CODES[event.code];
+
+    /* No HID usage to store - ignore it rather than record something the device
+       could never match. */
+    if (!usage)
+      return;
+
+    if (captureKeys.indexOf(usage) === -1 && captureKeys.length < 2)
+      captureKeys.push(usage);
+  }
+
+  capturing.textContent = comboLabel(packCapture());
+}
+
+/* Letting go of anything ends it, so a combo is recorded as it is released rather
+   than growing for as long as the keyboard is held down. */
+function captureKeyup(event) {
+  if (!capturing)
+    return;
+
+  event.preventDefault();
+  stopCapture(true);
+}
+
 /* ------------------------------------------------------------- listeners */
 
 function menuClick(event) {
@@ -1829,6 +2147,16 @@ function panelClick(event) {
 
   if (!button || button.disabled)
     return;
+
+  /* Reaching for anything else abandons a shortcut being recorded. */
+  if (capturing && button !== capturing)
+    stopCapture(false);
+
+  if (button.classList.contains('hk'))
+    return startCapture(button);
+
+  if (button.classList.contains('hk-x'))
+    return setApi(el(button.dataset.for), 0);
 
   const group = button.closest('.seg');
   if (group)
@@ -1946,6 +2274,12 @@ window.addEventListener('load', function () {
         closeDevice();
     });
 
+  window.addEventListener('keydown', captureKeydown, true);
+  window.addEventListener('keyup', captureKeyup, true);
+
+  /* A shortcut half recorded when the window loses focus is not a shortcut. */
+  window.addEventListener('blur', function () { stopCapture(false); });
+
   document.querySelectorAll('.api').forEach(syncControl);
   refreshColumnOrder();
   refreshVersions();
@@ -1978,7 +2312,7 @@ window.addEventListener('load', function () {
 
   /* key -> {name, default}, straight from form.py, so this file never carries a second
      copy of the field map. */
-  const FIELDS = {"11": {"default": 1, "name": "Screen Count"}, "12": {"default": 16, "name": "Speed X"}, "13": {"default": 16, "name": "Speed Y"}, "14": {"default": 0, "name": "Border Top"}, "15": {"default": 0, "name": "Border Bottom"}, "16": {"default": 1, "name": "Operating System"}, "17": {"default": 1, "name": "Screen Position"}, "18": {"default": 0, "name": "Cursor Park Position"}, "19": {"default": 0, "name": "Mode"}, "20": {"default": 0, "name": "Only If Inactive"}, "21": {"default": 0, "name": "Idle Time (\u03bcs)"}, "22": {"default": 0, "name": "Max Time (\u03bcs)"}, "41": {"default": 1, "name": "Screen Count"}, "42": {"default": 16, "name": "Speed X"}, "43": {"default": 16, "name": "Speed Y"}, "44": {"default": 0, "name": "Border Top"}, "45": {"default": 0, "name": "Border Bottom"}, "46": {"default": 1, "name": "Operating System"}, "47": {"default": 1, "name": "Screen Position"}, "48": {"default": 0, "name": "Cursor Park Position"}, "49": {"default": 0, "name": "Mode"}, "50": {"default": 0, "name": "Only If Inactive"}, "51": {"default": 0, "name": "Idle Time (\u03bcs)"}, "52": {"default": 0, "name": "Max Time (\u03bcs)"}, "71": {"default": 0, "name": "Force Mouse Boot Mode"}, "72": {"default": 0, "name": "Force KBD Boot Protocol"}, "73": {"default": 0, "name": "KBD LED as Indicator"}, "75": {"default": 0, "name": "Enable Acceleration"}, "76": {"default": 0, "name": "Enforce Ports"}, "77": {"default": 0, "name": "Jump Threshold"}, "78": {"default": 0, "name": "Running FW version"}, "79": {"default": 0, "name": "Running FW checksum"}, "83": {"default": 0, "name": "Edge Double-Tap to Switch"}, "84": {"default": 300, "name": "Double-Tap Time (ms)"}, "85": {"default": 1000, "name": "Double-Tap Pull-Back Distance"}, "86": {"default": 0, "name": "Other board FW version"}, "87": {"default": 1, "name": "Swap Columns"}, "88": {"default": 0, "name": "Status LED"}, "89": {"default": 30, "name": "Status LED Off After"}};
+  const FIELDS = {"11": {"default": 1, "name": "Screen Count"}, "12": {"default": 16, "name": "Speed X"}, "13": {"default": 16, "name": "Speed Y"}, "14": {"default": 0, "name": "Border Top"}, "15": {"default": 0, "name": "Border Bottom"}, "16": {"default": 1, "name": "Operating System"}, "17": {"default": 1, "name": "Screen Position"}, "18": {"default": 0, "name": "Cursor Park Position"}, "19": {"default": 0, "name": "Mode"}, "20": {"default": 0, "name": "Only If Inactive"}, "21": {"default": 0, "name": "Idle Time (\u03bcs)"}, "22": {"default": 0, "name": "Max Time (\u03bcs)"}, "41": {"default": 1, "name": "Screen Count"}, "42": {"default": 16, "name": "Speed X"}, "43": {"default": 16, "name": "Speed Y"}, "44": {"default": 0, "name": "Border Top"}, "45": {"default": 0, "name": "Border Bottom"}, "46": {"default": 1, "name": "Operating System"}, "47": {"default": 1, "name": "Screen Position"}, "48": {"default": 0, "name": "Cursor Park Position"}, "49": {"default": 0, "name": "Mode"}, "50": {"default": 0, "name": "Only If Inactive"}, "51": {"default": 0, "name": "Idle Time (\u03bcs)"}, "52": {"default": 0, "name": "Max Time (\u03bcs)"}, "71": {"default": 0, "name": "Force Mouse Boot Mode"}, "72": {"default": 0, "name": "Force KBD Boot Protocol"}, "73": {"default": 0, "name": "KBD LED as Indicator"}, "75": {"default": 0, "name": "Enable Acceleration"}, "76": {"default": 0, "name": "Enforce Ports"}, "77": {"default": 0, "name": "Jump Threshold"}, "78": {"default": 0, "name": "Running FW version"}, "79": {"default": 0, "name": "Running FW checksum"}, "83": {"default": 0, "name": "Edge Double-Tap to Switch"}, "84": {"default": 300, "name": "Double-Tap Time (ms)"}, "85": {"default": 1000, "name": "Double-Tap Pull-Back Distance"}, "86": {"default": 0, "name": "Other board FW version"}, "87": {"default": 1, "name": "Swap Columns"}, "88": {"default": 0, "name": "Status LED"}, "89": {"default": 30, "name": "Status LED Off After"}, "90": {"default": 0, "name": "Switch output"}, "91": {"default": 0, "name": "Slow mouse"}, "92": {"default": 0, "name": "Lock switching"}, "93": {"default": 0, "name": "Lock both screens"}, "94": {"default": 0, "name": "Gaming mode"}, "95": {"default": 0, "name": "Keep awake: pong"}, "96": {"default": 0, "name": "Keep awake: jitter"}, "97": {"default": 0, "name": "Keep awake: off"}, "98": {"default": 0, "name": "Wipe config"}, "99": {"default": 0, "name": "Record screen alignment"}, "100": {"default": 0, "name": "Config mode"}, "101": {"default": 0, "name": "Firmware upgrade, board A"}, "102": {"default": 0, "name": "Firmware upgrade, board B"}};
 
   const PACKET_LEN = 12;      /* 0xaa 0x55, type, 8 data bytes, checksum */
   const KEY_OFFSET = 3;       /* where data[0] lands in a direct report */

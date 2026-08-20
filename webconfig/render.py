@@ -66,7 +66,7 @@ def api_fields():
     never carries a second copy of the field map."""
     fields = {}
 
-    for item in output_A() + output_B() + output_status() + output_config():
+    for item in output_A() + output_B() + output_status() + output_config() + output_hotkeys():
         if item["elem"] == "label":
             continue
         fields[item["key"]] = {"name": item["name"], "default": item["default"] or 0}
@@ -100,6 +100,7 @@ if __name__ == "__main__":
         screen_B=output_B(),
         status=output_status(),
         config=output_config(),
+        hotkeys=output_hotkeys(),
         build=build_version(),
     )
 

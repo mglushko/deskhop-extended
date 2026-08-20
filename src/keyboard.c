@@ -108,6 +108,84 @@ hotkey_combo_t hotkeys[] = {
      .acknowledge    = true,
      .action_handler = &fw_upgrade_hotkey_handler_B}};
 
+/* config_t stores one packed combo per entry, in this order, so the two have to agree.
+   Adding a hotkey means adding an api_field_map entry for it (protocol.c) and a row on
+   the config page - and appending it here, never inserting, or every stored combo shifts
+   onto the wrong action. */
+_Static_assert(ARRAY_SIZE(hotkeys) == NUM_HOTKEYS, "NUM_HOTKEYS no longer matches hotkeys[]");
+
+/* True only while hotkeys[] is being rewritten, on the other core. */
+static volatile bool hotkeys_updating = false;
+
+/* Replace the compiled-in combos with whatever is configured.
+
+   hotkeys[] is overwritten in place, so the combos it was compiled with are captured on
+   the first call - which is initial_setup, before any config has been applied. That is
+   what an entry set back to zero returns to, and what a wiped config restores, without
+   needing a reboot. */
+void hotkeys_apply_config(device_t *state) {
+    static uint32_t compiled_in[NUM_HOTKEYS];
+    static bool captured = false;
+
+    /* This runs on core0, from the config endpoint, while core1 is matching keyboard
+       reports against the same table. Rather than reason about a half-written entry,
+       take the table out of use while it is rewritten - the cost is missing a hotkey
+       for the few microseconds it takes. */
+    hotkeys_updating = true;
+
+    if (!captured) {
+        for (int n = 0; n < NUM_HOTKEYS; n++)
+            compiled_in[n] = HOTKEY_PACK(hotkeys[n].modifier, hotkeys[n].keys[0], hotkeys[n].keys[1]);
+        captured = true;
+    }
+
+    for (int n = 0; n < NUM_HOTKEYS; n++) {
+        uint32_t packed = state->config.hotkey_cfg[n];
+
+        /* config.hotkey_toggle names the key for the switch combo and predates this
+           array. Nothing has ever read it - it is stored, defaulted and writable over the
+           config API, while the combo that switches outputs has always been the
+           compile-time one. Honour it here, but only where the array says nothing and
+           only where it says something other than the key this firmware was built with,
+           so a stored config that merely carries the default is not read as an
+           instruction to change anything. */
+        if (n == 0 && !packed
+            && state->config.hotkey_toggle != HOTKEY_TOGGLE
+            && state->config.hotkey_toggle != HID_KEY_NONE)
+            packed = HOTKEY_PACK(HOTKEY_MODIFIER, state->config.hotkey_toggle, HID_KEY_NONE);
+
+        if (!packed)
+            packed = compiled_in[n];
+
+        uint8_t modifier = HOTKEY_MOD(packed);
+        uint8_t keys[2]  = {0};
+        uint8_t count    = 0;
+
+        /* HID_KEY_NONE pads the empty slots of every keyboard report there is, so a
+           combo that asks for it matches everything and takes the keyboard with it.
+           Only the keys actually set are carried over, and the second key standing
+           alone becomes the first. */
+        if (HOTKEY_KEY1(packed) != HID_KEY_NONE)
+            keys[count++] = HOTKEY_KEY1(packed);
+
+        if (HOTKEY_KEY2(packed) != HID_KEY_NONE)
+            keys[count++] = HOTKEY_KEY2(packed);
+
+        /* A combo with neither a key nor a modifier can never fire - leave the entry
+           as it stands rather than store something inert. */
+        if (count == 0 && modifier == 0)
+            continue;
+
+        hotkeys[n].modifier  = modifier;
+        hotkeys[n].key_count = count;
+
+        memset(hotkeys[n].keys, 0, sizeof(hotkeys[n].keys));
+        memcpy(hotkeys[n].keys, keys, count);
+    }
+
+    hotkeys_updating = false;
+}
+
 /* ============================================================ *
  * Detect if any hotkeys were pressed
  * ============================================================ */
@@ -141,6 +219,10 @@ bool check_specific_hotkey(hotkey_combo_t keypress, const hid_keyboard_report_t 
 
 /* Go through the list of hotkeys, check if any of them match. */
 hotkey_combo_t *check_all_hotkeys(hid_keyboard_report_t *report, device_t *state) {
+    /* Set while the other core is rewriting the table (hotkeys_apply_config above). */
+    if (hotkeys_updating)
+        return NULL;
+
     for (int n = 0; n < ARRAY_SIZE(hotkeys); n++) {
         if (check_specific_hotkey(hotkeys[n], report)) {
             return &hotkeys[n];
