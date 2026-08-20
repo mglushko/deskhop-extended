@@ -101,26 +101,23 @@ configuration.</em></p>
   skipped, and nothing reaches the device until you press Save.
   [e8ef624](https://github.com/mglushko/deskhop-extended/commit/e8ef624),
   [de5e03c](https://github.com/mglushko/deskhop-extended/commit/de5e03c)
+
+![Export and Import in the header, and the panel Export opens](img/config-backup.png)
+
 - **Swapping the output columns** - which output is drawn on the left is a saved setting, so the
   page can match how the boards sit on your desk. Stored in four bytes already reserved in
   `config_t`, which keeps `sizeof(config_t)` unchanged.
   [e057fda](https://github.com/mglushko/deskhop-extended/commit/e057fda)
+
+![The output bar with the Swap control](img/config-swap.png)
+
 - **Edge double-tap to switch** - optional: crossing between the two physical outputs requires
   pushing the cursor against the edge, pulling away and pushing again within a short window. Off by
   default, virtual desktop switching unaffected, configurable on the page or in
   `src/include/user_config.h`. [7eda6f1](https://github.com/mglushko/deskhop-extended/commit/7eda6f1),
   [ca8b12c](https://github.com/mglushko/deskhop-extended/commit/ca8b12c)
 
-<details>
-  <summary>Close-ups: the export panel, the Swap control, the edge double-tap group</summary>
-
-  ![Export and Import in the header, and the panel Export opens](img/config-backup.png)
-
-  ![The output bar with the Swap control](img/config-swap.png)
-
-  ![The edge double-tap settings on the config page](img/config-dtap.png)
-
-</details>
+![The edge double-tap settings on the config page](img/config-dtap.png)
 
 Upstream's README below is reproduced unchanged, so its screenshots and its instruction to "click
 *exit* in the menu" still show upstream's page; on this build Exit sits in the header. See
