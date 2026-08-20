@@ -36,7 +36,10 @@ so they can be used before (and regardless of whether) they land upstream:
 Each entry links the commit, which carries the full account: the symptom per device, what was
 measured and why the fix is shaped the way it is. Measurements come from
 [deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests), which replays real descriptors
-and reports against this firmware's own decode paths.
+and reports against this firmware's own decode paths. Its
+[emulator](https://github.com/mglushko/deskhop-hidtests/tree/main/emu) turns a spare RP2040 into
+the device in question, so a finding can be confirmed on hardware rather than only on the host:
+the `gmovw3` below was read off a screen.
 
 - **Short reports no longer read past the end** - a descriptor arrives once at enumeration and the
   reports it describes arrive thousands of times a second, and nothing checked either against the
