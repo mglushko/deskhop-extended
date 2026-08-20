@@ -149,7 +149,9 @@ configuration.</em></p>
   stored per action and set from the page by clicking one and pressing the combination you want.
   The page reads the physical key rather than what the host layout makes of it, so a custom layout
   picks the right one; a shortcut left alone keeps whatever the firmware was built with, and
-  Default puts it back. This also gives `config.hotkey_toggle` something to do at last: upstream
+  Default puts it back. A browser keeps a few combinations for itself - `Ctrl + Shift + Tab` and
+  `Ctrl + W` among them - and never passes on the keypress, so those are assembled by hand under
+  Pick instead. This also gives `config.hotkey_toggle` something to do at last: upstream
   stores it, defaults it and lets the config API write it, but nothing has ever read it - the
   switch combination has always been the compile-time one - so a value other than the compiled-in
   key now takes effect instead of being discarded.

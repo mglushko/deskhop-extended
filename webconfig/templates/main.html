@@ -66,6 +66,11 @@
   <button type="button" class="hk" data-for="k{{ item.key }}"
           data-def="{{ item['values'].combo }}"
           aria-label="Shortcut for {{ item.name }}"></button>
+  {#- data-hk rather than data-for: anything carrying data-for is drawn by renderView,
+      which would write the stored number over the label. #}
+  <button type="button" class="hk-p" data-hk="k{{ item.key }}" data-name="{{ item.name }}"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for {{ item.name }} without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k{{ item.key }}"
           aria-label="Restore the default shortcut for {{ item.name }}">Default</button>
 </div>
@@ -436,10 +441,12 @@
         <span class="lbl">Shortcuts</span>
         <div class="grp">
           <span class="hint">Press a shortcut to change it: click it, hold the combination, let go.
-            Up to two keys besides the modifiers, and Esc on its own cancels. A few combinations
-            are reserved by the browser and never reach this page - pick another one for those.
-            Shortcuts are read on the board the keyboard is plugged into, so they work whichever
-            computer you are on.</span>
+            Up to two keys besides the modifiers, and Esc on its own cancels. Some combinations -
+            <b class="kbd">Ctrl</b> <b class="kbd">Shift</b> <b class="kbd">Tab</b> and
+            <b class="kbd">Ctrl</b> <b class="kbd">W</b> among them - are reserved by the browser
+            and never reach this page; <b>Pick</b> sets those without pressing them. Shortcuts are
+            read on the board the keyboard is plugged into, so they work whichever computer you are
+            on.</span>
 
           <div class="hk-list">
           {%- for item in hotkeys %}
@@ -447,6 +454,29 @@
           {%- endfor %}
           </div>
 
+          {# Pick opens this: the same combination, set by hand, for anything the browser
+             will not let the page hear. One editor for the whole list. #}
+          <div class="hk-ed" id="hk-ed" hidden>
+            <span class="hk-ed-t" id="hk-ed-t"></span>
+            <div class="hk-mods" id="hk-mods">
+              <button type="button" data-m="1" aria-pressed="false">L Ctrl</button>
+              <button type="button" data-m="2" aria-pressed="false">L Shift</button>
+              <button type="button" data-m="4" aria-pressed="false">L Alt</button>
+              <button type="button" data-m="8" aria-pressed="false">L Gui</button>
+              <button type="button" data-m="16" aria-pressed="false">R Ctrl</button>
+              <button type="button" data-m="32" aria-pressed="false">R Shift</button>
+              <button type="button" data-m="64" aria-pressed="false">R Alt</button>
+              <button type="button" data-m="128" aria-pressed="false">R Gui</button>
+            </div>
+            <div class="hk-ed-keys">
+              <label>Key <select id="hk-k1"></select></label>
+              <label>and <select id="hk-k2"></select></label>
+            </div>
+            <div class="row-btn">
+              <button type="button" class="btn btn-quiet" id="hk-ed-set">Set</button>
+              <button type="button" class="btn btn-quiet" id="hk-ed-cancel">Cancel</button>
+            </div>
+          </div>
         </div>
 
         <span class="lbl">Diagnostics</span>

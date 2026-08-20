@@ -152,6 +152,39 @@ with sync_playwright() as p:
           page.eval_on_selector('[data-key="92"]', "e => e.value") == before)
     check("and puts the label back", lock.text_content() == "Right Ctrl + K", lock.text_content())
 
+    # Pick: the fallback for combinations the browser keeps to itself, which the recorder
+    # can never hear. Ctrl+Shift+Tab is one of them.
+    page.click('.hk-p[data-hk="k92"]')
+    check("Pick opens the editor on that shortcut",
+          page.eval_on_selector('#hk-ed-t', "e => e.textContent") == "Lock switching",
+          page.eval_on_selector('#hk-ed-t', "e => e.textContent"))
+
+    prefill = '''() => [[...document.querySelectorAll('#hk-mods button')]
+        .filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.m),
+        el('hk-k1').value, el('hk-k2').value]'''
+    check("prefilled from the combination the row is showing",
+          page.evaluate(prefill) == [["16"], "14", "0"], page.evaluate(prefill))
+
+    page.click('#hk-mods button[data-m="16"]')   # drop Right Ctrl
+    page.click('#hk-mods button[data-m="1"]')    # Left Ctrl
+    page.click('#hk-mods button[data-m="2"]')    # Left Shift
+    page.select_option('#hk-k1', '43')           # Tab
+    page.select_option('#hk-k2', '0')
+    page.click('#hk-ed-set')
+    check("a combination the browser eats can still be set by hand",
+          page.eval_on_selector('[data-key="92"]', "e => e.value") == str(0x01 | 0x02 | (0x2b << 8)),
+          page.eval_on_selector('[data-key="92"]', "e => e.value"))
+    check("and reads back as itself",
+          page.locator('.hk[data-for="k92"]').text_content() == "Left Ctrl + Left Shift + Tab",
+          page.locator('.hk[data-for="k92"]').text_content())
+    check("the editor closes once it is set", page.eval_on_selector('#hk-ed', "e => e.hidden"))
+
+    page.click('.hk-p[data-hk="k92"]')
+    page.click('#hk-mods button[data-m="128"]')
+    page.click('#hk-ed-cancel')
+    check("Cancel leaves the shortcut as it was",
+          page.eval_on_selector('[data-key="92"]', "e => e.value") == str(0x01 | 0x02 | (0x2b << 8)))
+
     page.click('.hk-x[data-for="k90"]')
     check("Default clears what was stored",
           page.eval_on_selector('[data-key="90"]', "e => e.value") == "0")

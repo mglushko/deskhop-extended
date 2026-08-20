@@ -415,13 +415,34 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 /* Set on this device, rather than left at what the firmware was built with. */
 .hk-set { border-color: var(--bd); color: var(--fg); font-weight: 700; }
 .hk-cap { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
-.hk-x {
+.hk-p, .hk-x {
   flex: 0 0 auto; height: 28px; padding: 0 6px;
   border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer;
 }
-.hk-x:hover { color: var(--accent-dk); }
+.hk-p:hover, .hk-x:hover { color: var(--accent-dk); }
 .hk-x[disabled] { color: var(--bd-lock); cursor: default; }
 
+/* Pick opens this under the list, for the combinations the browser keeps to itself. */
+.hk-ed {
+  margin-top: 12px; padding: 12px;
+  border: 1px solid var(--line); border-radius: 4px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.hk-ed-t { font-size: 12.5px; font-weight: 700; color: var(--fg); }
+.hk-mods { display: flex; flex-wrap: wrap; gap: 4px; }
+.hk-mods button {
+  height: 26px; padding: 0 8px;
+  border: 1px solid var(--bd-soft); border-radius: 4px;
+  background: #fff; color: var(--fg); font-size: 12px; cursor: pointer;
+}
+.hk-mods button[aria-pressed=true] { background: var(--fg); border-color: var(--fg); color: #fff; font-weight: 700; }
+.hk-ed-keys { display: flex; align-items: center; gap: 14px; font-size: 12.5px; color: var(--muted); }
+.hk-ed-keys select {
+  height: 28px; margin-left: 4px;
+  border: 1px solid var(--bd); border-radius: 4px;
+  background: #fff; color: var(--fg); font-size: 12.5px;
+}
+.hk-ed .row-btn { margin-bottom: 0; }
 .row-btn { display: flex; gap: 8px; margin-bottom: 24px; }
 .box { padding: 16px; background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: 4px; }
 .box .lbl { color: var(--warn-fg); margin-bottom: 6px; }

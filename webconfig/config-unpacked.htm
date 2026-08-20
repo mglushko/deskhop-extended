@@ -450,13 +450,34 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 /* Set on this device, rather than left at what the firmware was built with. */
 .hk-set { border-color: var(--bd); color: var(--fg); font-weight: 700; }
 .hk-cap { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
-.hk-x {
+.hk-p, .hk-x {
   flex: 0 0 auto; height: 28px; padding: 0 6px;
   border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer;
 }
-.hk-x:hover { color: var(--accent-dk); }
+.hk-p:hover, .hk-x:hover { color: var(--accent-dk); }
 .hk-x[disabled] { color: var(--bd-lock); cursor: default; }
 
+/* Pick opens this under the list, for the combinations the browser keeps to itself. */
+.hk-ed {
+  margin-top: 12px; padding: 12px;
+  border: 1px solid var(--line); border-radius: 4px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.hk-ed-t { font-size: 12.5px; font-weight: 700; color: var(--fg); }
+.hk-mods { display: flex; flex-wrap: wrap; gap: 4px; }
+.hk-mods button {
+  height: 26px; padding: 0 8px;
+  border: 1px solid var(--bd-soft); border-radius: 4px;
+  background: #fff; color: var(--fg); font-size: 12px; cursor: pointer;
+}
+.hk-mods button[aria-pressed=true] { background: var(--fg); border-color: var(--fg); color: #fff; font-weight: 700; }
+.hk-ed-keys { display: flex; align-items: center; gap: 14px; font-size: 12.5px; color: var(--muted); }
+.hk-ed-keys select {
+  height: 28px; margin-left: 4px;
+  border: 1px solid var(--bd); border-radius: 4px;
+  background: #fff; color: var(--fg); font-size: 12.5px;
+}
+.hk-ed .row-btn { margin-bottom: 0; }
 .row-btn { display: flex; gap: 8px; margin-bottom: 24px; }
 .box { padding: 16px; background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: 4px; }
 .box .lbl { color: var(--warn-fg); margin-bottom: 6px; }
@@ -1038,10 +1059,12 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
         <span class="lbl">Shortcuts</span>
         <div class="grp">
           <span class="hint">Press a shortcut to change it: click it, hold the combination, let go.
-            Up to two keys besides the modifiers, and Esc on its own cancels. A few combinations
-            are reserved by the browser and never reach this page - pick another one for those.
-            Shortcuts are read on the board the keyboard is plugged into, so they work whichever
-            computer you are on.</span>
+            Up to two keys besides the modifiers, and Esc on its own cancels. Some combinations -
+            <b class="kbd">Ctrl</b> <b class="kbd">Shift</b> <b class="kbd">Tab</b> and
+            <b class="kbd">Ctrl</b> <b class="kbd">W</b> among them - are reserved by the browser
+            and never reach this page; <b>Pick</b> sets those without pressing them. Shortcuts are
+            read on the board the keyboard is plugged into, so they work whichever computer you are
+            on.</span>
 
           <div class="hk-list">
             <div class="hk-row">
@@ -1049,6 +1072,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k90"
           data-def="14593"
           aria-label="Shortcut for Switch output"></button>
+  <button type="button" class="hk-p" data-hk="k90" data-name="Switch output"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for Switch output without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k90"
           aria-label="Restore the default shortcut for Switch output">Default</button>
 </div><input class="api " type="hidden" id="k90" data-key="90" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
@@ -1057,6 +1083,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k91"
           data-def="80"
           aria-label="Shortcut for Slow mouse"></button>
+  <button type="button" class="hk-p" data-hk="k91" data-name="Slow mouse"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for Slow mouse without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k91"
           aria-label="Restore the default shortcut for Slow mouse">Default</button>
 </div><input class="api " type="hidden" id="k91" data-key="91" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
@@ -1065,6 +1094,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k92"
           data-def="3600"
           aria-label="Shortcut for Lock switching"></button>
+  <button type="button" class="hk-p" data-hk="k92" data-name="Lock switching"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for Lock switching without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k92"
           aria-label="Restore the default shortcut for Lock switching">Default</button>
 </div><input class="api " type="hidden" id="k92" data-key="92" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
@@ -1073,6 +1105,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k93"
           data-def="3856"
           aria-label="Shortcut for Lock both screens"></button>
+  <button type="button" class="hk-p" data-hk="k93" data-name="Lock both screens"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for Lock both screens without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k93"
           aria-label="Restore the default shortcut for Lock both screens">Default</button>
 </div><input class="api " type="hidden" id="k93" data-key="93" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
@@ -1081,6 +1116,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k94"
           data-def="2593"
           aria-label="Shortcut for Gaming mode"></button>
+  <button type="button" class="hk-p" data-hk="k94" data-name="Gaming mode"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for Gaming mode without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k94"
           aria-label="Restore the default shortcut for Gaming mode">Default</button>
 </div><input class="api " type="hidden" id="k94" data-key="94" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
@@ -1089,6 +1127,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k95"
           data-def="5665"
           aria-label="Shortcut for Keep awake: pong"></button>
+  <button type="button" class="hk-p" data-hk="k95" data-name="Keep awake: pong"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for Keep awake: pong without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k95"
           aria-label="Restore the default shortcut for Keep awake: pong">Default</button>
 </div><input class="api " type="hidden" id="k95" data-key="95" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
@@ -1097,6 +1138,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k96"
           data-def="3361"
           aria-label="Shortcut for Keep awake: jitter"></button>
+  <button type="button" class="hk-p" data-hk="k96" data-name="Keep awake: jitter"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for Keep awake: jitter without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k96"
           aria-label="Restore the default shortcut for Keep awake: jitter">Default</button>
 </div><input class="api " type="hidden" id="k96" data-key="96" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
@@ -1105,6 +1149,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k97"
           data-def="6945"
           aria-label="Shortcut for Keep awake: off"></button>
+  <button type="button" class="hk-p" data-hk="k97" data-name="Keep awake: off"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for Keep awake: off without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k97"
           aria-label="Restore the default shortcut for Keep awake: off">Default</button>
 </div><input class="api " type="hidden" id="k97" data-key="97" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
@@ -1113,6 +1160,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k98"
           data-def="476448"
           aria-label="Shortcut for Wipe config"></button>
+  <button type="button" class="hk-p" data-hk="k98" data-name="Wipe config"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for Wipe config without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k98"
           aria-label="Restore the default shortcut for Wipe config">Default</button>
 </div><input class="api " type="hidden" id="k98" data-key="98" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
@@ -1121,6 +1171,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k99"
           data-def="1852704"
           aria-label="Shortcut for Record screen alignment"></button>
+  <button type="button" class="hk-p" data-hk="k99" data-name="Record screen alignment"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for Record screen alignment without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k99"
           aria-label="Restore the default shortcut for Record screen alignment">Default</button>
 </div><input class="api " type="hidden" id="k99" data-key="99" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
@@ -1129,6 +1182,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k100"
           data-def="1181217"
           aria-label="Shortcut for Config mode"></button>
+  <button type="button" class="hk-p" data-hk="k100" data-name="Config mode"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for Config mode without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k100"
           aria-label="Restore the default shortcut for Config mode">Default</button>
 </div><input class="api " type="hidden" id="k100" data-key="100" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
@@ -1137,6 +1193,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k101"
           data-def="1058"
           aria-label="Shortcut for Firmware upgrade, board A"></button>
+  <button type="button" class="hk-p" data-hk="k101" data-name="Firmware upgrade, board A"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for Firmware upgrade, board A without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k101"
           aria-label="Restore the default shortcut for Firmware upgrade, board A">Default</button>
 </div><input class="api " type="hidden" id="k101" data-key="101" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
@@ -1145,11 +1204,36 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k102"
           data-def="1314"
           aria-label="Shortcut for Firmware upgrade, board B"></button>
+  <button type="button" class="hk-p" data-hk="k102" data-name="Firmware upgrade, board B"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for Firmware upgrade, board B without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k102"
           aria-label="Restore the default shortcut for Firmware upgrade, board B">Default</button>
 </div><input class="api " type="hidden" id="k102" data-key="102" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
           </div>
 
+          
+          <div class="hk-ed" id="hk-ed" hidden>
+            <span class="hk-ed-t" id="hk-ed-t"></span>
+            <div class="hk-mods" id="hk-mods">
+              <button type="button" data-m="1" aria-pressed="false">L Ctrl</button>
+              <button type="button" data-m="2" aria-pressed="false">L Shift</button>
+              <button type="button" data-m="4" aria-pressed="false">L Alt</button>
+              <button type="button" data-m="8" aria-pressed="false">L Gui</button>
+              <button type="button" data-m="16" aria-pressed="false">R Ctrl</button>
+              <button type="button" data-m="32" aria-pressed="false">R Shift</button>
+              <button type="button" data-m="64" aria-pressed="false">R Alt</button>
+              <button type="button" data-m="128" aria-pressed="false">R Gui</button>
+            </div>
+            <div class="hk-ed-keys">
+              <label>Key <select id="hk-k1"></select></label>
+              <label>and <select id="hk-k2"></select></label>
+            </div>
+            <div class="row-btn">
+              <button type="button" class="btn btn-quiet" id="hk-ed-set">Set</button>
+              <button type="button" class="btn btn-quiet" id="hk-ed-cancel">Cancel</button>
+            </div>
+          </div>
         </div>
 
         <span class="lbl">Diagnostics</span>
@@ -2072,6 +2156,7 @@ function packCapture() {
 
 function startCapture(button) {
   stopCapture(false);
+  closeHotkeyEditor();
 
   capturing = button;
   captureMods = 0;
@@ -2137,6 +2222,62 @@ function captureKeyup(event) {
   stopCapture(true);
 }
 
+/* Setting a combination without pressing it.
+
+   The browser keeps a few combinations for itself - Ctrl+Shift+Tab and Ctrl+W among them -
+   and a page never sees the keydown, so recording cannot reach them. Pick opens this on the
+   combination as it stands and lets it be assembled instead. */
+var editing = null;
+
+function fillKeyOptions(select) {
+  const usages = [...new Set(Object.values(KEY_CODES))].sort((a, b) => a - b);
+
+  select.appendChild(new Option('None', '0'));
+  usages.forEach(usage => select.appendChild(new Option(keyLabel(usage), String(usage))));
+}
+
+function openHotkeyEditor(pick) {
+  stopCapture(false);
+
+  editing = el(pick.dataset.hk);
+
+  /* What the row shows: the stored combination, or the compiled-in one it is sitting on. */
+  const view = document.querySelector(`.hk[data-for="${editing.id}"]`);
+  const packed = (parseInt(editing.value, 10) || 0) || (parseInt(view.dataset.def, 10) || 0);
+
+  el('hk-ed-t').textContent = pick.dataset.name;
+
+  document.querySelectorAll('#hk-mods button').forEach(button => {
+    button.setAttribute('aria-pressed', String(!!(packed & Number(button.dataset.m))));
+  });
+
+  el('hk-k1').value = String((packed >> 8) & 0xff);
+  el('hk-k2').value = String((packed >> 16) & 0xff);
+  el('hk-ed').hidden = false;
+  el('hk-ed').scrollIntoView({ block: 'nearest' });
+}
+
+function applyHotkeyEditor() {
+  if (!editing)
+    return;
+
+  let packed = (Number(el('hk-k1').value) || 0) << 8 | (Number(el('hk-k2').value) || 0) << 16;
+
+  document.querySelectorAll('#hk-mods button').forEach(button => {
+    if (button.getAttribute('aria-pressed') === 'true')
+      packed |= Number(button.dataset.m);
+  });
+
+  /* Nothing chosen is the same thing Default says: fall back to the compiled-in combo. */
+  setApi(editing, packed);
+  closeHotkeyEditor();
+}
+
+function closeHotkeyEditor() {
+  editing = null;
+  el('hk-ed').hidden = true;
+}
+
 /* ------------------------------------------------------------- listeners */
 
 function menuClick(event) {
@@ -2179,8 +2320,21 @@ function panelClick(event) {
   if (button.classList.contains('hk'))
     return startCapture(button);
 
+  if (button.classList.contains('hk-p'))
+    return openHotkeyEditor(button);
+
   if (button.classList.contains('hk-x'))
     return setApi(el(button.dataset.for), 0);
+
+  if (button.dataset.m)
+    return button.setAttribute('aria-pressed',
+                               String(button.getAttribute('aria-pressed') !== 'true'));
+
+  if (button.id === 'hk-ed-set')
+    return applyHotkeyEditor();
+
+  if (button.id === 'hk-ed-cancel')
+    return closeHotkeyEditor();
 
   const group = button.closest('.seg');
   if (group)
@@ -2297,6 +2451,9 @@ window.addEventListener('load', function () {
       if (event.device === device)
         closeDevice();
     });
+
+  fillKeyOptions(el('hk-k1'));
+  fillKeyOptions(el('hk-k2'));
 
   window.addEventListener('keydown', captureKeydown, true);
   window.addEventListener('keyup', captureKeyup, true);

@@ -875,6 +875,7 @@ function packCapture() {
 
 function startCapture(button) {
   stopCapture(false);
+  closeHotkeyEditor();
 
   capturing = button;
   captureMods = 0;
@@ -940,6 +941,62 @@ function captureKeyup(event) {
   stopCapture(true);
 }
 
+/* Setting a combination without pressing it.
+
+   The browser keeps a few combinations for itself - Ctrl+Shift+Tab and Ctrl+W among them -
+   and a page never sees the keydown, so recording cannot reach them. Pick opens this on the
+   combination as it stands and lets it be assembled instead. */
+var editing = null;
+
+function fillKeyOptions(select) {
+  const usages = [...new Set(Object.values(KEY_CODES))].sort((a, b) => a - b);
+
+  select.appendChild(new Option('None', '0'));
+  usages.forEach(usage => select.appendChild(new Option(keyLabel(usage), String(usage))));
+}
+
+function openHotkeyEditor(pick) {
+  stopCapture(false);
+
+  editing = el(pick.dataset.hk);
+
+  /* What the row shows: the stored combination, or the compiled-in one it is sitting on. */
+  const view = document.querySelector(`.hk[data-for="${editing.id}"]`);
+  const packed = (parseInt(editing.value, 10) || 0) || (parseInt(view.dataset.def, 10) || 0);
+
+  el('hk-ed-t').textContent = pick.dataset.name;
+
+  document.querySelectorAll('#hk-mods button').forEach(button => {
+    button.setAttribute('aria-pressed', String(!!(packed & Number(button.dataset.m))));
+  });
+
+  el('hk-k1').value = String((packed >> 8) & 0xff);
+  el('hk-k2').value = String((packed >> 16) & 0xff);
+  el('hk-ed').hidden = false;
+  el('hk-ed').scrollIntoView({ block: 'nearest' });
+}
+
+function applyHotkeyEditor() {
+  if (!editing)
+    return;
+
+  let packed = (Number(el('hk-k1').value) || 0) << 8 | (Number(el('hk-k2').value) || 0) << 16;
+
+  document.querySelectorAll('#hk-mods button').forEach(button => {
+    if (button.getAttribute('aria-pressed') === 'true')
+      packed |= Number(button.dataset.m);
+  });
+
+  /* Nothing chosen is the same thing Default says: fall back to the compiled-in combo. */
+  setApi(editing, packed);
+  closeHotkeyEditor();
+}
+
+function closeHotkeyEditor() {
+  editing = null;
+  el('hk-ed').hidden = true;
+}
+
 /* ------------------------------------------------------------- listeners */
 
 function menuClick(event) {
@@ -982,8 +1039,21 @@ function panelClick(event) {
   if (button.classList.contains('hk'))
     return startCapture(button);
 
+  if (button.classList.contains('hk-p'))
+    return openHotkeyEditor(button);
+
   if (button.classList.contains('hk-x'))
     return setApi(el(button.dataset.for), 0);
+
+  if (button.dataset.m)
+    return button.setAttribute('aria-pressed',
+                               String(button.getAttribute('aria-pressed') !== 'true'));
+
+  if (button.id === 'hk-ed-set')
+    return applyHotkeyEditor();
+
+  if (button.id === 'hk-ed-cancel')
+    return closeHotkeyEditor();
 
   const group = button.closest('.seg');
   if (group)
@@ -1100,6 +1170,9 @@ window.addEventListener('load', function () {
       if (event.device === device)
         closeDevice();
     });
+
+  fillKeyOptions(el('hk-k1'));
+  fillKeyOptions(el('hk-k2'));
 
   window.addEventListener('keydown', captureKeydown, true);
   window.addEventListener('keyup', captureKeyup, true);
