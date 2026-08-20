@@ -399,6 +399,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 .grp { display: flex; flex-direction: column; gap: 11px; margin-bottom: 24px; }
 .chk { display: flex; align-items: center; gap: 8px; }
 .chk input { margin: 0; }
+/* Each box keeps its own description, lined up under the label rather than the box. */
+.chk-f { display: flex; flex-direction: column; gap: 5px; }
+.chk-f .hint { margin-left: 21px; }
 /* Follows the double-tap toggle: stacks like .grp, minus the trailing gap,
    since it sits inside one. Dimmed through .off when the feature is off. */
 .dtap-part { display: flex; flex-direction: column; gap: 11px; }

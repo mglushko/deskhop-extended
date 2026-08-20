@@ -434,6 +434,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 .grp { display: flex; flex-direction: column; gap: 11px; margin-bottom: 24px; }
 .chk { display: flex; align-items: center; gap: 8px; }
 .chk input { margin: 0; }
+/* Each box keeps its own description, lined up under the label rather than the box. */
+.chk-f { display: flex; flex-direction: column; gap: 5px; }
+.chk-f .hint { margin-left: 21px; }
 /* Follows the double-tap toggle: stacks like .grp, minus the trailing gap,
    since it sits inside one. Dimmed through .off when the feature is off. */
 .dtap-part { display: flex; flex-direction: column; gap: 11px; }
@@ -963,7 +966,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
     <div class="shared">
       
       <div class="sbar">
-        <span class="out-n">Shared settings</span>
+        <span class="out-n">Shared Settings</span>
         <span class="sect-s">apply to both outputs</span>
       </div>
 
@@ -1018,20 +1021,40 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
         <span class="lbl">Mouse</span>
         <div class="grp">
-          <label class="chk"><input class="api " type="checkbox" id="k71" data-key="71" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Force Mouse Boot Mode</span></label>
-          <label class="chk"><input class="api " type="checkbox" id="k75" data-key="75" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Enable Acceleration</span></label>
+          <div class="chk-f">
+  <label class="chk"><input class="api " type="checkbox" id="k71" data-key="71" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Force Mouse Boot Mode</span></label>
+  <span class="hint">Ask the mouse for the plain boot format - three buttons and movement - instead of
+                  its own. Worth a try if a mouse misbehaves; the wheel and any extra buttons may go
+                  with it, though plenty of mice send them anyway.</span>
+</div>
+          <div class="chk-f">
+  <label class="chk"><input class="api " type="checkbox" id="k75" data-key="75" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Enable Acceleration</span></label>
+  <span class="hint">Carry the pointer further the faster the mouse moves, on a curve up to four times
+                  the distance. Off passes the movement through as it comes.</span>
+</div>
         </div>
 
         <span class="lbl">Device flags</span>
         <div class="grp">
-          <label class="chk"><input class="api " type="checkbox" id="k72" data-key="72" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Force KBD Boot Protocol</span></label>
-          <label class="chk"><input class="api " type="checkbox" id="k73" data-key="73" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>KBD LED as Indicator</span></label>
+          <div class="chk-f">
+  <label class="chk"><input class="api " type="checkbox" id="k72" data-key="72" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Force KBD Boot Protocol</span></label>
+  <span class="hint">Ask the keyboard for the plain 8-byte boot format instead of its own. Fixes
+                  keyboards whose reports are read wrongly, at the price of n-key rollover: six keys
+                  at once, plus the modifiers.</span>
+</div>
+          <div class="chk-f">
+  <label class="chk"><input class="api " type="checkbox" id="k73" data-key="73" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>KBD LED as Indicator</span></label>
+  <span class="hint">Give up the keyboard's caps lock light to show which computer is selected - lit
+                  means Output B. Num and scroll lock go on doing their own job.</span>
+</div>
         </div>
 
         <span class="lbl">Wiring</span>
         <div class="grp">
-          <label class="chk"><input class="api " type="checkbox" id="k76" data-key="76" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Enforce Ports</span></label>
-          <span class="hint">Requires the keyboard and mouse to be plugged into their designated ports.</span>
+          <div class="chk-f">
+  <label class="chk"><input class="api " type="checkbox" id="k76" data-key="76" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Enforce Ports</span></label>
+  <span class="hint">Requires the keyboard and mouse to be plugged into their designated ports.</span>
+</div>
         </div>
 
         <span class="lbl">Status LED</span>

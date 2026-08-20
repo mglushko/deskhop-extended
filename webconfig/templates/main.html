@@ -40,8 +40,13 @@
 </div>
 {%- endmacro %}
 
-{% macro chk(item, label) -%}
-<label class="chk">{{ api(item, '', '', 'checkbox') }}<span>{{ label }}</span></label>
+{% macro chk(item, label, hint='') -%}
+<div class="chk-f">
+  <label class="chk">{{ api(item, '', '', 'checkbox') }}<span>{{ label }}</span></label>
+  {%- if hint %}
+  <span class="hint">{{ hint }}</span>
+  {%- endif %}
+</div>
 {%- endmacro %}
 
 {# Seconds in the form, whatever the field is stored in: scale is what one second is
@@ -359,7 +364,7 @@
       {# The same bar the outputs get, and pinned the same way: this is the third thing on
          the page, not a footnote under the other two. #}
       <div class="sbar">
-        <span class="out-n">Shared settings</span>
+        <span class="out-n">Shared Settings</span>
         <span class="sect-s">apply to both outputs</span>
       </div>
 
@@ -408,20 +413,30 @@
 
         <span class="lbl">Mouse</span>
         <div class="grp">
-          {{ chk(C['Force Mouse Boot Mode'], 'Force Mouse Boot Mode') }}
-          {{ chk(C['Enable Acceleration'], 'Enable Acceleration') }}
+          {{ chk(C['Force Mouse Boot Mode'], 'Force Mouse Boot Mode',
+                 'Ask the mouse for the plain boot format - three buttons and movement - instead of
+                  its own. Worth a try if a mouse misbehaves; the wheel and any extra buttons may go
+                  with it, though plenty of mice send them anyway.') }}
+          {{ chk(C['Enable Acceleration'], 'Enable Acceleration',
+                 'Carry the pointer further the faster the mouse moves, on a curve up to four times
+                  the distance. Off passes the movement through as it comes.') }}
         </div>
 
         <span class="lbl">Device flags</span>
         <div class="grp">
-          {{ chk(C['Force KBD Boot Protocol'], 'Force KBD Boot Protocol') }}
-          {{ chk(C['KBD LED as Indicator'], 'KBD LED as Indicator') }}
+          {{ chk(C['Force KBD Boot Protocol'], 'Force KBD Boot Protocol',
+                 'Ask the keyboard for the plain 8-byte boot format instead of its own. Fixes
+                  keyboards whose reports are read wrongly, at the price of n-key rollover: six keys
+                  at once, plus the modifiers.') }}
+          {{ chk(C['KBD LED as Indicator'], 'KBD LED as Indicator',
+                 'Give up the keyboard\'s caps lock light to show which computer is selected - lit
+                  means Output B. Num and scroll lock go on doing their own job.') }}
         </div>
 
         <span class="lbl">Wiring</span>
         <div class="grp">
-          {{ chk(C['Enforce Ports'], 'Enforce Ports') }}
-          <span class="hint">Requires the keyboard and mouse to be plugged into their designated ports.</span>
+          {{ chk(C['Enforce Ports'], 'Enforce Ports',
+                 'Requires the keyboard and mouse to be plugged into their designated ports.') }}
         </div>
 
         <span class="lbl">Status LED</span>
