@@ -1,5 +1,25 @@
 # DeskHop Extended - Fast Desktop Switching
 
+> [!CAUTION]
+> **Flashing this firmware takes both boards with it, and going back to DeskHop means holding
+> BOOTSEL on both of them.**
+>
+> A board pushes its firmware onto the other one as soon as the other reports a lower version
+> (`handle_heartbeat_msg`, once a second), and this build numbers itself above upstream on
+> purpose - v1.06 reports `1106` against upstream v0.78's `178`. So flashing one board flashes
+> the pair, and flashing a single board back to
+> [hrvach/deskhop](https://github.com/hrvach/deskhop) only gets it overwritten again the moment
+> the two are powered up together.
+>
+> **To go back to upstream:** unplug both boards, then take each one on its own - hold its
+> BOOTSEL button while plugging it in, and copy upstream's `.uf2` onto the `RPI-RP2` drive that
+> appears. Do both before they are running side by side again.
+>
+> Settings do not make the trip in either direction: each build stores its configuration in a
+> form the other refuses, so whichever firmware you land on comes up on its compiled-in
+> defaults. Nothing on either computer is touched - both only ever see ordinary USB HID
+> devices - and neither board can be bricked this way, since BOOTSEL is in ROM.
+
 DeskHop is a small piece of open hardware (two Raspberry Pi Picos with a galvanic isolator
 between them) that lets a single keyboard and mouse drive two computers. You switch with a
 keyboard shortcut, or simply by dragging the mouse pointer off the edge of one screen and onto the
