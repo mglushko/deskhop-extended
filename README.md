@@ -137,6 +137,16 @@ Upstream's README below is reproduced unchanged, so its screenshots and its inst
 
 ### Notes
 
+**Mouse speed is a ratio, not two knobs.** `speed_x` and `speed_y` look independent on the config
+page and are not. Absolute positions go out on a 0..32767 grid in both axes, and that grid spans the
+screen's width in one and its height in the other, so equal physical movement needs `speed_x * width`
+to equal `speed_y * height`: the ratio is the screen's aspect ratio and nothing else. Raise both
+together to change sensitivity. Change one alone and the pointer stretches. The shipped 16 and 28 is
+1.75, which fits a 16:9 screen to within 1.6 percent, while 16:10 wants 1.6 and a 21:9 ultrawide
+wants 2.33. Measured on a 2560x1440 screen with an emulated trackball tracing a fixed circle, 13 and
+22 arrived 5 percent wide and 13 and 23 arrived round
+([deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests/tree/main/emu)).
+
 **Upgrading the firmware.** Press **Left Ctrl + Right Shift + C + O**; the board your keyboard is
 plugged into reboots as a USB drive called DESKHOP, and copying the `.uf2` onto it flashes that
 board and then the other, with the LED blinking throughout. That second half is what
