@@ -31,128 +31,54 @@ so they can be used before (and regardless of whether) they land upstream:
 - [#360](https://github.com/hrvach/deskhop/pull/360) - lets the board-to-board firmware upgrade finish instead of hanging one request short of the end
 - [#361](https://github.com/hrvach/deskhop/pull/361) - fixes an out-of-bounds write when a HID descriptor has a large report count ([#332](https://github.com/hrvach/deskhop/issues/332))
 
-### Pico-PIO-USB fixes
+### Fixes beyond the pull requests above
 
-The PIO USB host library in `Pico-PIO-USB/` is a vendored copy of upstream 0.5.3. Upstream has moved
-on to 0.7.2, but its 0.6.0 rewrite replaced the transmit encoder and the PIO allocation, which the
-bundled TinyUSB host controller driver was never built against. Rather than bump the whole
-library, these fixes are backported onto the 0.5.3 base:
+Each entry links the commit, which carries the full account: the symptom per device, what was
+measured and why the fix is shaped the way it is. Measurements come from
+[deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests), which replays real descriptors
+and reports against this firmware's own decode paths.
 
-- [512d3a2](https://github.com/sekigon-gonnoc/Pico-PIO-USB/commit/512d3a2) - puts `calc_usb_crc16`
-  in RAM, the last function on the SOF interrupt path that still ran from flash. That path keeps
-  running while the other core erases and programs flash during a board-to-board firmware upgrade.
-- [bc14d3e](https://github.com/sekigon-gonnoc/Pico-PIO-USB/commit/bc14d3e) +
-  [447ea43](https://github.com/sekigon-gonnoc/Pico-PIO-USB/commit/447ea43) - bounds the receive
-  buffer and times out the receive loops, so a device unplugged mid-packet can no longer spin the
-  USB core forever inside the frame handler.
-- [cbf055d](https://github.com/sekigon-gonnoc/Pico-PIO-USB/commit/cbf055d) - clamps the received
-  length before copying it into the caller's buffer, an out-of-bounds write a non-compliant device
-  could otherwise trigger.
+- **Short reports no longer read past the end** - a descriptor arrives once at enumeration and the
+  reports it describes arrive thousands of times a second, and nothing checked either against the
+  length the other implied. Four decode paths derived offsets that pointed past the end of the
+  buffer; 774 of 1159 truncated reports overread before, none after.
+  [fe908d0](https://github.com/mglushko/deskhop-extended/commit/fe908d0)
+- **NKRO decided on the whole bitmap, not one block of it** - any keyboard-page bit field passed the
+  test, so eight bits of function keys where the reserved byte usually sits routed every report down
+  the NKRO path, which never reads the ordinary key array: modifiers kept working and every keycode
+  vanished. Summing the blocks keeps both cases.
+  [1749e6a](https://github.com/mglushko/deskhop-extended/commit/1749e6a)
+- **Boot-protocol reports route by the interface, not `report[0]`** - dispatch chose its branch on
+  `uses_report_id`, which the parser sets at enumeration and nothing revises, so a keyboard put into
+  boot protocol was routed by its modifier byte: of three affected devices in the corpus, one had
+  its keystrokes discarded and one sent keyboard reports to the paths that carry Power and Sleep.
+  Dispatch goes from 13/20 to 20/20 and nothing outside boot protocol changes.
+  [85d6fe5](https://github.com/mglushko/deskhop-extended/commit/85d6fe5)
+- **Every keyboard collection on an interface gets its own `keyboard_t`** - `get_keyboard()`
+  short-circuited on `num_keyboards == 1`, so a keyboard declaring a 6KRO collection for BIOS
+  compatibility beside an NKRO bitmap had both written onto `keyboards[0]`. A Keychron Ultra-Link
+  then emits nothing for a bare `a`; an 8BitDo Retro Mechanical types `gmovw3` for `abcdef`.
+  Upstream [#57](https://github.com/hrvach/deskhop/issues/57),
+  [#211](https://github.com/hrvach/deskhop/issues/211) and
+  [#295](https://github.com/hrvach/deskhop/issues/295) all share this shape.
+  [1338364](https://github.com/mglushko/deskhop-extended/commit/1338364)
+- **Pico-PIO-USB fixes backported onto the vendored 0.5.3** - `calc_usb_crc16` moves into RAM, the
+  last function on the SOF interrupt path still running from flash while the other core programs it
+  during a board-to-board upgrade; the receive loops are bounded and timed out; the received length
+  is clamped before the copy. The vendored `usb_rx.pio` edit had also never been built, since the
+  checked-in `usb_rx.pio.h` wins the `#include` - both edge detectors now match upstream 0.7.2 and
+  the header is regenerated from them.
+  [876c188](https://github.com/mglushko/deskhop-extended/commit/876c188)
 
-Also completed here: the edge-detector fix carried in the vendored `usb_rx.pio` had never actually
-been built. The generated `usb_rx.pio.h` sitting next to `pio_usb.c` wins the `#include` over the
-one CMake generates, and it had not been regenerated, so the shipped binary kept the 0.5.3 program.
-The `.pio` source was also missing the `in pins, 1` capture that upstream's version of the same fix
-keeps, without which end-of-packet is never signalled. Both edge-detector programs now match
-upstream 0.7.2 instruction for instruction, and the checked-in header is regenerated from them.
+### Config page
 
-### Short reports no longer read past the end
-
-A HID descriptor arrives once at enumeration; the reports it describes arrive thousands of times a
-second. Nothing checked either against the length the other implied, so a device free to declare a
-thirty-byte key bitmap and then send eight bytes had every derived offset pointing past the end of
-the buffer. Four places, one mistake:
-
-- `get_report_value` tested the byte offset before incrementing it, so a field still short of bits
-  at the last byte read one past the end.
-- `extract_value` stepped past the report ID and handed on the unshifted length, leaving that same
-  bound off by one in the shifted frame - and stacking with the above for up to two bytes.
-- `_extract_kbd_other` had the same unshifted length, and walked its key array to `MAX_KEYS` with no
-  bound on the report at all: up to thirty-two bytes read out of an eight-byte report.
-- the boot-protocol path read a five-byte mouse report out of whatever it was handed, which can be
-  one byte. It now takes what arrived - buttons, X and Y are the defined part, wheel and pan only if
-  the device sent them.
-
-Measured with [deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests), whose `shortreport`
-target replays every decode case at every truncated length under ASan: 774 of 1159 truncated reports
-overread before this, none after.
-
-The same harness found a defect in [#359](https://github.com/hrvach/deskhop/pull/359) as it stood,
-fixed there and here. Recognising a key bitmap by its usage range mapping one usage per bit is
-right, but flagging the keyboard NKRO on the strength of a single such block is not - any
-keyboard-page bit field qualifies, and eight bits of function keys where the reserved byte usually
-sits was enough to route every report down the NKRO path, which never reads the ordinary key array.
-Such a keyboard kept its modifiers and lost every keycode. Deciding on the summed width of all
-blocks keeps both cases: eight bits is padding, a Wooting's four ranges are not.
-
-### Boot-protocol reports route by the interface
-
-`tuh_hid_report_received_cb` chose between its two dispatch branches on `uses_report_id`, which the
-parser sets from the descriptor at enumeration and nothing ever revises. It never looked at the
-interface protocol. So once a keyboard was put into boot protocol the device stopped sending a
-report ID, but dispatch kept reading `report[0]` as one, and in a boot report `report[0]` is the
-modifier byte: every keystroke was routed by which modifiers were held. Of the three affected
-devices in [deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests)' corpus, one had its
-keystrokes discarded, one routed only on modifier `0x07`, and one sent keyboard reports to the paths
-that carry Power and Sleep. `extract_kbd_data`'s boot branch was unreachable for every keyboard
-declaring a report ID, which is exactly the set of devices it exists for. The mouse side had the
-same mistake through `force_mouse_boot_mode`, where `report[0]` is the button byte.
-
-The rule was already in the codebase one level down, since `extract_kbd_data` and
-`extract_report_values` both test `HID_PROTOCOL_BOOT` before they consult `uses_report_id`: the boot
-layout is fixed and carries no ID whatever the descriptor said. Routing now applies it too, in
-`pick_receiver()`, a pure function of the interface, the protocol and the report bytes that the
-harness lifts verbatim rather than keeping its own copy of the rules, which is how this went unseen.
-Dispatch goes from 13/20 to 20/20, with no case passing because `report[0]` happened to equal a
-bound report ID. Nothing outside boot protocol changes.
-
-### Every keyboard collection on an interface gets its own keyboard_t
-
-`get_keyboard()` short-circuited on `num_keyboards == 1` before it could reach a second slot, so an
-interface using report IDs could never hold more than one keyboard and `MAX_KEYBOARDS` was dead
-code. A keyboard declaring a 6KRO collection for BIOS compatibility alongside an NKRO bitmap for
-everything else, which is the ordinary shape of a modern keyboard, had both collections written onto
-`keyboards[0]`, last one wins. It takes one keyboard, not two.
-
-What that costs depends on the descriptor. On a Keychron Ultra-Link the NKRO block sits at
-`offset_idx` 1 and is VARIABLE, and `handle_keyboard_descriptor_values` assigns
-`key_array[offset_idx] = (data_type == ARRAY)` unconditionally, so it cleared the flag the 6KRO
-collection had set on its first key slot: hold `a` alone and nothing came out. On an 8BitDo Retro
-Mechanical Keyboard, whose two NKRO blocks map one usage per bit over 120 bits and so pass every
-test the parser applies, `is_nkro` ends up set on the shared entry and a 6KRO report is decoded as
-though its bytes were bitmap bits. That keyboard does not lose one key, it types different ones:
-`abcdef` arrives as `gmovw3`.
-
-The knot was that `get_keyboard()` served two callers wanting different things. At parse time an
-unseen report ID should claim a slot; at decode time it must not, or a stray ID would consume one.
-`get_or_add_keyboard()` now does the allocating and `handle_keyboard_descriptor_values` calls it,
-leaving `get_keyboard()` a pure lookup. `get_next_keyboard_id()` is retired, since the map stamped
-`report_id` before the handler ran and could not find-or-allocate by ID anyway. Overflow past
-`MAX_KEYBOARDS` falls back to the primary, which is what happened before.
-
-Three upstream reports share this shape: [#57](https://github.com/hrvach/deskhop/issues/57), open
-since March 2024, [#211](https://github.com/hrvach/deskhop/issues/211), closed but reported as
-returning, and [#295](https://github.com/hrvach/deskhop/issues/295), closed only because the
-reporter hard-coded a mapping for their own keyboard. All three read "keyboard not working", which
-is what the collapse produces. Of the 42 keyboard interfaces dumped across 220 upstream issues,
-three declare more than one keyboard collection and all three use report IDs.
-
-[deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests) asserts the whole corpus against
-this now: every report ID bound to a keyboard must resolve, through the firmware's own
-`get_keyboard()`, to a slot claiming that ID. It also carries an RP2040 emulator of the 8BitDo, so
-the fix can be confirmed on hardware without owning one of the affected keyboards.
-
-### Rewritten web config page
-
-Upstream's page is already a single page with Output A and Output B side by side, but each output is
-a flat list of raw fields, with a button column on the left and Common Config / Device Status
-underneath. This rewrite keeps the two output columns and groups each one into labelled
-sections: operating system, arrangement (screen count, side, monitor diagram, screen alignment),
-cursor (park preview, speed) and keep awake (mode preview, idle toggle, timers). All of it is
-driven by segmented pickers, steppers and toggles rather than bare inputs. Shared settings sit below both columns, the device
-buttons move into the header, and Save becomes a sticky footer with an unsaved-changes indicator.
-Same WebHID protocol and same 64 kB flash budget. See
-[Web configuration mode](#web-configuration-mode) for how to reach it.
+- **Rewritten page** - upstream already puts Output A and Output B side by side, but each output is
+  a flat list of raw fields. Each column is now grouped into labelled sections - operating system,
+  arrangement, cursor, keep awake - driven by segmented pickers, steppers and toggles; shared
+  settings sit below both columns, the device buttons move into the header and Save becomes a
+  sticky footer. Same WebHID protocol, same 64 kB flash budget.
+  [04c397d](https://github.com/mglushko/deskhop-extended/commit/04c397d),
+  [6bd6035](https://github.com/mglushko/deskhop-extended/commit/6bd6035)
 
 ![The rewritten DeskHop Extended config page](img/config-page-extended.png)
 
@@ -160,135 +86,86 @@ Same WebHID protocol and same 64 kB flash budget. See
 Cursor, Keep awake and the shared settings continue below it. Values shown are a sample
 configuration.</em></p>
 
-Because upstream's README below is reproduced unchanged, its screenshots and its instruction to
-"click *exit* in the menu" still show upstream's page. On this build, Exit sits in the header.
-Everything else in those steps applies as written.
+- **Both board versions in the header** - the version of the board you are connected to and of the
+  other one, flagged when they differ; a dash means that board has not been heard from. It was
+  already crossing the link once a second in the heartbeat and being discarded. Worth having
+  because the boards push firmware at each other automatically when their versions differ.
+  [e057fda](https://github.com/mglushko/deskhop-extended/commit/e057fda)
+- **Export and import settings** - Export writes every setting the page exposes to a `.txt` file,
+  Import reads one back by file or by paste. Keyed by the numbers in `api_field_map`
+  (`src/protocol.c`), which name a field rather than a position in the struct, so an export stays
+  readable across firmware versions that add, drop or reorder fields; unknown keys are reported and
+  skipped, and nothing reaches the device until you press Save.
+  [e8ef624](https://github.com/mglushko/deskhop-extended/commit/e8ef624),
+  [de5e03c](https://github.com/mglushko/deskhop-extended/commit/de5e03c)
+- **Swapping the output columns** - which output is drawn on the left is a saved setting, so the
+  page can match how the boards sit on your desk. Stored in four bytes already reserved in
+  `config_t`, which keeps `sizeof(config_t)` unchanged.
+  [e057fda](https://github.com/mglushko/deskhop-extended/commit/e057fda)
+- **Edge double-tap to switch** - optional: crossing between the two physical outputs requires
+  pushing the cursor against the edge, pulling away and pushing again within a short window. Off by
+  default, virtual desktop switching unaffected, configurable on the page or in
+  `src/include/user_config.h`. [7eda6f1](https://github.com/mglushko/deskhop-extended/commit/7eda6f1),
+  [ca8b12c](https://github.com/mglushko/deskhop-extended/commit/ca8b12c)
 
-### Both boards on one page
+<details>
+  <summary>Close-ups: the export panel, the Swap control, the edge double-tap group</summary>
 
-The header shows the firmware version of the board you are connected to and of the other
-one, flagging it when the two differ. The version was already crossing the link once a
-second in the heartbeat and being discarded; it is now kept and exposed read-only. A dash
-means nothing has been heard from the other board: it is unpowered, or the link is down.
+  ![Export and Import in the header, and the panel Export opens](img/config-backup.png)
 
-Worth having because the boards push firmware at each other automatically when their
-versions differ, so a half-finished propagation is a state you want to be able to see.
+  ![The output bar with the Swap control](img/config-swap.png)
 
-### Export and import settings
+  ![The edge double-tap settings on the config page](img/config-dtap.png)
 
-Export saves every setting the page exposes to a `.txt` file; Import reads one back, either
-by picking the file or by pasting it in. Settings are keyed by the numbers in `api_field_map`
-(`src/protocol.c`), which name a field rather than a position in the config struct, so an
-export stays readable across firmware versions that add, drop or reorder fields. Unknown
-keys are reported and skipped rather than silently misapplied. Import only fills in the page;
-nothing reaches the device until you press Save.
+</details>
 
-![Export and Import in the header, and the panel Export opens](img/config-backup.png)
+Upstream's README below is reproduced unchanged, so its screenshots and its instruction to "click
+*exit* in the menu" still show upstream's page; on this build Exit sits in the header. See
+[Web configuration mode](#web-configuration-mode) for how to reach the page.
 
-<p align="center"><em>Export writes the file and shows the same text in the panel, in case you
-would rather copy it than keep a download.</em></p>
+### Firmware
 
-### Swapping the output columns
+- **Boot-protocol keyboard support** - the keyboard keeps working in pre-boot environments that only
+  speak the 8-byte HID boot protocol, such as UEFI setup and the BitLocker PIN prompt.
+  [814e186](https://github.com/mglushko/deskhop-extended/commit/814e186)
+- **Settings survive firmware changes** - upstream stores the configuration as a dump of `config_t`
+  and discards it whenever `CURRENT_CONFIG_VERSION` moves, which adding a field forces, so one new
+  setting costs you all of them. This build stores `{key, length, value}` triples keyed by
+  `api_field_map`, so fields can be added, removed or reordered without invalidating flash, and a
+  config written by an older build is migrated on first boot. Exercised on the host by
+  `misc/hosttest/run.sh`. [7c8fe38](https://github.com/mglushko/deskhop-extended/commit/7c8fe38)
 
-Which output is drawn in the left-hand column is a saved setting, so the page can match how
-the boards actually sit on your desk. Output A is drawn first by default; the Swap control
-in the top right of the output bar flips it, and the choice is stored on the device.
+### Notes
 
-![The output bar with the Swap control](img/config-swap.png)
+**Upgrading the firmware.** Press **Left Ctrl + Right Shift + C + O**; the board your keyboard is
+plugged into reboots as a USB drive called DESKHOP, and copying the `.uf2` onto it flashes that
+board and then the other, with the LED blinking throughout. That second half is what
+[#360](https://github.com/hrvach/deskhop/pull/360) repairs. The config page has no button for any of
+this: firmware upgrade is deliberately not on the firmware's packet allowlist (`validate_packet` in
+`src/utils.c`), so upstream's Bootloader button silently does nothing and this build drops it rather
+than widen the allowlist ([0e3f7c7](https://github.com/mglushko/deskhop-extended/commit/0e3f7c7)).
+Two undocumented shortcuts reach the ROM bootloader directly - `Left Shift + Right Shift + A` for the
+local board, `+ B` for the other - and holding a board's on-board button while plugging it in always
+works, whatever state it is in.
 
-It is stored in four bytes that were already reserved in `config_t`, which keeps
-`sizeof(config_t)` unchanged and the migration from pre-key-value configs intact.
+**Building the config page.** The page ships inside a small FAT image, so changing
+`webconfig/templates/` means `make render` in `webconfig/` and then rebuilding the image; rebuilding
+the firmware alone will not pick the change up. For the image, either `./create.sh` in `disk/`, which
+loop-mounts and so needs sudo, or `misc/rebuild-disk-image.py`, which edits the committed image in
+place and needs no root - `--selftest` rebuilds the committed image from its own page and checks the
+result byte for byte ([b5f8196](https://github.com/mglushko/deskhop-extended/commit/b5f8196)).
+`make render` also writes `webconfig/config-test.htm`, which never reaches the device: the same
+markup and `script.js` with an emulated device appended, so it opens already connected in any
+browser and logs every report the page sends.
 
-### Edge double-tap to switch
-
-Optional: switching between the two physical outputs requires pushing the cursor against the screen
-edge, pulling it away, and pushing against it again within a short window. Prevents accidental
-switches when working near the edge. Virtual desktop switching is unaffected. Disabled by default;
-configurable from the web config page or in `src/include/user_config.h`
-(`SWITCH_DOUBLE_TAP_ENABLE`, `SWITCH_DOUBLE_TAP_MS`, `SWITCH_DOUBLE_TAP_MARGIN`).
-
-![The edge double-tap settings on the config page](img/config-dtap.png)
-
-### Boot-protocol keyboard support
-
-The keyboard keeps working in pre-boot environments that only speak the 8-byte HID boot protocol,
-such as UEFI setup and the BitLocker PIN prompt.
-
-### Settings survive firmware changes
-
-Upstream stores the configuration as a dump of `config_t` and throws the whole thing away
-whenever `CURRENT_CONFIG_VERSION` moves, which it has to whenever a field is added, so
-adding one setting costs you all of them. This build stores `{key, length, value}` triples
-keyed by the numbers in `api_field_map` (`src/protocol.c`), which name a field rather than a
-position in the struct. Fields can be added, removed or reordered without invalidating what
-is already in flash: keys the firmware no longer knows are skipped, keys it has gained keep
-their default, and a bad magic header or checksum still falls back to defaults exactly as
-before.
-
-A config written by an older build is recognised and migrated on first boot, so upgrading to
-this version does not cost you your settings either. The format is exercised on the host by
-`misc/hosttest/run.sh`, which builds the real `src/config_store.c` against a byte array
-standing in for the flash page.
-
-### Upgrading the firmware
-
-Press **Left Ctrl + Right Shift + C + O**. The board your keyboard is plugged into reboots
-as a USB drive called DESKHOP, the same drive this build's config page is served from.
-Copy the `.uf2` onto it. The device verifies the image, flashes itself and reboots, then
-upgrades the other board, with the LED blinking throughout; once that finishes it writes
-flash and reboots to complete the operation.
-
-That second half, one board carrying the new firmware to the other, is what
-[#360](https://github.com/hrvach/deskhop/pull/360) repairs. If a board ends up in a state
-where none of this works, holding its on-board button while plugging it in always reaches
-the ROM bootloader, whatever the device is doing.
-
-The config page has no button for any of this. The firmware only accepts a short allowlist
-of packets from a connected computer (`validate_packet` in `src/utils.c`) and firmware
-upgrade is deliberately not on it, upstream's rule being that only a physical action may
-trigger flashing. Upstream's page ships a Bootloader button that sends exactly that packet,
-so it silently does nothing; this build drops the button rather than widen the allowlist.
-Two keyboard shortcuts upstream never documents reach the ROM bootloader directly if you
-want it: `Left Shift + Right Shift + A` for the board your keyboard is plugged into, and
-`+ B` for the other one.
-
-### Building the config page
-
-The config page ships inside a small FAT image, so changing `webconfig/templates/` requires
-regenerating both: `make render` in `webconfig/`, then the image. Rebuilding the firmware alone
-will not pick up the change.
-
-For the image, either `./create.sh` in `disk/`, which loop-mounts and so needs sudo, or
-`misc/rebuild-disk-image.py`, which edits the committed image in place and needs no root. The
-two produce the same bytes: `misc/rebuild-disk-image.py --selftest` rebuilds the committed
-image from its own page and checks the result matches byte for byte.
-
-`make render` also writes `webconfig/config-test.htm`, which is not part of the image and never
-reaches the device. It is the same markup and the same `script.js` with an emulated device
-appended, so opening it in any browser gives a page that is already connected: Connect, Read,
-Save, Export, Import and Blink all work, and a panel in the corner logs every report the page
-sends with its decoded fields, its raw bytes and its checksum verified. Useful for working on
-the page without a board on the desk, and for seeing what a button actually puts on the wire.
-
-### Versioning
-
-This build numbers itself independently of upstream, starting at 1.0 rather than continuing
-upstream's 0.x, and the config page marks it **beta**. It is a small project's first
-release, so treat it as one. The current version is whatever `CMakeLists.txt` says; the
-config page shows it, and the board reports it over the link.
-
-Minor numbers read to two digits (v1.00, v1.01, v1.02), and only the printed form is
-padded; the version the boards exchange is the same `major * 1000 + minor + 100` as ever.
-Note that a board only accepts firmware from the other one when that board reports a
-*higher* number, so installing a lower version than the pair is already running means
-flashing each board over its on-board button with the other unplugged.
-
-The number is deliberately above upstream's, and not only for labelling: a board pulls
-firmware from the other one when the other reports a *higher* version
-(`handle_heartbeat_msg`), so being above upstream is what lets you flash one board and have
-the second follow, rather than the reverse. "beta" is a label rendered onto the config page
-from `VERSION_SUFFIX` in `CMakeLists.txt`; the version the boards exchange is a `uint16`
-with no room for a suffix.
+**Versioning.** This build numbers itself independently of upstream, starting at 1.0 rather than
+continuing upstream's 0.x, and the config page marks it **beta**. Minor numbers print to two digits
+(v1.00, v1.01, v1.02); only the printed form is padded. The number is deliberately above upstream's,
+because a board pulls firmware from the other one only when that board reports a *higher* version
+(`handle_heartbeat_msg`) - which also means installing a version below what the pair is running
+takes flashing each board over its on-board button with the other unplugged.
+[ac858f2](https://github.com/mglushko/deskhop-extended/commit/ac858f2),
+[1afd118](https://github.com/mglushko/deskhop-extended/commit/1afd118)
 
 ------
 
