@@ -1,4 +1,4 @@
-# DeskHop Extended - Fast Desktop Switching
+# DeskHop EX
 
 > [!CAUTION]
 > **Flashing one board flashes both, and going back is not just flashing DeskHop again.**
