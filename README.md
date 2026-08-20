@@ -1,11 +1,9 @@
 # DeskHop Extended - Fast Desktop Switching
 
 > [!CAUTION]
-> **Flashing one board flashes both, and the usual upgrade route cannot undo it.**
-> Each board copies its firmware onto the other whenever the other one is older, and this build
-> numbers itself above upstream on purpose, so dropping a DeskHop `.uf2` onto the DESKHOP drive
-> only gets that board overwritten again. For how to go back, see
-> [Going back to DeskHop](#going-back-to-deskhop).
+> **Flashing one board flashes both, and going back is not just flashing DeskHop again.**
+> Settings do not carry over in either direction, so whichever firmware you land on comes up
+> on its defaults. For how to go back, see [Going back to DeskHop](#going-back-to-deskhop).
 
 DeskHop is a small piece of open hardware (two Raspberry Pi Picos with a galvanic isolator
 between them) that lets a single keyboard and mouse drive two computers. You switch with a
