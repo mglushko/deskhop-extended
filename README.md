@@ -23,56 +23,6 @@ it is upstream's own README, reproduced unchanged.
 
 ## Changes from DeskHop
 
-### Pending upstream pull requests
-
-These are all open against [hrvach/deskhop](https://github.com/hrvach/deskhop) and are merged here
-so they can be used before (and regardless of whether) they land upstream:
-
-- [#355](https://github.com/hrvach/deskhop/pull/355) - optional edge double-tap requirement for output switching
-- [#356](https://github.com/hrvach/deskhop/pull/356) - boot-protocol keyboard support for UEFI/BitLocker pre-boot
-- [#357](https://github.com/hrvach/deskhop/pull/357) - fixes the cursor jumping when a pointing device is attached to each board ([#263](https://github.com/hrvach/deskhop/issues/263))
-- [#358](https://github.com/hrvach/deskhop/pull/358) - fixes media keys on keyboards that don't use HID report IDs ([#236](https://github.com/hrvach/deskhop/issues/236))
-- [#359](https://github.com/hrvach/deskhop/pull/359) - keeps all key sections on keyboards that use more than one
-- [#360](https://github.com/hrvach/deskhop/pull/360) - lets the board-to-board firmware upgrade finish instead of hanging one request short of the end
-- [#361](https://github.com/hrvach/deskhop/pull/361) - fixes an out-of-bounds write when a HID descriptor has a large report count ([#332](https://github.com/hrvach/deskhop/issues/332))
-
-### Fixes beyond the pull requests above
-
-Each entry links its commit, which has the full account - the symptom per device, what was measured
-and why the fix looks the way it does. The measurements come from
-[deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests), which replays real descriptors and
-reports against this firmware's own decode paths; its
-[emulator](https://github.com/mglushko/deskhop-hidtests/tree/main/emu) turns a spare RP2040 into the
-device in question, so a finding can be checked on hardware and not just on the host - the `gmovw3`
-below was read off a screen.
-
-- **Short reports no longer read past the end** - a device can send a report shorter than its
-  descriptor promised, and nothing checked. Four decode paths read past the end of the buffer: 774
-  of 1159 truncated reports overread before, none after.
-  [fe908d0](https://github.com/mglushko/deskhop-extended/commit/fe908d0)
-- **NKRO is decided on the key bitmap, not the whole report** - a keyboard with eight function-key
-  bits where the reserved byte usually sits was taken for NKRO, so its ordinary key array was never
-  read: modifiers worked and every keycode vanished.
-  [1749e6a](https://github.com/mglushko/deskhop-extended/commit/1749e6a)
-- **Boot-protocol reports are routed by the interface, not the first byte** - a keyboard switched
-  into boot protocol was routed by its modifier byte instead. Of three affected devices, one had its
-  keystrokes discarded and one sent keyboard reports down the path that carries Power and Sleep;
-  dispatch goes from 13/20 to 20/20.
-  [85d6fe5](https://github.com/mglushko/deskhop-extended/commit/85d6fe5)
-- **One `keyboard_t` per keyboard collection** - a keyboard that declares a 6KRO collection for BIOS
-  compatibility beside an NKRO bitmap had both written into the same slot. A Keychron Ultra-Link
-  then types nothing for a bare `a`; an 8BitDo Retro Mechanical types `gmovw3` for `abcdef`.
-  Upstream [#57](https://github.com/hrvach/deskhop/issues/57),
-  [#211](https://github.com/hrvach/deskhop/issues/211) and
-  [#295](https://github.com/hrvach/deskhop/issues/295) all share this shape.
-  [1338364](https://github.com/mglushko/deskhop-extended/commit/1338364)
-- **Pico-PIO-USB fixes backported onto the vendored 0.5.3** - `calc_usb_crc16` moves into RAM, since
-  it was the last thing on the interrupt path still running from flash while a board-to-board
-  upgrade rewrites that flash; the receive loops get bounds and timeouts, and the copy is clamped
-  to the length received. A fix to `usb_rx.pio` had also never been built, because the checked-in
-  header wins the `#include`.
-  [876c188](https://github.com/mglushko/deskhop-extended/commit/876c188)
-
 ### Config page
 
 - **Rewritten page** - upstream already puts Output A and Output B side by side, but each output is
@@ -140,6 +90,78 @@ Upstream's README below is reproduced unchanged, so its screenshots and its inst
 *exit* in the menu" still show upstream's page; on this build Exit sits in the header. See
 [Web configuration mode](#web-configuration-mode) for how to reach the page.
 
+### Going back to DeskHop
+
+A board pushes its firmware onto the other one as soon as that one reports a lower version
+(`handle_heartbeat_msg`, once a second), and this build numbers itself above upstream on purpose -
+v1.06 reports `1106` against upstream v0.78's `178`. So flashing a single board back to
+[hrvach/deskhop](https://github.com/hrvach/deskhop) only gets it overwritten again the moment the
+two are powered up together. Both boards have to be done, one at a time, while neither is running:
+
+1. Unplug both boards.
+2. Hold BOOTSEL on the first board and plug it in. A drive named `RPI-RP2` appears; let go of the
+   button.
+3. Copy the DeskHop `.uf2` onto that drive. The board reboots by itself and the drive disappears.
+4. Unplug that board, then repeat steps 2 and 3 for the other one.
+5. Plug both back in.
+
+Stepping back to an older DeskHop EX build works the same way, for the same reason.
+
+Settings do not make the trip in either direction - each build stores its configuration in a form
+the other refuses, so whichever firmware you land on comes up on its compiled-in defaults. Nothing
+on either computer is touched; both only ever see ordinary USB HID devices. Neither board can be
+bricked this way either, since BOOTSEL lives in ROM.
+
+### Pending upstream pull requests
+
+These are all open against [hrvach/deskhop](https://github.com/hrvach/deskhop) and are merged here
+so they can be used before (and regardless of whether) they land upstream:
+
+- [#355](https://github.com/hrvach/deskhop/pull/355) - optional edge double-tap requirement for output switching
+- [#356](https://github.com/hrvach/deskhop/pull/356) - boot-protocol keyboard support for UEFI/BitLocker pre-boot
+- [#357](https://github.com/hrvach/deskhop/pull/357) - fixes the cursor jumping when a pointing device is attached to each board ([#263](https://github.com/hrvach/deskhop/issues/263))
+- [#358](https://github.com/hrvach/deskhop/pull/358) - fixes media keys on keyboards that don't use HID report IDs ([#236](https://github.com/hrvach/deskhop/issues/236))
+- [#359](https://github.com/hrvach/deskhop/pull/359) - keeps all key sections on keyboards that use more than one
+- [#360](https://github.com/hrvach/deskhop/pull/360) - lets the board-to-board firmware upgrade finish instead of hanging one request short of the end
+- [#361](https://github.com/hrvach/deskhop/pull/361) - fixes an out-of-bounds write when a HID descriptor has a large report count ([#332](https://github.com/hrvach/deskhop/issues/332))
+
+### Fixes beyond the pull requests above
+
+Each entry links its commit, which has the full account - the symptom per device, what was measured
+and why the fix looks the way it does. The measurements come from
+[deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests), which replays real descriptors and
+reports against this firmware's own decode paths; its
+[emulator](https://github.com/mglushko/deskhop-hidtests/tree/main/emu) turns a spare RP2040 into the
+device in question, so a finding can be checked on hardware and not just on the host - the `gmovw3`
+below was read off a screen.
+
+- **Short reports no longer read past the end** - a device can send a report shorter than its
+  descriptor promised, and nothing checked. Four decode paths read past the end of the buffer: 774
+  of 1159 truncated reports overread before, none after.
+  [fe908d0](https://github.com/mglushko/deskhop-extended/commit/fe908d0)
+- **NKRO is decided on the key bitmap, not the whole report** - a keyboard with eight function-key
+  bits where the reserved byte usually sits was taken for NKRO, so its ordinary key array was never
+  read: modifiers worked and every keycode vanished.
+  [1749e6a](https://github.com/mglushko/deskhop-extended/commit/1749e6a)
+- **Boot-protocol reports are routed by the interface, not the first byte** - a keyboard switched
+  into boot protocol was routed by its modifier byte instead. Of three affected devices, one had its
+  keystrokes discarded and one sent keyboard reports down the path that carries Power and Sleep;
+  dispatch goes from 13/20 to 20/20.
+  [85d6fe5](https://github.com/mglushko/deskhop-extended/commit/85d6fe5)
+- **One `keyboard_t` per keyboard collection** - a keyboard that declares a 6KRO collection for BIOS
+  compatibility beside an NKRO bitmap had both written into the same slot. A Keychron Ultra-Link
+  then types nothing for a bare `a`; an 8BitDo Retro Mechanical types `gmovw3` for `abcdef`.
+  Upstream [#57](https://github.com/hrvach/deskhop/issues/57),
+  [#211](https://github.com/hrvach/deskhop/issues/211) and
+  [#295](https://github.com/hrvach/deskhop/issues/295) all share this shape.
+  [1338364](https://github.com/mglushko/deskhop-extended/commit/1338364)
+- **Pico-PIO-USB fixes backported onto the vendored 0.5.3** - `calc_usb_crc16` moves into RAM, since
+  it was the last thing on the interrupt path still running from flash while a board-to-board
+  upgrade rewrites that flash; the receive loops get bounds and timeouts, and the copy is clamped
+  to the length received. A fix to `usb_rx.pio` had also never been built, because the checked-in
+  header wins the `#include`.
+  [876c188](https://github.com/mglushko/deskhop-extended/commit/876c188)
+
 ### Firmware
 
 - **One USB identity instead of two** - config mode enumerated under the Raspberry Pi VID/PID
@@ -199,32 +221,10 @@ browser and logs every report the page sends.
 continuing upstream's 0.x, and the config page marks it **beta**. Minor numbers print to two digits
 (v1.00, v1.01, v1.02); only the printed form is padded. The number is deliberately above upstream's,
 because a board pulls firmware from the other one only when that board reports a *higher* version
-(`handle_heartbeat_msg`); [Going back to DeskHop](#going-back-to-deskhop) below is what that means
+(`handle_heartbeat_msg`); [Going back to DeskHop](#going-back-to-deskhop) above is what that means
 in practice.
 [ac858f2](https://github.com/mglushko/deskhop-extended/commit/ac858f2),
 [1afd118](https://github.com/mglushko/deskhop-extended/commit/1afd118)
-
-### Going back to DeskHop
-
-A board pushes its firmware onto the other one as soon as that one reports a lower version
-(`handle_heartbeat_msg`, once a second), and this build numbers itself above upstream on purpose -
-v1.06 reports `1106` against upstream v0.78's `178`. So flashing a single board back to
-[hrvach/deskhop](https://github.com/hrvach/deskhop) only gets it overwritten again the moment the
-two are powered up together. Both boards have to be done, one at a time, while neither is running:
-
-1. Unplug both boards.
-2. Hold BOOTSEL on the first board and plug it in. A drive named `RPI-RP2` appears; let go of the
-   button.
-3. Copy the DeskHop `.uf2` onto that drive. The board reboots by itself and the drive disappears.
-4. Unplug that board, then repeat steps 2 and 3 for the other one.
-5. Plug both back in.
-
-Stepping back to an older DeskHop EX build works the same way, for the same reason.
-
-Settings do not make the trip in either direction - each build stores its configuration in a form
-the other refuses, so whichever firmware you land on comes up on its compiled-in defaults. Nothing
-on either computer is touched; both only ever see ordinary USB HID devices. Neither board can be
-bricked this way either, since BOOTSEL lives in ROM.
 
 ------
 
