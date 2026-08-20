@@ -4,7 +4,7 @@
 > **Flashing one board flashes both, and the usual upgrade route cannot undo it.**
 > Each board copies its firmware onto the other whenever the other one is older, and this build
 > numbers itself above upstream on purpose, so dropping a DeskHop `.uf2` onto the DESKHOP drive
-> only gets that board overwritten again. There is a way back - see
+> only gets that board overwritten again. For how to go back, see
 > [Going back to DeskHop](#going-back-to-deskhop).
 
 DeskHop is a small piece of open hardware (two Raspberry Pi Picos with a galvanic isolator
