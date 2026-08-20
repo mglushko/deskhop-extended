@@ -119,27 +119,17 @@ configuration.</em></p>
 
 ![The edge double-tap settings on the config page](img/config-dtap.png)
 
-- **The status LED can be told to go dark** - the on-board LED marks whichever board is driving the
-  computer you are on, which for anyone whose desk shares a room with a bed is a light on all night.
-  It can now put itself out: once that computer has gone a set number of seconds without a keypress
-  or a mouse move, a set number of seconds after the output last changed, or both on their own
-  timers - the first keeps it lit while you work, the second shows the switch and then gets out of
-  the way, and together a short timer can mark the switch without shortening the one on your typing.
-  Off by default, and config mode's blink is exempt, since it is the only sign the device is in it.
-  Reuses the same `last_activity` timestamp the keep-awake modes run on, which the inter-board link
-  already keeps current for input arriving from the other board.
+- **The status LED can be told to go dark** - the LED marking the active board, a light on all
+  night if your desk shares a room with a bed, can now put itself out after a set idle time, a set
+  time since the output last changed, or both on their own timers. Off by default, and config
+  mode's blink is exempt, since it is the only sign the device is in it.
   [7e2f1b4](https://github.com/mglushko/deskhop-extended/commit/7e2f1b4)
 
-- **Every shortcut can be changed** - all thirteen of them, `Right Shift + F12 + D` included, are
-  stored per action and set from the page by clicking one and pressing the combination you want.
-  The page reads the physical key rather than what the host layout makes of it, so a custom layout
-  picks the right one; a shortcut left alone keeps whatever the firmware was built with, and
-  Default puts it back. A browser keeps a few combinations for itself - `Ctrl + Shift + Tab` and
-  `Ctrl + W` among them - and never passes on the keypress, so those are assembled by hand under
-  Pick instead. This also gives `config.hotkey_toggle` something to do at last: upstream
-  stores it, defaults it and lets the config API write it, but nothing has ever read it - the
-  switch combination has always been the compile-time one - so a value other than the compiled-in
-  key now takes effect instead of being discarded.
+- **Every shortcut can be changed** - all thirteen, `Right Shift + F12 + D` included, are set from
+  the page by clicking one and pressing the combination you want, read as the physical key so a
+  custom layout picks the right one. Combinations the browser keeps for itself, `Ctrl + W` among
+  them, are assembled by hand under Pick instead, and `config.hotkey_toggle` - stored, defaulted
+  and writable upstream but never read - finally takes effect.
   [0215c72](https://github.com/mglushko/deskhop-extended/commit/0215c72)
 
 Upstream's README below is reproduced unchanged, so its screenshots and its instruction to "click
