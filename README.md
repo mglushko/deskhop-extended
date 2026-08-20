@@ -144,26 +144,19 @@ Upstream's README below is reproduced unchanged, so its screenshots and its inst
 
 - **One USB identity instead of two** - config mode enumerated under the Raspberry Pi VID/PID
   (`2e8a:107c`) while normal mode used `1209:c000`, so Windows registered a whole second device tree
-  and, as it does, kept it forever as a hidden node. Both modes now enumerate as `1209:c000`; the
-  serial is already per board, so opening the config page reuses the normal-mode node rather than
-  minting another. The udev rule further down covers config mode for the first time as a result.
-  Nodes already registered are cleared by `misc/cleanup-windows-ghosts.ps1` - though on the machine
-  this was found on DeskHop was only 14 of 235 such nodes, the bulk belonging to a keyboard and a
-  wireless receiver that report no serial number at all and so earn a fresh node per hub port.
+  and kept it forever as a hidden node. Both modes now enumerate as `1209:c000`, which reuses the
+  normal-mode node and brings config mode under the udev rule further down for the first time;
+  `misc/cleanup-windows-ghosts.ps1` clears the nodes already registered.
   [4400d12](https://github.com/mglushko/deskhop-extended/commit/4400d12)
 - **Boot-protocol keyboard support** - the keyboard keeps working in pre-boot environments that only
   speak the 8-byte HID boot protocol, such as UEFI setup and the BitLocker PIN prompt.
   [814e186](https://github.com/mglushko/deskhop-extended/commit/814e186)
 - **Settings survive firmware changes** - upstream stores the configuration as a dump of `config_t`
-  and discards it whenever `CURRENT_CONFIG_VERSION` moves, which adding a field forces, so one new
-  setting costs you all of them. This build stores `{key, length, value}` triples keyed by
-  `api_field_map`, so fields can be added, removed or reordered without invalidating flash, and a
-  config written by an older build is migrated on first boot. Exercised on the host by
+  and discards it whenever `CURRENT_CONFIG_VERSION` moves, which adding a single field forces, so
+  one new setting costs you all of them. This build stores `{key, length, value}` triples keyed by
+  `api_field_map` instead, so fields can be added, removed or reordered without invalidating flash,
+  and an older build's config is migrated on first boot - exercised on the host by
   `misc/hosttest/run.sh`. [7c8fe38](https://github.com/mglushko/deskhop-extended/commit/7c8fe38)
-  The stored page spans two flash pages rather than one, since the field map outgrew 256 bytes and
-  `config_store_pack` drops settings off the end rather than overrun; the pre key-value layout it
-  migrates from is frozen as its own struct, so `config_t` can grow without invalidating what is
-  already in anyone's flash.
 
 ### Notes
 
