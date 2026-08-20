@@ -33,44 +33,39 @@ so they can be used before (and regardless of whether) they land upstream:
 
 ### Fixes beyond the pull requests above
 
-Each entry links the commit, which carries the full account: the symptom per device, what was
-measured and why the fix is shaped the way it is. Measurements come from
-[deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests), which replays real descriptors
-and reports against this firmware's own decode paths. Its
-[emulator](https://github.com/mglushko/deskhop-hidtests/tree/main/emu) turns a spare RP2040 into
-the device in question, so a finding can be confirmed on hardware rather than only on the host:
-the `gmovw3` below was read off a screen.
+Each entry links its commit, which has the full account - the symptom per device, what was measured
+and why the fix looks the way it does. The measurements come from
+[deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests), which replays real descriptors and
+reports against this firmware's own decode paths; its
+[emulator](https://github.com/mglushko/deskhop-hidtests/tree/main/emu) turns a spare RP2040 into the
+device in question, so a finding can be checked on hardware and not just on the host - the `gmovw3`
+below was read off a screen.
 
-- **Short reports no longer read past the end** - a descriptor arrives once at enumeration and the
-  reports it describes arrive thousands of times a second, and nothing checked either against the
-  length the other implied. Four decode paths derived offsets that pointed past the end of the
-  buffer; 774 of 1159 truncated reports overread before, none after.
+- **Short reports no longer read past the end** - a device can send a report shorter than its
+  descriptor promised, and nothing checked. Four decode paths read past the end of the buffer: 774
+  of 1159 truncated reports overread before, none after.
   [fe908d0](https://github.com/mglushko/deskhop-extended/commit/fe908d0)
-- **NKRO decided on the whole bitmap, not one block of it** - any keyboard-page bit field passed the
-  test, so eight bits of function keys where the reserved byte usually sits routed every report down
-  the NKRO path, which never reads the ordinary key array: modifiers kept working and every keycode
-  vanished. Summing the blocks keeps both cases.
+- **NKRO is decided on the key bitmap, not the whole report** - a keyboard with eight function-key
+  bits where the reserved byte usually sits was taken for NKRO, so its ordinary key array was never
+  read: modifiers worked and every keycode vanished.
   [1749e6a](https://github.com/mglushko/deskhop-extended/commit/1749e6a)
-- **Boot-protocol reports route by the interface, not `report[0]`** - dispatch chose its branch on
-  `uses_report_id`, which the parser sets at enumeration and nothing revises, so a keyboard put into
-  boot protocol was routed by its modifier byte: of three affected devices in the corpus, one had
-  its keystrokes discarded and one sent keyboard reports to the paths that carry Power and Sleep.
-  Dispatch goes from 13/20 to 20/20 and nothing outside boot protocol changes.
+- **Boot-protocol reports are routed by the interface, not the first byte** - a keyboard switched
+  into boot protocol was routed by its modifier byte instead. Of three affected devices, one had its
+  keystrokes discarded and one sent keyboard reports down the path that carries Power and Sleep;
+  dispatch goes from 13/20 to 20/20.
   [85d6fe5](https://github.com/mglushko/deskhop-extended/commit/85d6fe5)
-- **Every keyboard collection on an interface gets its own `keyboard_t`** - `get_keyboard()`
-  short-circuited on `num_keyboards == 1`, so a keyboard declaring a 6KRO collection for BIOS
-  compatibility beside an NKRO bitmap had both written onto `keyboards[0]`. A Keychron Ultra-Link
-  then emits nothing for a bare `a`; an 8BitDo Retro Mechanical types `gmovw3` for `abcdef`.
+- **One `keyboard_t` per keyboard collection** - a keyboard that declares a 6KRO collection for BIOS
+  compatibility beside an NKRO bitmap had both written into the same slot. A Keychron Ultra-Link
+  then types nothing for a bare `a`; an 8BitDo Retro Mechanical types `gmovw3` for `abcdef`.
   Upstream [#57](https://github.com/hrvach/deskhop/issues/57),
   [#211](https://github.com/hrvach/deskhop/issues/211) and
   [#295](https://github.com/hrvach/deskhop/issues/295) all share this shape.
   [1338364](https://github.com/mglushko/deskhop-extended/commit/1338364)
-- **Pico-PIO-USB fixes backported onto the vendored 0.5.3** - `calc_usb_crc16` moves into RAM, the
-  last function on the SOF interrupt path still running from flash while the other core programs it
-  during a board-to-board upgrade; the receive loops are bounded and timed out; the received length
-  is clamped before the copy. The vendored `usb_rx.pio` edit had also never been built, since the
-  checked-in `usb_rx.pio.h` wins the `#include` - both edge detectors now match upstream 0.7.2 and
-  the header is regenerated from them.
+- **Pico-PIO-USB fixes backported onto the vendored 0.5.3** - `calc_usb_crc16` moves into RAM, since
+  it was the last thing on the interrupt path still running from flash while a board-to-board
+  upgrade rewrites that flash; the receive loops get bounds and timeouts, and the copy is clamped
+  to the length received. A fix to `usb_rx.pio` had also never been built, because the checked-in
+  header wins the `#include`.
   [876c188](https://github.com/mglushko/deskhop-extended/commit/876c188)
 
 ### Config page
