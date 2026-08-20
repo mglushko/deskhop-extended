@@ -13,10 +13,10 @@ all of the firmware are upstream's work. This repository exists to run upstream 
 that are still waiting on review there, plus two features and a rewritten config page that suit
 how I use the device day to day. Upstream remains the canonical project and is the better
 starting point for most people; this build is here for anyone who would rather not wait for those
-fixes to land. [What's extended](#whats-extended) is the complete list of what differs from
-upstream; everything after it is upstream's own README, reproduced unchanged.
+fixes to land. [Changes from DeskHop](#changes-from-deskhop) is the complete list; everything after
+it is upstream's own README, reproduced unchanged.
 
-## What's extended
+## Changes from DeskHop
 
 ### Pending upstream pull requests
 
@@ -167,7 +167,7 @@ takes flashing each board over its on-board button with the other unplugged.
 > **Everything below this line is the original DeskHop README from
 > [hrvach/deskhop](https://github.com/hrvach/deskhop), reproduced unchanged.** First person ("I")
 > in it refers to upstream's author, and it describes upstream's build. Where this repository
-> behaves differently, it is listed in [What's extended](#whats-extended) above.
+> behaves differently, it is listed under [Changes from DeskHop](#changes-from-deskhop) above.
 
 ------
 
