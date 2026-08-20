@@ -90,28 +90,6 @@ Upstream's README below is reproduced unchanged, so its screenshots and its inst
 *exit* in the menu" still show upstream's page; on this build Exit sits in the header. See
 [Web configuration mode](#web-configuration-mode) for how to reach the page.
 
-### Going back to DeskHop
-
-A board pushes its firmware onto the other one as soon as that one reports a lower version
-(`handle_heartbeat_msg`, once a second), and this build numbers itself above upstream on purpose -
-v1.06 reports `1106` against upstream v0.78's `178`. So flashing a single board back to
-[hrvach/deskhop](https://github.com/hrvach/deskhop) only gets it overwritten again the moment the
-two are powered up together. Both boards have to be done, one at a time, while neither is running:
-
-1. Unplug both boards.
-2. Hold BOOTSEL on the first board and plug it in. A drive named `RPI-RP2` appears; let go of the
-   button.
-3. Copy the DeskHop `.uf2` onto that drive. The board reboots by itself and the drive disappears.
-4. Unplug that board, then repeat steps 2 and 3 for the other one.
-5. Plug both back in.
-
-Stepping back to an older DeskHop EX build works the same way, for the same reason.
-
-Settings do not make the trip in either direction - each build stores its configuration in a form
-the other refuses, so whichever firmware you land on comes up on its compiled-in defaults. Nothing
-on either computer is touched; both only ever see ordinary USB HID devices. Neither board can be
-bricked this way either, since BOOTSEL lives in ROM.
-
 ### Pending upstream pull requests
 
 These are all open against [hrvach/deskhop](https://github.com/hrvach/deskhop) and are merged here
@@ -179,6 +157,28 @@ below was read off a screen.
   `api_field_map` instead, so fields can be added, removed or reordered without invalidating flash,
   and an older build's config is migrated on first boot - exercised on the host by
   `misc/hosttest/run.sh`. [7c8fe38](https://github.com/mglushko/deskhop-extended/commit/7c8fe38)
+
+### Going back to DeskHop
+
+A board pushes its firmware onto the other one as soon as that one reports a lower version
+(`handle_heartbeat_msg`, once a second), and this build numbers itself above upstream on purpose -
+v1.06 reports `1106` against upstream v0.78's `178`. So flashing a single board back to
+[hrvach/deskhop](https://github.com/hrvach/deskhop) only gets it overwritten again the moment the
+two are powered up together. Both boards have to be done, one at a time, while neither is running:
+
+1. Unplug both boards.
+2. Hold BOOTSEL on the first board and plug it in. A drive named `RPI-RP2` appears; let go of the
+   button.
+3. Copy the DeskHop `.uf2` onto that drive. The board reboots by itself and the drive disappears.
+4. Unplug that board, then repeat steps 2 and 3 for the other one.
+5. Plug both back in.
+
+Stepping back to an older DeskHop EX build works the same way, for the same reason.
+
+Settings do not make the trip in either direction - each build stores its configuration in a form
+the other refuses, so whichever firmware you land on comes up on its compiled-in defaults. Nothing
+on either computer is touched; both only ever see ordinary USB HID devices. Neither board can be
+bricked this way either, since BOOTSEL lives in ROM.
 
 ### Notes
 
