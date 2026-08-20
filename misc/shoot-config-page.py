@@ -7,9 +7,11 @@ prose and is easier shown than told:
     img/config-page-extended.png   the card down to the end of Arrangement
     img/config-swap.png            the output bar and its Swap control
     img/config-dtap.png            the edge double-tap group
+    img/config-led.png             the status LED mode and its two timers
+    img/config-hotkeys.png         the shortcut list
     img/config-backup.png          the export panel
 
-All four come out of one load of webconfig/config.htm - the shipped self-extracting artifact, not the unpacked
+All six come out of one load of webconfig/config.htm - the shipped self-extracting artifact, not the unpacked
 source - in headless Chromium and drives it into its connected state with a sample
 configuration, since nothing can pair over WebHID from a build machine. The firmware
 version comes from CMakeLists.txt and the checksum from build/deskhop.crc, so both are
@@ -105,6 +107,20 @@ BOXES = {
         const bottom = label.nextElementSibling.getBoundingClientRect();
         return {x: top.x, y: top.y, width: bottom.width, height: bottom.bottom - top.y};
     }""",
+    # Label through group, the same framing as the double-tap shot above. Mode "Idle +
+    # switch" is set in VALUES so both timers are live in the frame; the other three modes
+    # grey one or both out, which reads as a broken control in a still.
+    "config-led": """() => {
+        const label = [...document.querySelectorAll('.shared-in .lbl')]
+            .find(e => e.textContent === 'Status LED');
+        const top = label.getBoundingClientRect();
+        const bottom = label.nextElementSibling.getBoundingClientRect();
+        return {x: top.x, y: top.y, width: bottom.width, height: bottom.bottom - top.y};
+    }""",
+    # The rows on their own, not the whole group: the two paragraphs above them explaining
+    # Pick are prose the README already carries, and they run the shot to twice the height.
+    # All thirteen are in the frame, since that is the part worth seeing.
+    "config-hotkeys": """() => document.querySelector('.hk-list').getBoundingClientRect()""",
     # The whole header down through the panel, so Export and Import are in the frame next
     # to what pressing Export gets you. From the top of the header rather than the button
     # row, which would saw the wordmark in half. One ring around the pair, drawn as an
@@ -162,9 +178,10 @@ VALUES = {
     # Shared. 72 (boot-protocol keyboard) and 83 (edge double-tap) are this fork's additions;
     # 87 is which output the page draws on the left.
     71: 0, 72: 1, 73: 1, 75: 0, 76: 0, 77: 0, 83: 1, 84: 300, 85: 1000, 87: 0,
-    # Status LED: dark after a minute of no input on the computer being driven, with the
-    # after-switch timer set but unused in that mode.
-    88: 1, 89: 60, 103: 10,
+    # Status LED: both timers, so the LED stays lit while that computer is being used and
+    # for a moment after a switch. Mode 3 is also the one that poses the section best -
+    # it is the only one with neither timer greyed out.
+    88: 3, 89: 60, 103: 10,
     # Shortcuts, 90-102, one per entry in hotkeys[]. Zero is what a device that has never
     # had one changed holds, and the page draws the compiled-in combo for it - which is
     # what the shots should show.
@@ -221,7 +238,8 @@ def write(name: str, shot: bytes, final_width: int) -> None:
                          Image.LANCZOS).convert("P", palette=Image.ADAPTIVE, colors=256)
     image.save(out, optimize=True)
     tmp.unlink()
-    print(f"wrote {out.relative_to(REPO)}: {image.width}x{image.height}, "
+    shown = out.relative_to(REPO) if out.is_relative_to(REPO) else out
+    print(f"wrote {shown}: {image.width}x{image.height}, "
           f"{out.stat().st_size // 1024} KB")
 
 
