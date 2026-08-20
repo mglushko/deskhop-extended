@@ -162,8 +162,9 @@ VALUES = {
     # Shared. 72 (boot-protocol keyboard) and 83 (edge double-tap) are this fork's additions;
     # 87 is which output the page draws on the left.
     71: 0, 72: 1, 73: 1, 75: 0, 76: 0, 77: 0, 83: 1, 84: 300, 85: 1000, 87: 0,
-    # Status LED: dark after a minute of no input on the computer being driven.
-    88: 1, 89: 60,
+    # Status LED: dark after a minute of no input on the computer being driven, with the
+    # after-switch timer set but unused in that mode.
+    88: 1, 89: 60, 103: 10,
     # Shortcuts, 90-102, one per entry in hotkeys[]. Zero is what a device that has never
     # had one changed holds, and the page draws the compiled-in combo for it - which is
     # what the shots should show.

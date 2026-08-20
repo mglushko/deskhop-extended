@@ -31,21 +31,28 @@
  * This covers the on-board LED only - the caps lock indicator above, if you use it,
  * keeps showing the output.
  *
- * LED_OFF_MODE: LED_ALWAYS_ON        - lit for as long as this board is the output
- *               LED_OFF_WHEN_IDLE    - goes dark once this computer has had no input
- *                                      for LED_OFF_SEC, comes back on the next keypress
- *                                      or mouse move
- *               LED_OFF_AFTER_SWITCH - lit for LED_OFF_SEC after this board becomes the
- *                                      output, then dark until the next switch
+ * LED_OFF_MODE: LED_ALWAYS_ON            - lit for as long as this board is the output
+ *               LED_OFF_WHEN_IDLE        - goes dark once this computer has had no input
+ *                                          for LED_OFF_SEC, comes back on the next
+ *                                          keypress or mouse move
+ *               LED_OFF_AFTER_SWITCH     - lit for LED_SWITCH_SEC after this board
+ *                                          becomes the output, then dark until the next
+ *                                          switch, whatever you type in between
+ *               LED_OFF_IDLE_AND_SWITCH  - both, each on its own timer: either one keeps
+ *                                          the light on, so it goes dark once the
+ *                                          computer has been quiet for LED_OFF_SEC and
+ *                                          the switch is older than LED_SWITCH_SEC
  *
- * LED_OFF_SEC: [0-4200] seconds. 0 means never - the LED stays lit either way.
+ * LED_OFF_SEC, LED_SWITCH_SEC: [0-4200] seconds. 0 means never - a rule set to it keeps
+ * the LED lit for good.
  *
  * Config mode is exempt: its once-a-second blink is the only sign the device is in it.
  *
  * */
 
-#define LED_OFF_MODE LED_ALWAYS_ON
-#define LED_OFF_SEC  30
+#define LED_OFF_MODE   LED_ALWAYS_ON
+#define LED_OFF_SEC    30
+#define LED_SWITCH_SEC 10
 
 /**===================================================== *
  * ===========  Hotkey for output switching  =========== *

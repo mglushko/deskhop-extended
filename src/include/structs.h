@@ -91,8 +91,9 @@ typedef struct {
 
     /* Status LED: when the on-board LED goes dark on the board that is the active
        output. The caps lock indicator, if it is standing in for it, is unaffected. */
-    uint8_t led_off_mode;   /* led_off_mode_e */
-    uint16_t led_off_sec;   /* How long before it goes dark, in seconds */
+    uint8_t led_off_mode;    /* led_off_mode_e */
+    uint16_t led_off_sec;    /* Seconds of no input before it goes dark */
+    uint16_t led_switch_sec; /* Seconds after a switch it stays lit for */
 
     /* One packed combo per entry in hotkeys[] (keyboard.c), in that order.
        See HOTKEY_PACK in keyboard.h for the layout. Zero means "keep the compiled-in
@@ -213,12 +214,15 @@ enum screensaver_mode_e {
 
 /* When the on-board LED stops showing which output is active. IDLE counts from the last
    input this board's computer saw, SWITCH counts from the moment it became the active
-   output - so IDLE keeps the light on while you work, SWITCH shows it only briefly. */
+   output - so IDLE keeps the light on while you work, SWITCH shows it only briefly.
+   BOTH runs the two on their own timers and goes dark only once neither has anything
+   left to say. */
 enum led_off_mode_e {
-    LED_ALWAYS_ON       = 0,
-    LED_OFF_WHEN_IDLE   = 1,
-    LED_OFF_AFTER_SWITCH = 2,
-    MAX_LED_OFF_VAL     = LED_OFF_AFTER_SWITCH,
+    LED_ALWAYS_ON          = 0,
+    LED_OFF_WHEN_IDLE      = 1,
+    LED_OFF_AFTER_SWITCH   = 2,
+    LED_OFF_IDLE_AND_SWITCH = 3,
+    MAX_LED_OFF_VAL        = LED_OFF_IDLE_AND_SWITCH,
 };
 
 extern const config_t default_config;

@@ -423,8 +423,13 @@
           {{ seg(C['Status LED'], '', 'ledmode', 'Status LED') }}
           <span class="hint" id="led-note"></span>
 
-          <div class="led-part">
-            {{ secs(C['Status LED Off After'], '', 'ledsec', 'Goes dark after', scale=1, min=1) }}
+          <div class="led-times">
+            <div class="led-part" data-led="idle">
+              {{ secs(C['Status LED Idle Time'], '', 'ledsec', 'No input for', scale=1, min=1) }}
+            </div>
+            <div class="led-part" data-led="switch">
+              {{ secs(C['Status LED Switch Time'], '', 'ledswitch', 'Since switching', scale=1, min=1) }}
+            </div>
           </div>
         </div>
 
@@ -441,6 +446,7 @@
             {{ hotkey(item) }}
           {%- endfor %}
           </div>
+
         </div>
 
         <span class="lbl">Diagnostics</span>

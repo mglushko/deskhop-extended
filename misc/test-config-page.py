@@ -49,20 +49,37 @@ with sync_playwright() as p:
     check("seconds field is disabled while the LED is always on",
           page.eval_on_selector('.led-part input.sec', "e => e.disabled"))
 
+    def timers_on():
+        return page.evaluate('''() => [...document.querySelectorAll('.led-part')]
+            .filter(p => !p.querySelector('input').disabled).map(p => p.dataset.led)''')
+
     page.evaluate("() => setValue(document.querySelector('[data-key=\"88\"]'), 1)")
-    check("seconds field wakes up with a timeout mode",
-          not page.eval_on_selector('.led-part input.sec', "e => e.disabled"))
+    check("when idle brings up the idle timer alone", timers_on() == ["idle"], timers_on())
+
+    page.evaluate("() => setValue(document.querySelector('[data-key=\"88\"]'), 2)")
+    check("after switching brings up the switch timer alone", timers_on() == ["switch"], timers_on())
+
+    page.evaluate("() => setValue(document.querySelector('[data-key=\"88\"]'), 3)")
+    check("idle + switch brings up both", timers_on() == ["idle", "switch"], timers_on())
+
+    idle, switch = '[data-led="idle"] input.sec', '[data-led="switch"] input.sec'
 
     page.evaluate("() => setValue(document.querySelector('[data-key=\"89\"]'), 45)")
-    check("led_off_sec renders 1:1 as seconds",
-          page.eval_on_selector('.led-part input.sec', "e => e.value") == "45",
-          page.eval_on_selector('.led-part input.sec', "e => e.value"))
+    page.evaluate("() => setValue(document.querySelector('[data-key=\"103\"]'), 8)")
+    check("both timers render 1:1 as seconds",
+          [page.eval_on_selector(idle, "e => e.value"), page.eval_on_selector(switch, "e => e.value")]
+          == ["45", "8"],
+          [page.eval_on_selector(idle, "e => e.value"), page.eval_on_selector(switch, "e => e.value")])
 
-    page.fill('.led-part input.sec', '90')
-    page.dispatch_event('.led-part input.sec', 'change')
-    check("typing seconds writes seconds",
-          page.eval_on_selector('[data-key="89"]', "e => e.value") == "90",
-          page.eval_on_selector('[data-key="89"]', "e => e.value"))
+    page.fill(idle, '90')
+    page.dispatch_event(idle, 'change')
+    page.fill(switch, '5')
+    page.dispatch_event(switch, 'change')
+    check("typing seconds writes seconds to the field it belongs to",
+          [page.eval_on_selector('[data-key="89"]', "e => e.value"),
+           page.eval_on_selector('[data-key="103"]', "e => e.value")] == ["90", "5"],
+          [page.eval_on_selector('[data-key="89"]', "e => e.value"),
+           page.eval_on_selector('[data-key="103"]', "e => e.value")])
 
     # ---- screensaver seconds still scale by a million ----------------------
     # The timers follow the keep-awake mode, so give output A one first.
@@ -143,7 +160,7 @@ with sync_playwright() as p:
 
     # ---- export carries the new fields -------------------------------------
     keys = page.evaluate("() => [...backupFields()].map(e => e.dataset.key)")
-    missing = [k for k in ["88", "89", "90", "96", "102"] if k not in keys]
+    missing = [k for k in ["88", "89", "90", "96", "102", "103"] if k not in keys]
     check("export covers the new settings", not missing, missing)
 
     check("no errors raised while driving it", not errors, errors)

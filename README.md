@@ -136,10 +136,11 @@ configuration.</em></p>
 
 - **The status LED can be told to go dark** - the on-board LED marks whichever board is driving the
   computer you are on, which for anyone whose desk shares a room with a bed is a light on all night.
-  It can now put itself out: either once that computer has gone a set number of seconds without a
-  keypress or a mouse move, or a set number of seconds after the output last changed - the first
-  keeps it lit while you work, the second shows the switch and then gets out of the way. Off by
-  default, and config mode's blink is exempt, since it is the only sign the device is in it.
+  It can now put itself out: once that computer has gone a set number of seconds without a keypress
+  or a mouse move, a set number of seconds after the output last changed, or both on their own
+  timers - the first keeps it lit while you work, the second shows the switch and then gets out of
+  the way, and together a short timer can mark the switch without shortening the one on your typing.
+  Off by default, and config mode's blink is exempt, since it is the only sign the device is in it.
   Reuses the same `last_activity` timestamp the keep-awake modes run on, which the inter-board link
   already keeps current for input arriving from the other board.
   [7e2f1b4](https://github.com/mglushko/deskhop-extended/commit/7e2f1b4)

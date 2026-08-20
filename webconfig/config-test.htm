@@ -428,8 +428,10 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
    since it sits inside one. Dimmed through .off when the feature is off. */
 .dtap-part { display: flex; flex-direction: column; gap: 11px; }
 
-/* Same idea, following the status LED mode. */
-.led-part { display: flex; flex-direction: column; gap: 11px; max-width: 190px; }
+/* Same idea, following the status LED mode. Two timers side by side, since the combined
+   mode runs both of them. */
+.led-times { display: flex; gap: 12px; }
+.led-part { flex: 1 1 0; min-width: 0; max-width: 190px; }
 
 /* ---- shortcuts ------------------------------------------------------- */
 
@@ -454,6 +456,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 }
 .hk-x:hover { color: var(--accent-dk); }
 .hk-x[disabled] { color: var(--bd-lock); cursor: default; }
+
 .row-btn { display: flex; gap: 8px; margin-bottom: 24px; }
 .box { padding: 16px; background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: 4px; }
 .box .lbl { color: var(--warn-fg); margin-bottom: 6px; }
@@ -1006,17 +1009,29 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" role="radio" aria-checked="false" data-v="0">Always on</button>
   <button type="button" role="radio" aria-checked="false" data-v="1">When idle</button>
   <button type="button" role="radio" aria-checked="false" data-v="2">After switching</button>
+  <button type="button" role="radio" aria-checked="false" data-v="3">Idle + switch</button>
 </div><input class="api " type="hidden" id="k88" data-key="88" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-n="ledmode" >
           <span class="hint" id="led-note"></span>
 
-          <div class="led-part">
-            <label class="fld">
-  <span class="hint">Goes dark after</span>
+          <div class="led-times">
+            <div class="led-part" data-led="idle">
+              <label class="fld">
+  <span class="hint">No input for</span>
   <span class="num">
     <input type="number" min="1" max="4200" data-scale="1" data-for="k89" class="sec">
     <span class="num-u">sec</span>
   </span>
 </label><input class="api " type="hidden" id="k89" data-key="89" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-n="ledsec" >
+            </div>
+            <div class="led-part" data-led="switch">
+              <label class="fld">
+  <span class="hint">Since switching</span>
+  <span class="num">
+    <input type="number" min="1" max="4200" data-scale="1" data-for="k103" class="sec">
+    <span class="num-u">sec</span>
+  </span>
+</label><input class="api " type="hidden" id="k103" data-key="103" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-n="ledswitch" >
+            </div>
           </div>
         </div>
 
@@ -1134,6 +1149,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Restore the default shortcut for Firmware upgrade, board B">Default</button>
 </div><input class="api " type="hidden" id="k102" data-key="102" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
           </div>
+
         </div>
 
         <span class="lbl">Diagnostics</span>
@@ -1923,24 +1939,32 @@ function refreshSwitching() {
   });
 }
 
-/* The timeout only means anything once the LED has been given a reason to go dark, so
-   it follows the mode - the same way the double-tap knobs follow their switch. */
+/* A timer only means anything once the mode has given the LED a reason to go dark, so
+   each one follows the mode - the same way the double-tap knobs follow their switch. */
+const LED_TIMERS = {'0': [], '1': ['idle'], '2': ['switch'], '3': ['idle', 'switch']};
+
+const LED_NOTES = {
+  '0': 'The board driving the computer you are on keeps its LED lit.',
+  '1': 'The LED goes dark once that computer has gone this long without a keypress or a ' +
+       'mouse move, and comes back on with the next one. Switching to it starts the clock too.',
+  '2': 'The LED is lit for this long after the output changes, then goes dark until the next ' +
+       'switch, whatever you type in between.',
+  '3': 'Either timer keeps the LED lit, so it goes dark once the computer has been quiet for ' +
+       'the first and the switch is older than the second.',
+};
+
 function refreshLed() {
   const master = document.querySelector('.api[data-n="ledmode"]');
   const mode = master ? String(getValue(master)) : '0';
-  const always = mode === '0';
+  const shown = LED_TIMERS[mode] || [];
 
-  el('led-note').textContent = always
-    ? 'The board driving the computer you are on keeps its LED lit.'
-    : mode === '1'
-      ? 'The LED goes dark once that computer has gone this long without a keypress or a ' +
-        'mouse move, and comes back on with the next one.'
-      : 'The LED is lit for this long after the output changes, then goes dark until the ' +
-        'next switch.';
+  el('led-note').textContent = LED_NOTES[mode] || LED_NOTES['0'];
 
   document.querySelectorAll('.led-part').forEach(part => {
-    part.classList.toggle('off', always);
-    part.querySelectorAll('button, input').forEach(control => { control.disabled = always; });
+    const off = shown.indexOf(part.dataset.led) === -1;
+
+    part.classList.toggle('off', off);
+    part.querySelectorAll('button, input').forEach(control => { control.disabled = off; });
   });
 }
 
@@ -2312,7 +2336,7 @@ window.addEventListener('load', function () {
 
   /* key -> {name, default}, straight from form.py, so this file never carries a second
      copy of the field map. */
-  const FIELDS = {"11": {"default": 1, "name": "Screen Count"}, "12": {"default": 16, "name": "Speed X"}, "13": {"default": 16, "name": "Speed Y"}, "14": {"default": 0, "name": "Border Top"}, "15": {"default": 0, "name": "Border Bottom"}, "16": {"default": 1, "name": "Operating System"}, "17": {"default": 1, "name": "Screen Position"}, "18": {"default": 0, "name": "Cursor Park Position"}, "19": {"default": 0, "name": "Mode"}, "20": {"default": 0, "name": "Only If Inactive"}, "21": {"default": 0, "name": "Idle Time (\u03bcs)"}, "22": {"default": 0, "name": "Max Time (\u03bcs)"}, "41": {"default": 1, "name": "Screen Count"}, "42": {"default": 16, "name": "Speed X"}, "43": {"default": 16, "name": "Speed Y"}, "44": {"default": 0, "name": "Border Top"}, "45": {"default": 0, "name": "Border Bottom"}, "46": {"default": 1, "name": "Operating System"}, "47": {"default": 1, "name": "Screen Position"}, "48": {"default": 0, "name": "Cursor Park Position"}, "49": {"default": 0, "name": "Mode"}, "50": {"default": 0, "name": "Only If Inactive"}, "51": {"default": 0, "name": "Idle Time (\u03bcs)"}, "52": {"default": 0, "name": "Max Time (\u03bcs)"}, "71": {"default": 0, "name": "Force Mouse Boot Mode"}, "72": {"default": 0, "name": "Force KBD Boot Protocol"}, "73": {"default": 0, "name": "KBD LED as Indicator"}, "75": {"default": 0, "name": "Enable Acceleration"}, "76": {"default": 0, "name": "Enforce Ports"}, "77": {"default": 0, "name": "Jump Threshold"}, "78": {"default": 0, "name": "Running FW version"}, "79": {"default": 0, "name": "Running FW checksum"}, "83": {"default": 0, "name": "Edge Double-Tap to Switch"}, "84": {"default": 300, "name": "Double-Tap Time (ms)"}, "85": {"default": 1000, "name": "Double-Tap Pull-Back Distance"}, "86": {"default": 0, "name": "Other board FW version"}, "87": {"default": 1, "name": "Swap Columns"}, "88": {"default": 0, "name": "Status LED"}, "89": {"default": 30, "name": "Status LED Off After"}, "90": {"default": 0, "name": "Switch output"}, "91": {"default": 0, "name": "Slow mouse"}, "92": {"default": 0, "name": "Lock switching"}, "93": {"default": 0, "name": "Lock both screens"}, "94": {"default": 0, "name": "Gaming mode"}, "95": {"default": 0, "name": "Keep awake: pong"}, "96": {"default": 0, "name": "Keep awake: jitter"}, "97": {"default": 0, "name": "Keep awake: off"}, "98": {"default": 0, "name": "Wipe config"}, "99": {"default": 0, "name": "Record screen alignment"}, "100": {"default": 0, "name": "Config mode"}, "101": {"default": 0, "name": "Firmware upgrade, board A"}, "102": {"default": 0, "name": "Firmware upgrade, board B"}};
+  const FIELDS = {"11": {"default": 1, "name": "Screen Count"}, "12": {"default": 16, "name": "Speed X"}, "13": {"default": 16, "name": "Speed Y"}, "14": {"default": 0, "name": "Border Top"}, "15": {"default": 0, "name": "Border Bottom"}, "16": {"default": 1, "name": "Operating System"}, "17": {"default": 1, "name": "Screen Position"}, "18": {"default": 0, "name": "Cursor Park Position"}, "19": {"default": 0, "name": "Mode"}, "20": {"default": 0, "name": "Only If Inactive"}, "21": {"default": 0, "name": "Idle Time (\u03bcs)"}, "22": {"default": 0, "name": "Max Time (\u03bcs)"}, "41": {"default": 1, "name": "Screen Count"}, "42": {"default": 16, "name": "Speed X"}, "43": {"default": 16, "name": "Speed Y"}, "44": {"default": 0, "name": "Border Top"}, "45": {"default": 0, "name": "Border Bottom"}, "46": {"default": 1, "name": "Operating System"}, "47": {"default": 1, "name": "Screen Position"}, "48": {"default": 0, "name": "Cursor Park Position"}, "49": {"default": 0, "name": "Mode"}, "50": {"default": 0, "name": "Only If Inactive"}, "51": {"default": 0, "name": "Idle Time (\u03bcs)"}, "52": {"default": 0, "name": "Max Time (\u03bcs)"}, "71": {"default": 0, "name": "Force Mouse Boot Mode"}, "72": {"default": 0, "name": "Force KBD Boot Protocol"}, "73": {"default": 0, "name": "KBD LED as Indicator"}, "75": {"default": 0, "name": "Enable Acceleration"}, "76": {"default": 0, "name": "Enforce Ports"}, "77": {"default": 0, "name": "Jump Threshold"}, "78": {"default": 0, "name": "Running FW version"}, "79": {"default": 0, "name": "Running FW checksum"}, "83": {"default": 0, "name": "Edge Double-Tap to Switch"}, "84": {"default": 300, "name": "Double-Tap Time (ms)"}, "85": {"default": 1000, "name": "Double-Tap Pull-Back Distance"}, "86": {"default": 0, "name": "Other board FW version"}, "87": {"default": 1, "name": "Swap Columns"}, "88": {"default": 0, "name": "Status LED"}, "89": {"default": 30, "name": "Status LED Idle Time"}, "90": {"default": 0, "name": "Switch output"}, "91": {"default": 0, "name": "Slow mouse"}, "92": {"default": 0, "name": "Lock switching"}, "93": {"default": 0, "name": "Lock both screens"}, "94": {"default": 0, "name": "Gaming mode"}, "95": {"default": 0, "name": "Keep awake: pong"}, "96": {"default": 0, "name": "Keep awake: jitter"}, "97": {"default": 0, "name": "Keep awake: off"}, "98": {"default": 0, "name": "Wipe config"}, "99": {"default": 0, "name": "Record screen alignment"}, "100": {"default": 0, "name": "Config mode"}, "101": {"default": 0, "name": "Firmware upgrade, board A"}, "102": {"default": 0, "name": "Firmware upgrade, board B"}, "103": {"default": 10, "name": "Status LED Switch Time"}};
 
   const PACKET_LEN = 12;      /* 0xaa 0x55, type, 8 data bytes, checksum */
   const KEY_OFFSET = 3;       /* where data[0] lands in a direct report */

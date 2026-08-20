@@ -742,24 +742,32 @@ function refreshSwitching() {
   });
 }
 
-/* The timeout only means anything once the LED has been given a reason to go dark, so
-   it follows the mode - the same way the double-tap knobs follow their switch. */
+/* A timer only means anything once the mode has given the LED a reason to go dark, so
+   each one follows the mode - the same way the double-tap knobs follow their switch. */
+const LED_TIMERS = {'0': [], '1': ['idle'], '2': ['switch'], '3': ['idle', 'switch']};
+
+const LED_NOTES = {
+  '0': 'The board driving the computer you are on keeps its LED lit.',
+  '1': 'The LED goes dark once that computer has gone this long without a keypress or a ' +
+       'mouse move, and comes back on with the next one. Switching to it starts the clock too.',
+  '2': 'The LED is lit for this long after the output changes, then goes dark until the next ' +
+       'switch, whatever you type in between.',
+  '3': 'Either timer keeps the LED lit, so it goes dark once the computer has been quiet for ' +
+       'the first and the switch is older than the second.',
+};
+
 function refreshLed() {
   const master = document.querySelector('.api[data-n="ledmode"]');
   const mode = master ? String(getValue(master)) : '0';
-  const always = mode === '0';
+  const shown = LED_TIMERS[mode] || [];
 
-  el('led-note').textContent = always
-    ? 'The board driving the computer you are on keeps its LED lit.'
-    : mode === '1'
-      ? 'The LED goes dark once that computer has gone this long without a keypress or a ' +
-        'mouse move, and comes back on with the next one.'
-      : 'The LED is lit for this long after the output changes, then goes dark until the ' +
-        'next switch.';
+  el('led-note').textContent = LED_NOTES[mode] || LED_NOTES['0'];
 
   document.querySelectorAll('.led-part').forEach(part => {
-    part.classList.toggle('off', always);
-    part.querySelectorAll('button, input').forEach(control => { control.disabled = always; });
+    const off = shown.indexOf(part.dataset.led) === -1;
+
+    part.classList.toggle('off', off);
+    part.querySelectorAll('button, input').forEach(control => { control.disabled = off; });
   });
 }
 

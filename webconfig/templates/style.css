@@ -393,8 +393,10 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
    since it sits inside one. Dimmed through .off when the feature is off. */
 .dtap-part { display: flex; flex-direction: column; gap: 11px; }
 
-/* Same idea, following the status LED mode. */
-.led-part { display: flex; flex-direction: column; gap: 11px; max-width: 190px; }
+/* Same idea, following the status LED mode. Two timers side by side, since the combined
+   mode runs both of them. */
+.led-times { display: flex; gap: 12px; }
+.led-part { flex: 1 1 0; min-width: 0; max-width: 190px; }
 
 /* ---- shortcuts ------------------------------------------------------- */
 
@@ -419,6 +421,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 }
 .hk-x:hover { color: var(--accent-dk); }
 .hk-x[disabled] { color: var(--bd-lock); cursor: default; }
+
 .row-btn { display: flex; gap: 8px; margin-bottom: 24px; }
 .box { padding: 16px; background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: 4px; }
 .box .lbl { color: var(--warn-fg); margin-bottom: 6px; }

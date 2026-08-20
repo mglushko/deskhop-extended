@@ -64,6 +64,7 @@ const field_map_t api_field_map[] = {
     { 87, false, UINT8,  1, offsetof(device_t, config.swap_columns) },
     { 88, false, UINT8,  1, offsetof(device_t, config.led_off_mode) },
     { 89, false, UINT16, 2, offsetof(device_t, config.led_off_sec) },
+    { 103, false, UINT16, 2, offsetof(device_t, config.led_switch_sec) },
 
     /* Hotkeys, one packed combo per entry in hotkeys[] (keyboard.c) and in that order.
        HOTKEY_CFG_FIRST_KEY (keyboard.h) has to stay pointing at the first of them. */

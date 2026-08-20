@@ -66,6 +66,7 @@ const config_t default_config = {
     .swap_columns = 0,
     .led_off_mode = LED_OFF_MODE,
     .led_off_sec = LED_OFF_SEC,
+    .led_switch_sec = LED_SWITCH_SEC,
     .switch_double_tap_enable = SWITCH_DOUBLE_TAP_ENABLE,
     .switch_double_tap_ms = SWITCH_DOUBLE_TAP_MS,
     .switch_double_tap_margin = SWITCH_DOUBLE_TAP_MARGIN,
