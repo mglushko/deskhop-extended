@@ -223,14 +223,18 @@ in practice.
 
 A board pushes its firmware onto the other one as soon as that one reports a lower version
 (`handle_heartbeat_msg`, once a second), and this build numbers itself above upstream on purpose -
-v1.06 reports `1106` against upstream v0.78's `178`. So flashing one board flashes the pair, and
-flashing a single board back to [hrvach/deskhop](https://github.com/hrvach/deskhop) only gets it
-overwritten again the moment the two are powered up together. The same goes for stepping back to an
-older DeskHop EX build.
+v1.06 reports `1106` against upstream v0.78's `178`. So flashing a single board back to
+[hrvach/deskhop](https://github.com/hrvach/deskhop) only gets it overwritten again the moment the
+two are powered up together. Both boards have to be done, one at a time, while neither is running:
 
-Unplug both boards, then take each one on its own: hold its BOOTSEL button while plugging it in, and
-copy the `.uf2` you want onto the `RPI-RP2` drive that appears. Do both before they are running side
-by side again.
+1. Unplug both boards.
+2. Hold BOOTSEL on the first board and plug it in. A drive named `RPI-RP2` appears; let go of the
+   button.
+3. Copy the DeskHop `.uf2` onto that drive. The board reboots by itself and the drive disappears.
+4. Unplug that board, then repeat steps 2 and 3 for the other one.
+5. Plug both back in.
+
+Stepping back to an older DeskHop EX build works the same way, for the same reason.
 
 Settings do not make the trip in either direction - each build stores its configuration in a form
 the other refuses, so whichever firmware you land on comes up on its compiled-in defaults. Nothing
