@@ -54,9 +54,10 @@ void core1_main() {
         [1] = {.exec = &packet_receiver_task,    .frequency = _TOP()},       // | Receive data over serial from the other board
         [2] = {.exec = &led_blinking_task,       .frequency = _HZ(30)},      // | Check if LED needs blinking
         [3] = {.exec = &led_sync_task,           .frequency = _HZ(30)},      // | Sync LED state if needed
-        [4] = {.exec = &screensaver_task,        .frequency = _HZ(120)},     // | Handle "screensaver" movements
-        [5] = {.exec = &firmware_upgrade_task,   .frequency = _HZ(4000)},    // | Send firmware to the other board if needed
-        [6] = {.exec = &heartbeat_output_task,   .frequency = _HZ(1)},       // | Output periodic heartbeats
+        [4] = {.exec = &led_timeout_task,        .frequency = _HZ(10)},      // | Take the indicator dark once idle
+        [5] = {.exec = &screensaver_task,        .frequency = _HZ(120)},     // | Handle "screensaver" movements
+        [6] = {.exec = &firmware_upgrade_task,   .frequency = _HZ(4000)},    // | Send firmware to the other board if needed
+        [7] = {.exec = &heartbeat_output_task,   .frequency = _HZ(1)},       // | Output periodic heartbeats
     };                                                                       // `----- then go back and repeat forever
     const int NUM_TASKS = ARRAY_SIZE(tasks_core1);
 

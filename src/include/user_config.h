@@ -23,6 +23,31 @@
 #define KBD_LED_AS_INDICATOR 0
 
 /**===================================================== *
+ * ==============  Status LED Timeout  ================= *
+ * ===================================================== *
+ *
+ * The on-board LED is lit on whichever board is the active output. If it is somewhere
+ * you would rather not have a light at night, it can be told to go dark on its own.
+ * This covers the on-board LED only - the caps lock indicator above, if you use it,
+ * keeps showing the output.
+ *
+ * LED_OFF_MODE: LED_ALWAYS_ON        - lit for as long as this board is the output
+ *               LED_OFF_WHEN_IDLE    - goes dark once this computer has had no input
+ *                                      for LED_OFF_SEC, comes back on the next keypress
+ *                                      or mouse move
+ *               LED_OFF_AFTER_SWITCH - lit for LED_OFF_SEC after this board becomes the
+ *                                      output, then dark until the next switch
+ *
+ * LED_OFF_SEC: [0-4200] seconds. 0 means never - the LED stays lit either way.
+ *
+ * Config mode is exempt: its once-a-second blink is the only sign the device is in it.
+ *
+ * */
+
+#define LED_OFF_MODE LED_ALWAYS_ON
+#define LED_OFF_SEC  30
+
+/**===================================================== *
  * ===========  Hotkey for output switching  =========== *
  * ===================================================== *
  *

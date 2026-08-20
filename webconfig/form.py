@@ -48,6 +48,11 @@ CONFIG_ = [
 
     # Config page layout only - which output is drawn in the left-hand column.
     FormField(87, "Swap Columns", 1, {}, "uint8", "checkbox"),
+
+    FormField(1004, "Status LED", elem="label"),
+    FormField(88, "Status LED", 0, {0: "Always on", 1: "When idle", 2: "After switching"}, "uint8"),
+    # Seconds here, not microseconds: config.led_off_sec is stored in seconds.
+    FormField(89, "Status LED Off After", 30, {"min": 1, "max": 4200}, "uint16"),
 ]
 
 OUTPUT_ = [

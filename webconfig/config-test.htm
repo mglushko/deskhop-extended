@@ -22,6 +22,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -423,6 +424,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 /* Follows the double-tap toggle: stacks like .grp, minus the trailing gap,
    since it sits inside one. Dimmed through .off when the feature is off. */
 .dtap-part { display: flex; flex-direction: column; gap: 11px; }
+
+/* Same idea, following the status LED mode. */
+.led-part { display: flex; flex-direction: column; gap: 11px; max-width: 190px; }
 .row-btn { display: flex; gap: 8px; margin-bottom: 24px; }
 .box { padding: 16px; background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: 4px; }
 .box .lbl { color: var(--warn-fg); margin-bottom: 6px; }
@@ -821,14 +825,14 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
               <label class="fld">
   <span class="hint">Starts after</span>
   <span class="num">
-    <input type="number" min="0" max="4200" data-for="k21" class="sec">
+    <input type="number" min="0" max="4200" data-scale="1000000" data-for="k21" class="sec">
     <span class="num-u">sec</span>
   </span>
 </label><input class="api " type="hidden" id="k21" data-key="21" data-type="uint64" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="idle" >
               <label class="fld">
   <span class="hint">Stops after</span>
   <span class="num">
-    <input type="number" min="0" max="4200" data-for="k22" class="sec">
+    <input type="number" min="0" max="4200" data-scale="1000000" data-for="k22" class="sec">
     <span class="num-u">sec</span>
   </span>
 </label><input class="api " type="hidden" id="k22" data-key="22" data-type="uint64" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="maxt" >
@@ -871,14 +875,14 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
               <label class="fld">
   <span class="hint">Starts after</span>
   <span class="num">
-    <input type="number" min="0" max="4200" data-for="k51" class="sec">
+    <input type="number" min="0" max="4200" data-scale="1000000" data-for="k51" class="sec">
     <span class="num-u">sec</span>
   </span>
 </label><input class="api " type="hidden" id="k51" data-key="51" data-type="uint64" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="idle" >
               <label class="fld">
   <span class="hint">Stops after</span>
   <span class="num">
-    <input type="number" min="0" max="4200" data-for="k52" class="sec">
+    <input type="number" min="0" max="4200" data-scale="1000000" data-for="k52" class="sec">
     <span class="num-u">sec</span>
   </span>
 </label><input class="api " type="hidden" id="k52" data-key="52" data-type="uint64" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="maxt" >
@@ -965,6 +969,26 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
         <div class="grp">
           <label class="chk"><input class="api " type="checkbox" id="k76" data-key="76" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Enforce Ports</span></label>
           <span class="hint">Requires the keyboard and mouse to be plugged into their designated ports.</span>
+        </div>
+
+        <span class="lbl">Status LED</span>
+        <div class="grp">
+          <div class="seg " role="radiogroup" aria-label="Status LED" data-for="k88">
+  <button type="button" role="radio" aria-checked="false" data-v="0">Always on</button>
+  <button type="button" role="radio" aria-checked="false" data-v="1">When idle</button>
+  <button type="button" role="radio" aria-checked="false" data-v="2">After switching</button>
+</div><input class="api " type="hidden" id="k88" data-key="88" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-n="ledmode" >
+          <span class="hint" id="led-note"></span>
+
+          <div class="led-part">
+            <label class="fld">
+  <span class="hint">Goes dark after</span>
+  <span class="num">
+    <input type="number" min="1" max="4200" data-scale="1" data-for="k89" class="sec">
+    <span class="num-u">sec</span>
+  </span>
+</label><input class="api " type="hidden" id="k89" data-key="89" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-n="ledsec" >
+          </div>
         </div>
 
         <span class="lbl">Diagnostics</span>
@@ -1590,6 +1614,8 @@ function syncControl(element) {
     refreshOutput(element.dataset.o);
   else if (element.dataset.n === 'dtap')
     refreshSwitching();
+  else if (element.dataset.n === 'ledmode')
+    refreshLed();
 
   if (element.hasAttribute('data-fw-ver'))
     refreshVersions();
@@ -1615,7 +1641,7 @@ function renderView(view, element) {
   } else if (list.contains('sw')) {
     view.setAttribute('aria-checked', element.checked);
   } else if (list.contains('sec')) {
-    view.value = Math.round((parseInt(value, 10) || 0) / 1000000);
+    view.value = Math.round((parseInt(value, 10) || 0) / (Number(view.dataset.scale) || 1));
   } else if (list.contains('swap')) {
     view.setAttribute('aria-pressed', value != 0);
   } else if (list.contains('pctv')) {
@@ -1743,6 +1769,27 @@ function refreshSwitching() {
   });
 }
 
+/* The timeout only means anything once the LED has been given a reason to go dark, so
+   it follows the mode - the same way the double-tap knobs follow their switch. */
+function refreshLed() {
+  const master = document.querySelector('.api[data-n="ledmode"]');
+  const mode = master ? String(getValue(master)) : '0';
+  const always = mode === '0';
+
+  el('led-note').textContent = always
+    ? 'The board driving the computer you are on keeps its LED lit.'
+    : mode === '1'
+      ? 'The LED goes dark once that computer has gone this long without a keypress or a ' +
+        'mouse move, and comes back on with the next one.'
+      : 'The LED is lit for this long after the output changes, then goes dark until the ' +
+        'next switch.';
+
+  document.querySelectorAll('.led-part').forEach(part => {
+    part.classList.toggle('off', always);
+    part.querySelectorAll('button, input').forEach(control => { control.disabled = always; });
+  });
+}
+
 function useFullEdge(output) {
   setApi(apiValue(output, 'bt'), 0);
   setApi(apiValue(output, 'bb'), MAX_SCREEN_COORD);
@@ -1839,18 +1886,22 @@ function coordChanged(event) {
   }
 }
 
-/* Idle/Max time are µs on the wire, seconds in the form. The wire value is a
-   uint32, so seconds are capped short of 2^32 µs. */
+/* Seconds in the form, whatever the field holds on the wire - data-scale says what one
+   second is worth there. The screensaver timers are µs in a uint32, which is where the
+   4200 second ceiling comes from; the LED timeout is already seconds. */
 function secondsChanged(event) {
   const field = event.target;
 
   if (!field.classList.contains('sec'))
     return;
 
-  const seconds = Math.max(0, Math.min(4200, Math.round(Number(field.value) || 0)));
+  const scale = Number(field.dataset.scale) || 1;
+  const floor = Number(field.min) || 0;
+  const ceiling = Number(field.max) || 4200;
+  const seconds = Math.max(floor, Math.min(ceiling, Math.round(Number(field.value) || 0)));
 
   field.value = seconds;
-  setApi(el(field.dataset.for), seconds * 1000000);
+  setApi(el(field.dataset.for), seconds * scale);
 }
 
 window.addEventListener('load', function () {
@@ -1901,6 +1952,7 @@ window.addEventListener('load', function () {
   refreshOutput('A');
   refreshOutput('B');
   refreshSwitching();
+  refreshLed();
   setConnected(false);
 });
 </script>
@@ -1926,14 +1978,14 @@ window.addEventListener('load', function () {
 
   /* key -> {name, default}, straight from form.py, so this file never carries a second
      copy of the field map. */
-  const FIELDS = {"11": {"default": 1, "name": "Screen Count"}, "12": {"default": 16, "name": "Speed X"}, "13": {"default": 16, "name": "Speed Y"}, "14": {"default": 0, "name": "Border Top"}, "15": {"default": 0, "name": "Border Bottom"}, "16": {"default": 1, "name": "Operating System"}, "17": {"default": 1, "name": "Screen Position"}, "18": {"default": 0, "name": "Cursor Park Position"}, "19": {"default": 0, "name": "Mode"}, "20": {"default": 0, "name": "Only If Inactive"}, "21": {"default": 0, "name": "Idle Time (\u03bcs)"}, "22": {"default": 0, "name": "Max Time (\u03bcs)"}, "41": {"default": 1, "name": "Screen Count"}, "42": {"default": 16, "name": "Speed X"}, "43": {"default": 16, "name": "Speed Y"}, "44": {"default": 0, "name": "Border Top"}, "45": {"default": 0, "name": "Border Bottom"}, "46": {"default": 1, "name": "Operating System"}, "47": {"default": 1, "name": "Screen Position"}, "48": {"default": 0, "name": "Cursor Park Position"}, "49": {"default": 0, "name": "Mode"}, "50": {"default": 0, "name": "Only If Inactive"}, "51": {"default": 0, "name": "Idle Time (\u03bcs)"}, "52": {"default": 0, "name": "Max Time (\u03bcs)"}, "71": {"default": 0, "name": "Force Mouse Boot Mode"}, "72": {"default": 0, "name": "Force KBD Boot Protocol"}, "73": {"default": 0, "name": "KBD LED as Indicator"}, "75": {"default": 0, "name": "Enable Acceleration"}, "76": {"default": 0, "name": "Enforce Ports"}, "77": {"default": 0, "name": "Jump Threshold"}, "78": {"default": 0, "name": "Running FW version"}, "79": {"default": 0, "name": "Running FW checksum"}, "83": {"default": 0, "name": "Edge Double-Tap to Switch"}, "84": {"default": 300, "name": "Double-Tap Time (ms)"}, "85": {"default": 1000, "name": "Double-Tap Pull-Back Distance"}, "86": {"default": 0, "name": "Other board FW version"}, "87": {"default": 1, "name": "Swap Columns"}};
+  const FIELDS = {"11": {"default": 1, "name": "Screen Count"}, "12": {"default": 16, "name": "Speed X"}, "13": {"default": 16, "name": "Speed Y"}, "14": {"default": 0, "name": "Border Top"}, "15": {"default": 0, "name": "Border Bottom"}, "16": {"default": 1, "name": "Operating System"}, "17": {"default": 1, "name": "Screen Position"}, "18": {"default": 0, "name": "Cursor Park Position"}, "19": {"default": 0, "name": "Mode"}, "20": {"default": 0, "name": "Only If Inactive"}, "21": {"default": 0, "name": "Idle Time (\u03bcs)"}, "22": {"default": 0, "name": "Max Time (\u03bcs)"}, "41": {"default": 1, "name": "Screen Count"}, "42": {"default": 16, "name": "Speed X"}, "43": {"default": 16, "name": "Speed Y"}, "44": {"default": 0, "name": "Border Top"}, "45": {"default": 0, "name": "Border Bottom"}, "46": {"default": 1, "name": "Operating System"}, "47": {"default": 1, "name": "Screen Position"}, "48": {"default": 0, "name": "Cursor Park Position"}, "49": {"default": 0, "name": "Mode"}, "50": {"default": 0, "name": "Only If Inactive"}, "51": {"default": 0, "name": "Idle Time (\u03bcs)"}, "52": {"default": 0, "name": "Max Time (\u03bcs)"}, "71": {"default": 0, "name": "Force Mouse Boot Mode"}, "72": {"default": 0, "name": "Force KBD Boot Protocol"}, "73": {"default": 0, "name": "KBD LED as Indicator"}, "75": {"default": 0, "name": "Enable Acceleration"}, "76": {"default": 0, "name": "Enforce Ports"}, "77": {"default": 0, "name": "Jump Threshold"}, "78": {"default": 0, "name": "Running FW version"}, "79": {"default": 0, "name": "Running FW checksum"}, "83": {"default": 0, "name": "Edge Double-Tap to Switch"}, "84": {"default": 300, "name": "Double-Tap Time (ms)"}, "85": {"default": 1000, "name": "Double-Tap Pull-Back Distance"}, "86": {"default": 0, "name": "Other board FW version"}, "87": {"default": 1, "name": "Swap Columns"}, "88": {"default": 0, "name": "Status LED"}, "89": {"default": 30, "name": "Status LED Off After"}};
 
   const PACKET_LEN = 12;      /* 0xaa 0x55, type, 8 data bytes, checksum */
   const KEY_OFFSET = 3;       /* where data[0] lands in a direct report */
 
   /* This tree's version, as the uint16 the boards exchange. The checksum is invented -
      the page only ever prints it - but it is fixed, so it does not churn screenshots. */
-  const FW_VERSION = 1105;
+  const FW_VERSION = 1106;
   const CHECKSUM = 0x7d3ed9ba;
 
   /* What the emulated boards start out holding: a plausible saved configuration, not a

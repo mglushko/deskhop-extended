@@ -44,11 +44,14 @@
 <label class="chk">{{ api(item, '', '', 'checkbox') }}<span>{{ label }}</span></label>
 {%- endmacro %}
 
-{% macro secs(item, o, n, label) -%}
+{# Seconds in the form, whatever the field is stored in: scale is what one second is
+   worth on the wire - 1000000 for the screensaver timers, 1 for a field already in
+   seconds. script.js reads it from data-scale in both directions. #}
+{% macro secs(item, o, n, label, scale=1000000, min=0) -%}
 <label class="fld">
   <span class="hint">{{ label }}</span>
   <span class="num">
-    <input type="number" min="0" max="4200" data-for="k{{ item.key }}" class="sec">
+    <input type="number" min="{{ min }}" max="4200" data-scale="{{ scale }}" data-for="k{{ item.key }}" class="sec">
     <span class="num-u">sec</span>
   </span>
 </label>
@@ -398,6 +401,16 @@
         <div class="grp">
           {{ chk(C['Enforce Ports'], 'Enforce Ports') }}
           <span class="hint">Requires the keyboard and mouse to be plugged into their designated ports.</span>
+        </div>
+
+        <span class="lbl">Status LED</span>
+        <div class="grp">
+          {{ seg(C['Status LED'], '', 'ledmode', 'Status LED') }}
+          <span class="hint" id="led-note"></span>
+
+          <div class="led-part">
+            {{ secs(C['Status LED Off After'], '', 'ledsec', 'Goes dark after', scale=1, min=1) }}
+          </div>
         </div>
 
         <span class="lbl">Diagnostics</span>

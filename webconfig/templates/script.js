@@ -578,6 +578,8 @@ function syncControl(element) {
     refreshOutput(element.dataset.o);
   else if (element.dataset.n === 'dtap')
     refreshSwitching();
+  else if (element.dataset.n === 'ledmode')
+    refreshLed();
 
   if (element.hasAttribute('data-fw-ver'))
     refreshVersions();
@@ -603,7 +605,7 @@ function renderView(view, element) {
   } else if (list.contains('sw')) {
     view.setAttribute('aria-checked', element.checked);
   } else if (list.contains('sec')) {
-    view.value = Math.round((parseInt(value, 10) || 0) / 1000000);
+    view.value = Math.round((parseInt(value, 10) || 0) / (Number(view.dataset.scale) || 1));
   } else if (list.contains('swap')) {
     view.setAttribute('aria-pressed', value != 0);
   } else if (list.contains('pctv')) {
@@ -731,6 +733,27 @@ function refreshSwitching() {
   });
 }
 
+/* The timeout only means anything once the LED has been given a reason to go dark, so
+   it follows the mode - the same way the double-tap knobs follow their switch. */
+function refreshLed() {
+  const master = document.querySelector('.api[data-n="ledmode"]');
+  const mode = master ? String(getValue(master)) : '0';
+  const always = mode === '0';
+
+  el('led-note').textContent = always
+    ? 'The board driving the computer you are on keeps its LED lit.'
+    : mode === '1'
+      ? 'The LED goes dark once that computer has gone this long without a keypress or a ' +
+        'mouse move, and comes back on with the next one.'
+      : 'The LED is lit for this long after the output changes, then goes dark until the ' +
+        'next switch.';
+
+  document.querySelectorAll('.led-part').forEach(part => {
+    part.classList.toggle('off', always);
+    part.querySelectorAll('button, input').forEach(control => { control.disabled = always; });
+  });
+}
+
 function useFullEdge(output) {
   setApi(apiValue(output, 'bt'), 0);
   setApi(apiValue(output, 'bb'), MAX_SCREEN_COORD);
@@ -827,18 +850,22 @@ function coordChanged(event) {
   }
 }
 
-/* Idle/Max time are µs on the wire, seconds in the form. The wire value is a
-   uint32, so seconds are capped short of 2^32 µs. */
+/* Seconds in the form, whatever the field holds on the wire - data-scale says what one
+   second is worth there. The screensaver timers are µs in a uint32, which is where the
+   4200 second ceiling comes from; the LED timeout is already seconds. */
 function secondsChanged(event) {
   const field = event.target;
 
   if (!field.classList.contains('sec'))
     return;
 
-  const seconds = Math.max(0, Math.min(4200, Math.round(Number(field.value) || 0)));
+  const scale = Number(field.dataset.scale) || 1;
+  const floor = Number(field.min) || 0;
+  const ceiling = Number(field.max) || 4200;
+  const seconds = Math.max(floor, Math.min(ceiling, Math.round(Number(field.value) || 0)));
 
   field.value = seconds;
-  setApi(el(field.dataset.for), seconds * 1000000);
+  setApi(el(field.dataset.for), seconds * scale);
 }
 
 window.addEventListener('load', function () {
@@ -889,5 +916,6 @@ window.addEventListener('load', function () {
   refreshOutput('A');
   refreshOutput('B');
   refreshSwitching();
+  refreshLed();
   setConnected(false);
 });

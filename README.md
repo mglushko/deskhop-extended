@@ -114,6 +114,15 @@ configuration.</em></p>
 
 ![The edge double-tap settings on the config page](img/config-dtap.png)
 
+- **The status LED can be told to go dark** - the on-board LED marks whichever board is driving the
+  computer you are on, which for anyone whose desk shares a room with a bed is a light on all night.
+  It can now put itself out: either once that computer has gone a set number of seconds without a
+  keypress or a mouse move, or a set number of seconds after the output last changed - the first
+  keeps it lit while you work, the second shows the switch and then gets out of the way. Off by
+  default, and config mode's blink is exempt, since it is the only sign the device is in it.
+  Reuses the same `last_activity` timestamp the keep-awake modes run on, which the inter-board link
+  already keeps current for input arriving from the other board.
+
 Upstream's README below is reproduced unchanged, so its screenshots and its instruction to "click
 *exit* in the menu" still show upstream's page; on this build Exit sits in the header. See
 [Web configuration mode](#web-configuration-mode) for how to reach the page.
@@ -138,6 +147,8 @@ Upstream's README below is reproduced unchanged, so its screenshots and its inst
   `api_field_map`, so fields can be added, removed or reordered without invalidating flash, and a
   config written by an older build is migrated on first boot. Exercised on the host by
   `misc/hosttest/run.sh`. [7c8fe38](https://github.com/mglushko/deskhop-extended/commit/7c8fe38)
+  The pre key-value layout it migrates from is frozen as its own struct, so `config_t` can grow
+  without invalidating what is already in anyone's flash.
 
 ### Notes
 

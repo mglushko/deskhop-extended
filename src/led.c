@@ -32,8 +32,9 @@ void set_keyboard_leds(uint8_t requested_led_state, device_t *state) {
 }
 
 void restore_leds(device_t *state) {
-    /* Light up on-board LED if current board is active output */
-    state->onboard_led_state = (state->active_output == BOARD_ROLE);
+    /* Light up on-board LED if current board is active output, unless the status LED
+       timeout has taken it dark (led_timeout_task below). */
+    state->onboard_led_state = (state->active_output == BOARD_ROLE) && !state->led_suppressed;
     gpio_put(GPIO_LED_PIN, state->onboard_led_state);
 
     /* Light up appropriate keyboard leds (if it's connected locally) */
@@ -92,6 +93,52 @@ void led_blinking_task(device_t *state) {
     state->last_led_change = time_us_32();
 
     /* Restore LEDs in the last pass */
+    if (state->blinks_left == 0)
+        restore_leds(state);
+}
+
+/* Take the indicator dark once this board has been quiet for long enough.
+
+   Both modes are a timestamp and a timeout. IDLE measures from the last input this
+   board's computer received - the same last_activity the screensaver uses, which the
+   inter-board link keeps current for input arriving from the other board too - so the
+   light stays on while you work and goes out when you stop. SWITCH measures from the
+   moment the output last changed, so it shows the switch and then gets out of the way.
+
+   Only the board that is the active output has anything lit, so this does nothing on
+   the other one. The caps lock indicator (kbd_led_as_indicator) is deliberately left
+   alone: led_sync_task drives the keyboard's LEDs from keyboard_leds_desired and would
+   undo any suppression here within a frame. */
+void led_timeout_task(device_t *state) {
+    bool suppress = false;
+
+    /* Config mode blinks once a second and that blink is the only sign the device is in
+       it, so it outranks the timeout. */
+    if (state->config.led_off_mode != LED_ALWAYS_ON && !state->config_mode_active) {
+        uint64_t timeout_us = (uint64_t)state->config.led_off_sec * 1000000;
+        uint64_t since = state->last_switch_time;
+
+        /* Idle counts from the last input this computer saw, or from the switch if that
+           is the more recent of the two: becoming the active output starts the clock as
+           much as a keypress does, and without it switching by hotkey onto a computer
+           left alone since this morning would light the LED and put it straight back
+           out. Counting from the switch alone is the other mode's whole point, so it
+           takes the timestamp as it stands. */
+        if (state->config.led_off_mode == LED_OFF_WHEN_IDLE
+            && state->last_activity[BOARD_ROLE] > since)
+            since = state->last_activity[BOARD_ROLE];
+
+        /* Zero seconds means never, so a half-configured device keeps its indicator. */
+        suppress = timeout_us && (time_us_64() - since > timeout_us);
+    }
+
+    if (suppress == state->led_suppressed)
+        return;
+
+    state->led_suppressed = suppress;
+
+    /* Mid-blink the blinking task owns the pin and ends by calling restore_leds()
+       itself, which picks this up - stepping in here would cut it short. */
     if (state->blinks_left == 0)
         restore_leds(state);
 }

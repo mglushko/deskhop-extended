@@ -51,12 +51,12 @@ int main(void) {
     char detail[128];
 
     /* ---- layout the legacy path depends on ------------------------------ */
-    /* config_store_load_legacy memcpys sizeof(config_t) out of a pre key-value page and
-       checksums sizeof(config_t) - 4. Grow the struct and every such page silently stops
-       validating, so pin the size rather than trusting that nobody appends to it. */
-    snprintf(detail, sizeof(detail), "sizeof(config_t) = %zu", sizeof(config_t));
-    check("config_t is still the 144 bytes the legacy format was written at",
-          sizeof(config_t) == 144, detail);
+    /* config_store_load_legacy reads a pre key-value page as config_v9_t and checksums
+       sizeof(config_v9_t) - 4. Grow that struct and every such page silently stops
+       validating, so pin its size. config_t itself is free to grow past it. */
+    snprintf(detail, sizeof(detail), "sizeof(config_v9_t) = %zu", sizeof(config_v9_t));
+    check("the frozen legacy layout is still the 144 bytes it was written at",
+          sizeof(config_v9_t) == 144, detail);
 
     /* ---- round trip ---------------------------------------------------- */
     fill(&device_a, 11);
@@ -64,6 +64,10 @@ int main(void) {
 
     snprintf(detail, sizeof(detail), "%zu bytes of %d", used, FLASH_PAGE_SIZE);
     check("worst case payload fits one flash page", used > 0 && used <= FLASH_PAGE_SIZE, detail);
+
+    /* Printed either way: config_store_pack stops rather than overrun, so a field map
+       that outgrows the page loses settings silently. This is the headroom left. */
+    printf("        %s\n", detail);
 
     fill(&device_b, 200);
     check("unpack reports a key-value page",
@@ -163,13 +167,13 @@ int main(void) {
 
     /* ---- migration from the pre key-value layout ------------------------ */
     {
-        config_t legacy;
+        config_v9_t legacy;
         memset(&legacy, 0, sizeof(legacy));
         legacy.magic_header = CONFIG_MAGIC_HEADER;
         legacy.version = CURRENT_CONFIG_VERSION;
         legacy.jump_threshold = 1234;
         legacy.output[1].screen_count = 3;
-        legacy.checksum = calc_crc32((uint8_t *)&legacy, sizeof(config_t) - sizeof(uint32_t));
+        legacy.checksum = calc_crc32((uint8_t *)&legacy, sizeof(config_v9_t) - sizeof(uint32_t));
 
         memset(page, 0, sizeof(page));
         memcpy(page, &legacy, sizeof(legacy));
@@ -177,11 +181,17 @@ int main(void) {
         check("a pre key-value page is recognised as legacy",
               config_store_unpack(page, sizeof(page), (uint8_t *)&device_b) == CONFIG_STORE_LEGACY, "");
 
+        /* As load_config does: start from the defaults, then let the old page speak for
+           the fields it knows. Anything newer than it has to survive untouched. */
         config_t out;
         memset(&out, 0, sizeof(out));
+        out.led_off_sec = 42;
+
         check("legacy page loads", config_store_load_legacy(page, sizeof(page), &out), "");
         check("legacy values survive the migration",
               out.jump_threshold == 1234 && out.output[1].screen_count == 3, "");
+        check("fields added after the legacy layout keep their defaults",
+              out.led_off_sec == 42, "");
 
         legacy.checksum ^= 0xFF;
         memcpy(page, &legacy, sizeof(legacy));

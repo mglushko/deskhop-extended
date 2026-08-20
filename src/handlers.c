@@ -207,6 +207,7 @@ void handle_output_select_msg(uart_packet_t *packet, device_t *state) {
     if (state->tud_connected)
         release_all_keys(state);
 
+    note_output_switch(state);
     restore_leds(state);
 }
 
@@ -400,9 +401,18 @@ void handle_heartbeat_msg(uart_packet_t *packet, device_t *state) {
  * ==============  Output Switch Routines  ============ *
  * ==================================================== */
 
+/* Light the indicator back up and restart whichever timeout the status LED is on.
+   Called from both sides of a switch: the board that performed it, and the board that
+   hears about it over the link. */
+void note_output_switch(device_t *state) {
+    state->last_switch_time = time_us_64();
+    state->led_suppressed   = false;
+}
+
 /* Update output variable, set LED on/off and notify the other board so they are in sync. */
 void set_active_output(device_t *state, uint8_t new_output) {
     state->active_output = new_output;
+    note_output_switch(state);
     restore_leds(state);
     send_value(new_output, OUTPUT_SELECT_MSG);
 

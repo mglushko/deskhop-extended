@@ -62,6 +62,8 @@ const field_map_t api_field_map[] = {
     { 84, false, UINT16, 2, offsetof(device_t, config.switch_double_tap_ms) },
     { 85, false, UINT16, 2, offsetof(device_t, config.switch_double_tap_margin) },
     { 87, false, UINT8,  1, offsetof(device_t, config.swap_columns) },
+    { 88, false, UINT8,  1, offsetof(device_t, config.led_off_mode) },
+    { 89, false, UINT16, 2, offsetof(device_t, config.led_off_sec) },
 
     /* Firmware */
     { 78, true,  UINT16, 2, offsetof(device_t, _running_fw.version) },

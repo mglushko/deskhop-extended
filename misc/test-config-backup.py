@@ -52,9 +52,9 @@ with sync_playwright() as p:
                   "  setValue(e, e.type === 'checkbox' ? (i % 2) : (i + 3))); markClean(); }")
 
     writable = page.evaluate("() => document.querySelectorAll('.api:not([readonly])').length")
-    # 34 of the firmware's 38 writable fields; the page deliberately does not expose
+    # 36 of the firmware's 40 writable fields; the page deliberately does not expose
     # output[].number (x2), config.version or hotkey_toggle.
-    check("page exposes 34 writable fields", writable == 34, writable)
+    check("page exposes 36 writable fields", writable == 36, writable)
 
     page.evaluate("() => exportHandler()")
     exported = json.loads(page.eval_on_selector("#backup-text", "e => e.value"))

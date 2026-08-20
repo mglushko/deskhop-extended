@@ -113,19 +113,37 @@ config_store_kind_t config_store_unpack(const uint8_t *stored, size_t stored_len
 }
 
 bool config_store_load_legacy(const uint8_t *stored, size_t stored_len, config_t *out) {
-    config_t legacy;
+    config_v9_t legacy;
 
-    if (stored_len < sizeof(config_t))
+    if (stored_len < sizeof(config_v9_t))
         return false;
 
-    memcpy(&legacy, stored, sizeof(config_t));
+    memcpy(&legacy, stored, sizeof(config_v9_t));
 
     if (legacy.magic_header != CONFIG_MAGIC_HEADER || legacy.version != CURRENT_CONFIG_VERSION)
         return false;
 
-    if (legacy.checksum != calc_crc32((uint8_t *)&legacy, sizeof(config_t) - sizeof(uint32_t)))
+    if (legacy.checksum != calc_crc32((uint8_t *)&legacy, sizeof(config_v9_t) - sizeof(uint32_t)))
         return false;
 
-    memcpy(out, &legacy, sizeof(config_t));
+    /* Copied field by field rather than as a block: config_t has grown since this layout
+       was written, and out already holds the defaults, which is what the fields the old
+       page knows nothing about must keep. */
+    out->magic_header             = legacy.magic_header;
+    out->version                  = legacy.version;
+    out->force_mouse_boot_mode    = legacy.force_mouse_boot_mode;
+    out->force_kbd_boot_protocol  = legacy.force_kbd_boot_protocol;
+    out->kbd_led_as_indicator     = legacy.kbd_led_as_indicator;
+    out->hotkey_toggle            = legacy.hotkey_toggle;
+    out->enable_acceleration      = legacy.enable_acceleration;
+    out->enforce_ports            = legacy.enforce_ports;
+    out->jump_threshold           = legacy.jump_threshold;
+    out->switch_double_tap_enable = legacy.switch_double_tap_enable;
+    out->switch_double_tap_ms     = legacy.switch_double_tap_ms;
+    out->switch_double_tap_margin = legacy.switch_double_tap_margin;
+    out->swap_columns             = legacy.swap_columns;
+
+    memcpy(out->output, legacy.output, sizeof(out->output));
+
     return true;
 }

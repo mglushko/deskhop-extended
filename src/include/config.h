@@ -40,6 +40,42 @@ typedef struct {
     uint8_t _pad;
 } config_store_header_t;
 
+/* The pre key-value layout, frozen.
+
+   config_store_load_legacy() reads a stored page as this and nothing else, so config_t
+   is free to grow: a page written by a firmware older than the key-value format is 144
+   bytes of exactly these fields in exactly this order, whatever config_t looks like now.
+   Do not edit this struct - it describes what is already in other people's flash. */
+typedef struct {
+    uint32_t magic_header;
+    uint32_t version;
+
+    uint8_t force_mouse_boot_mode;
+    uint8_t force_kbd_boot_protocol;
+
+    uint8_t kbd_led_as_indicator;
+    uint8_t hotkey_toggle;
+    uint8_t enable_acceleration;
+
+    uint8_t enforce_ports;
+    uint16_t jump_threshold;
+
+    uint8_t switch_double_tap_enable;
+    uint16_t switch_double_tap_ms;
+    uint16_t switch_double_tap_margin;
+
+    output_t output[NUM_SCREENS];
+
+    uint8_t swap_columns;
+    uint8_t _reserved[3];
+
+    uint32_t checksum;
+} config_v9_t;
+
+/* output_t sits inside the frozen layout, so a change to it moves bytes that are already
+   written. If this fires, config_v9_t needs its own copy of the old output_t. */
+_Static_assert(sizeof(config_v9_t) == 144, "the pre key-value config layout has moved");
+
 /*==============================================================================
  *  Configuration Data
  *  Structures and variables related to device configuration.
