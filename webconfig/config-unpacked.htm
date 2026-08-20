@@ -1184,7 +1184,7 @@ async function connectHandler() {
     return;
 
   var devices = await navigator.hid.requestDevice({
-    filters: [{ vendorId: 0x2e8a, productId: 0x107c, usagePage: 0xff00, usage: 0x10 }]
+    filters: [{ vendorId: 0x1209, productId: 0xc000, usagePage: 0xff00, usage: 0x10 }]
   });
 
   if (!devices || !devices.length)

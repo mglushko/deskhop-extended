@@ -229,8 +229,8 @@
   }
 
   const fakeDevice = {
-    vendorId: 0x2e8a,
-    productId: 0x107c,
+    vendorId: 0x1209,
+    productId: 0xc000,
     productName: 'DeskHop Extended (emulated)',
     opened: false,
 

@@ -17,8 +17,18 @@
 // Device Descriptors
 //--------------------------------------------------------------------+
 
-                                        // https://github.com/raspberrypi/usb-pid
-tusb_desc_device_t const desc_device_config = DEVICE_DESCRIPTOR(0x2e8a, 0x107c);
+/* Both modes enumerate under the same VID/PID so the host sees one device identity.
+
+   Windows keys a device node on VID + PID + serial, and the serial is per-board (see
+   tud_descriptor_string_cb below), so config mode now reuses the normal-mode node instead of
+   registering a second one that lingers in Device Manager forever. Interface 0 is the keyboard
+   in both descriptor sets, so the keyboard node survives the switch untouched; config mode's
+   extra interfaces come and go as ordinary composite children.
+
+   It also means the udev rule in the README covers config mode, which it never did while this
+   was the Raspberry Pi VID/PID (0x2e8a, 0x107c). */
+
+tusb_desc_device_t const desc_device_config = DEVICE_DESCRIPTOR(0x1209, 0xc000);
 
                                         // https://pid.codes/1209/C000/
 tusb_desc_device_t const desc_device = DEVICE_DESCRIPTOR(0x1209, 0xc000);
