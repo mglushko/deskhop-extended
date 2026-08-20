@@ -162,6 +162,9 @@ the same transition takes 815 ms. That is the tell: if plugging anything else in
 the board straight back, walk the USB parent chain (`DEVPKEY_Device_Parent` on Windows) and move the
 board off it. Nothing in the firmware can help here - the device detaches cleanly every time and
 re-attaches on schedule; the host is simply never told it returned.
+`misc/watch-usb-enumeration.ps1` is where those numbers come from: it logs every enumeration change
+with a timestamp, so triggering the hotkey once tells you which side of that you are on, and any
+candidate hub can be checked the same way.
 
 **Building the config page.** The page ships inside a small FAT image, so changing
 `webconfig/templates/` means `make render` in `webconfig/` and then rebuilding the image; rebuilding
