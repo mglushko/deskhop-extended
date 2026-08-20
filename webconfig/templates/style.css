@@ -384,7 +384,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 /* ---- shared settings ------------------------------------------------- */
 
 .shared { margin: 0 -24px -24px; padding: 0 24px 28px; }
-.shared-in { margin: 16px 0 0; max-width: 520px; }
+/* Centred under its heading, rather than hugging the left edge below two columns. */
+.shared-in { margin: 16px auto 0; max-width: 520px; }
 .shared .lbl { margin-bottom: 10px; }
 .grp { display: flex; flex-direction: column; gap: 11px; margin-bottom: 24px; }
 .chk { display: flex; align-items: center; gap: 8px; }
@@ -406,7 +407,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 .hk-row { display: flex; align-items: center; gap: 8px; }
 .hk-n { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--fg); }
 .hk {
-  flex: 0 0 auto; min-width: 140px; max-width: 268px; height: 28px; padding: 0 10px;
+  flex: 0 0 214px; height: 28px; padding: 0 10px;
   border: 1px solid var(--bd-soft); border-radius: 4px;
   background: #fff; color: var(--muted); font-size: 12px; cursor: pointer;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;

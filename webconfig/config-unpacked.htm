@@ -419,7 +419,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 /* ---- shared settings ------------------------------------------------- */
 
 .shared { margin: 0 -24px -24px; padding: 0 24px 28px; }
-.shared-in { margin: 16px 0 0; max-width: 520px; }
+/* Centred under its heading, rather than hugging the left edge below two columns. */
+.shared-in { margin: 16px auto 0; max-width: 520px; }
 .shared .lbl { margin-bottom: 10px; }
 .grp { display: flex; flex-direction: column; gap: 11px; margin-bottom: 24px; }
 .chk { display: flex; align-items: center; gap: 8px; }
@@ -441,7 +442,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 .hk-row { display: flex; align-items: center; gap: 8px; }
 .hk-n { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--fg); }
 .hk {
-  flex: 0 0 auto; min-width: 140px; max-width: 268px; height: 28px; padding: 0 10px;
+  flex: 0 0 214px; height: 28px; padding: 0 10px;
   border: 1px solid var(--bd-soft); border-radius: 4px;
   background: #fff; color: var(--muted); font-size: 12px; cursor: pointer;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -951,7 +952,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
     
     <div class="shared">
+      
       <div class="sect">
+        <span class="sect-l"></span>
         <span class="sect-t">Shared settings</span>
         <span class="sect-s">apply to both outputs</span>
         <span class="sect-l"></span>
@@ -1058,13 +1061,25 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
         <span class="lbl">Shortcuts</span>
         <div class="grp">
-          <span class="hint">Press a shortcut to change it: click it, hold the combination, let go.
-            Up to two keys besides the modifiers, and Esc on its own cancels. Some combinations -
-            <b class="kbd">Ctrl</b> <b class="kbd">Shift</b> <b class="kbd">Tab</b> and
-            <b class="kbd">Ctrl</b> <b class="kbd">W</b> among them - are reserved by the browser
-            and never reach this page; <b>Pick</b> sets those without pressing them. Shortcuts are
-            read on the board the keyboard is plugged into, so they work whichever computer you are
-            on.</span>
+          <span class="hint">Two ways to change one. Click it and hold the combination you want,
+            then let go - up to two keys besides the modifiers, and Esc on its own cancels. Or press
+            <b>Pick</b> and assemble it without pressing anything. Shortcuts are read on the board
+            the keyboard is plugged into, so they work whichever computer you are on.</span>
+
+          <span class="hint">Pick is the only way to reach the combinations the browser keeps for
+            itself and never passes on to a page. In Chrome and Edge those are
+            <b class="kbd">Ctrl</b> <b class="kbd">T</b>, <b class="kbd">N</b>,
+            <b class="kbd">W</b> and their <b class="kbd">Shift</b> forms,
+            <b class="kbd">Ctrl</b> <b class="kbd">Tab</b>,
+            <b class="kbd">Ctrl</b> <b class="kbd">Shift</b> <b class="kbd">Tab</b>,
+            <b class="kbd">Ctrl</b> <b class="kbd">Page Up</b> / <b class="kbd">Page Down</b>,
+            <b class="kbd">Ctrl</b> <b class="kbd">1</b>-<b class="kbd">9</b>,
+            <b class="kbd">Ctrl</b> <b class="kbd">L</b>, <b class="kbd">F12</b> and
+            <b class="kbd">Ctrl</b> <b class="kbd">Shift</b>
+            <b class="kbd">I</b>/<b class="kbd">J</b>/<b class="kbd">C</b>, plus anything the
+            operating system takes first, such as <b class="kbd">Alt</b> <b class="kbd">Tab</b> or
+            <b class="kbd">Alt</b> <b class="kbd">F4</b>. The device has no such reservations, so a
+            shortcut set here works whatever the browser thinks of it.</span>
 
           <div class="hk-list">
             <div class="hk-row">

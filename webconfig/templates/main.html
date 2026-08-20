@@ -356,7 +356,10 @@
 
     {# ---- shared ---- #}
     <div class="shared">
+      {# Ruled on both sides, so the heading sits over the middle of its own column the
+         way Output A and Output B sit over theirs. #}
       <div class="sect">
+        <span class="sect-l"></span>
         <span class="sect-t">Shared settings</span>
         <span class="sect-s">apply to both outputs</span>
         <span class="sect-l"></span>
@@ -440,13 +443,25 @@
 
         <span class="lbl">Shortcuts</span>
         <div class="grp">
-          <span class="hint">Press a shortcut to change it: click it, hold the combination, let go.
-            Up to two keys besides the modifiers, and Esc on its own cancels. Some combinations -
-            <b class="kbd">Ctrl</b> <b class="kbd">Shift</b> <b class="kbd">Tab</b> and
-            <b class="kbd">Ctrl</b> <b class="kbd">W</b> among them - are reserved by the browser
-            and never reach this page; <b>Pick</b> sets those without pressing them. Shortcuts are
-            read on the board the keyboard is plugged into, so they work whichever computer you are
-            on.</span>
+          <span class="hint">Two ways to change one. Click it and hold the combination you want,
+            then let go - up to two keys besides the modifiers, and Esc on its own cancels. Or press
+            <b>Pick</b> and assemble it without pressing anything. Shortcuts are read on the board
+            the keyboard is plugged into, so they work whichever computer you are on.</span>
+
+          <span class="hint">Pick is the only way to reach the combinations the browser keeps for
+            itself and never passes on to a page. In Chrome and Edge those are
+            <b class="kbd">Ctrl</b> <b class="kbd">T</b>, <b class="kbd">N</b>,
+            <b class="kbd">W</b> and their <b class="kbd">Shift</b> forms,
+            <b class="kbd">Ctrl</b> <b class="kbd">Tab</b>,
+            <b class="kbd">Ctrl</b> <b class="kbd">Shift</b> <b class="kbd">Tab</b>,
+            <b class="kbd">Ctrl</b> <b class="kbd">Page Up</b> / <b class="kbd">Page Down</b>,
+            <b class="kbd">Ctrl</b> <b class="kbd">1</b>-<b class="kbd">9</b>,
+            <b class="kbd">Ctrl</b> <b class="kbd">L</b>, <b class="kbd">F12</b> and
+            <b class="kbd">Ctrl</b> <b class="kbd">Shift</b>
+            <b class="kbd">I</b>/<b class="kbd">J</b>/<b class="kbd">C</b>, plus anything the
+            operating system takes first, such as <b class="kbd">Alt</b> <b class="kbd">Tab</b> or
+            <b class="kbd">Alt</b> <b class="kbd">F4</b>. The device has no such reservations, so a
+            shortcut set here works whatever the browser thinks of it.</span>
 
           <div class="hk-list">
           {%- for item in hotkeys %}
