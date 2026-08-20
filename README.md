@@ -120,6 +120,15 @@ Upstream's README below is reproduced unchanged, so its screenshots and its inst
 
 ### Firmware
 
+- **One USB identity instead of two** - config mode enumerated under the Raspberry Pi VID/PID
+  (`2e8a:107c`) while normal mode used `1209:c000`, so Windows registered a whole second device tree
+  and, as it does, kept it forever as a hidden node. Both modes now enumerate as `1209:c000`; the
+  serial is already per board, so opening the config page reuses the normal-mode node rather than
+  minting another. The udev rule further down covers config mode for the first time as a result.
+  Nodes already registered are cleared by `misc/cleanup-windows-ghosts.ps1` - though on the machine
+  this was found on DeskHop was only 14 of 235 such nodes, the bulk belonging to a keyboard and a
+  wireless receiver that report no serial number at all and so earn a fresh node per hub port.
+  [4400d12](https://github.com/mglushko/deskhop-extended/commit/4400d12)
 - **Boot-protocol keyboard support** - the keyboard keeps working in pre-boot environments that only
   speak the 8-byte HID boot protocol, such as UEFI setup and the BitLocker PIN prompt.
   [814e186](https://github.com/mglushko/deskhop-extended/commit/814e186)
@@ -142,6 +151,17 @@ than widen the allowlist ([0e3f7c7](https://github.com/mglushko/deskhop-extended
 Two undocumented shortcuts reach the ROM bootloader directly - `Left Shift + Right Shift + A` for the
 local board, `+ B` for the other - and holding a board's on-board button while plugging it in always
 works, whatever state it is in.
+
+**Plug the boards into the machine, not a hub.** Entering config mode resets the board, so it drops
+off USB and re-attaches a moment later. Some hubs never report that re-attach upstream: the host
+sees a clean detach and then nothing, the cursor vanishes on that screen, and the DESKHOP drive
+never appears. Measured behind two cascaded hubs - VIA Labs `2109` feeding an ASMedia `174C` - the
+board took 15.0 s, 15.9 s and 23.9 s to come back, and once only after an unrelated device was
+plugged into the *same* hub, which forces the hub to re-poll its ports. On a motherboard root port
+the same transition takes 815 ms. That is the tell: if plugging anything else into the hub brings
+the board straight back, walk the USB parent chain (`DEVPKEY_Device_Parent` on Windows) and move the
+board off it. Nothing in the firmware can help here - the device detaches cleanly every time and
+re-attaches on schedule; the host is simply never told it returned.
 
 **Building the config page.** The page ships inside a small FAT image, so changing
 `webconfig/templates/` means `make render` in `webconfig/` and then rebuilding the image; rebuilding
