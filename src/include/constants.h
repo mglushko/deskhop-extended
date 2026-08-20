@@ -53,6 +53,10 @@
 #define MOUSE_ZOOM_SCALING_FACTOR 2
 #define NUM_SCREENS 2
 
+/* Entries in hotkeys[] (keyboard.c). Pinned here because config_t stores one packed
+   combo per entry; keyboard.c asserts the table still matches. */
+#define NUM_HOTKEYS 13
+
 /*==============================================================================
  *  Utility Macros
  *==============================================================================*/

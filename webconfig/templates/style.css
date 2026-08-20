@@ -384,14 +384,78 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 /* ---- shared settings ------------------------------------------------- */
 
 .shared { margin: 0 -24px -24px; padding: 0 24px 28px; }
-.shared-in { margin: 16px 0 0; max-width: 520px; }
+/* The same bar Output A and Output B get, pinned the same way. Both sit at the top rather
+   than stacking, because .obar is sticky inside the outputs section and lets go as that
+   section ends - which is exactly where this one arrives. */
+.sbar {
+  position: sticky; top: 0; z-index: 4;
+  display: flex; align-items: baseline; justify-content: center; gap: 12px;
+  margin: 0 -24px 20px; padding: 12px 24px;
+  background: #fff; border-bottom: 1px solid var(--chip);
+}
+/* Centred under its heading, rather than hugging the left edge below two columns. */
+.shared-in { margin: 16px auto 0; max-width: 520px; }
 .shared .lbl { margin-bottom: 10px; }
 .grp { display: flex; flex-direction: column; gap: 11px; margin-bottom: 24px; }
 .chk { display: flex; align-items: center; gap: 8px; }
 .chk input { margin: 0; }
+/* Each box keeps its own description, lined up under the label rather than the box. */
+.chk-f { display: flex; flex-direction: column; gap: 5px; }
+.chk-f .hint { margin-left: 21px; }
 /* Follows the double-tap toggle: stacks like .grp, minus the trailing gap,
    since it sits inside one. Dimmed through .off when the feature is off. */
 .dtap-part { display: flex; flex-direction: column; gap: 11px; }
+
+/* Same idea, following the status LED mode. Two timers side by side, since the combined
+   mode runs both of them. */
+.led-times { display: flex; gap: 12px; }
+.led-part { flex: 1 1 0; min-width: 0; max-width: 190px; }
+
+/* ---- shortcuts ------------------------------------------------------- */
+
+/* One row per action: what it does, the combination it answers to, and a way back
+   to the combination the firmware was built with. */
+.hk-list { display: flex; flex-direction: column; gap: 6px; }
+.hk-row { display: flex; align-items: center; gap: 8px; }
+.hk-n { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--fg); }
+.hk {
+  flex: 0 0 214px; height: 28px; padding: 0 10px;
+  border: 1px solid var(--bd-soft); border-radius: 4px;
+  background: #fff; color: var(--muted); font-size: 12px; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hk:hover { border-color: var(--accent); color: var(--accent-dk); }
+/* Set on this device, rather than left at what the firmware was built with. */
+.hk-set { border-color: var(--bd); color: var(--fg); font-weight: 700; }
+.hk-cap { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
+.hk-p, .hk-x {
+  flex: 0 0 auto; height: 28px; padding: 0 6px;
+  border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer;
+}
+.hk-p:hover, .hk-x:hover { color: var(--accent-dk); }
+.hk-x[disabled] { color: var(--bd-lock); cursor: default; }
+
+/* Pick opens this under the list, for the combinations the browser keeps to itself. */
+.hk-ed {
+  margin-top: 12px; padding: 12px;
+  border: 1px solid var(--line); border-radius: 4px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.hk-ed-t { font-size: 12.5px; font-weight: 700; color: var(--fg); }
+.hk-mods { display: flex; flex-wrap: wrap; gap: 4px; }
+.hk-mods button {
+  height: 26px; padding: 0 8px;
+  border: 1px solid var(--bd-soft); border-radius: 4px;
+  background: #fff; color: var(--fg); font-size: 12px; cursor: pointer;
+}
+.hk-mods button[aria-pressed=true] { background: var(--fg); border-color: var(--fg); color: #fff; font-weight: 700; }
+.hk-ed-keys { display: flex; align-items: center; gap: 14px; font-size: 12.5px; color: var(--muted); }
+.hk-ed-keys select {
+  height: 28px; margin-left: 4px;
+  border: 1px solid var(--bd); border-radius: 4px;
+  background: #fff; color: var(--fg); font-size: 12.5px;
+}
+.hk-ed .row-btn { margin-bottom: 0; }
 .row-btn { display: flex; gap: 8px; margin-bottom: 24px; }
 .box { padding: 16px; background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: 4px; }
 .box .lbl { color: var(--warn-fg); margin-bottom: 6px; }

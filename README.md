@@ -1,5 +1,10 @@
 # DeskHop Extended - Fast Desktop Switching
 
+> [!CAUTION]
+> **Flashing this takes both boards with it, and there is no way back from the config page.**
+> Returning to DeskHop means holding BOOTSEL on both - see
+> [Going back to DeskHop](#going-back-to-deskhop).
+
 DeskHop is a small piece of open hardware (two Raspberry Pi Picos with a galvanic isolator
 between them) that lets a single keyboard and mouse drive two computers. You switch with a
 keyboard shortcut, or simply by dragging the mouse pointer off the edge of one screen and onto the
@@ -114,6 +119,29 @@ configuration.</em></p>
 
 ![The edge double-tap settings on the config page](img/config-dtap.png)
 
+- **The status LED can be told to go dark** - the on-board LED marks whichever board is driving the
+  computer you are on, which for anyone whose desk shares a room with a bed is a light on all night.
+  It can now put itself out: once that computer has gone a set number of seconds without a keypress
+  or a mouse move, a set number of seconds after the output last changed, or both on their own
+  timers - the first keeps it lit while you work, the second shows the switch and then gets out of
+  the way, and together a short timer can mark the switch without shortening the one on your typing.
+  Off by default, and config mode's blink is exempt, since it is the only sign the device is in it.
+  Reuses the same `last_activity` timestamp the keep-awake modes run on, which the inter-board link
+  already keeps current for input arriving from the other board.
+  [7e2f1b4](https://github.com/mglushko/deskhop-extended/commit/7e2f1b4)
+
+- **Every shortcut can be changed** - all thirteen of them, `Right Shift + F12 + D` included, are
+  stored per action and set from the page by clicking one and pressing the combination you want.
+  The page reads the physical key rather than what the host layout makes of it, so a custom layout
+  picks the right one; a shortcut left alone keeps whatever the firmware was built with, and
+  Default puts it back. A browser keeps a few combinations for itself - `Ctrl + Shift + Tab` and
+  `Ctrl + W` among them - and never passes on the keypress, so those are assembled by hand under
+  Pick instead. This also gives `config.hotkey_toggle` something to do at last: upstream
+  stores it, defaults it and lets the config API write it, but nothing has ever read it - the
+  switch combination has always been the compile-time one - so a value other than the compiled-in
+  key now takes effect instead of being discarded.
+  [0215c72](https://github.com/mglushko/deskhop-extended/commit/0215c72)
+
 Upstream's README below is reproduced unchanged, so its screenshots and its instruction to "click
 *exit* in the menu" still show upstream's page; on this build Exit sits in the header. See
 [Web configuration mode](#web-configuration-mode) for how to reach the page.
@@ -138,6 +166,10 @@ Upstream's README below is reproduced unchanged, so its screenshots and its inst
   `api_field_map`, so fields can be added, removed or reordered without invalidating flash, and a
   config written by an older build is migrated on first boot. Exercised on the host by
   `misc/hosttest/run.sh`. [7c8fe38](https://github.com/mglushko/deskhop-extended/commit/7c8fe38)
+  The stored page spans two flash pages rather than one, since the field map outgrew 256 bytes and
+  `config_store_pack` drops settings off the end rather than overrun; the pre key-value layout it
+  migrates from is frozen as its own struct, so `config_t` can grow without invalidating what is
+  already in anyone's flash.
 
 ### Notes
 
@@ -180,10 +212,28 @@ browser and logs every report the page sends.
 continuing upstream's 0.x, and the config page marks it **beta**. Minor numbers print to two digits
 (v1.00, v1.01, v1.02); only the printed form is padded. The number is deliberately above upstream's,
 because a board pulls firmware from the other one only when that board reports a *higher* version
-(`handle_heartbeat_msg`) - which also means installing a version below what the pair is running
-takes flashing each board over its on-board button with the other unplugged.
+(`handle_heartbeat_msg`); [Going back to DeskHop](#going-back-to-deskhop) below is what that means
+in practice.
 [ac858f2](https://github.com/mglushko/deskhop-extended/commit/ac858f2),
 [1afd118](https://github.com/mglushko/deskhop-extended/commit/1afd118)
+
+### Going back to DeskHop
+
+A board pushes its firmware onto the other one as soon as that one reports a lower version
+(`handle_heartbeat_msg`, once a second), and this build numbers itself above upstream on purpose -
+v1.06 reports `1106` against upstream v0.78's `178`. So flashing one board flashes the pair, and
+flashing a single board back to [hrvach/deskhop](https://github.com/hrvach/deskhop) only gets it
+overwritten again the moment the two are powered up together. The same goes for stepping back to an
+older DeskHop EX build.
+
+Unplug both boards, then take each one on its own: hold its BOOTSEL button while plugging it in, and
+copy the `.uf2` you want onto the `RPI-RP2` drive that appears. Do both before they are running side
+by side again.
+
+Settings do not make the trip in either direction - each build stores its configuration in a form
+the other refuses, so whichever firmware you land on comes up on its compiled-in defaults. Nothing
+on either computer is touched; both only ever see ordinary USB HID devices. Neither board can be
+bricked this way either, since BOOTSEL lives in ROM.
 
 ------
 

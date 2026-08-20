@@ -87,15 +87,23 @@ typedef struct {
 
     output_t output[NUM_SCREENS];
 
-    /* Carved out of what used to be a uint32 _reserved. Same four bytes in the same place,
-       so sizeof(config_t) and every offset after it are unchanged and config_store's
-       legacy path still reads pre key-value pages byte for byte. Those bytes were zero,
-       so a migrated config reads swap_columns = 0. */
     uint8_t swap_columns;   /* Draw output B in the left-hand column of the config page */
-    uint8_t _reserved[3];
 
-    // Keep checksum at the end of the struct
-    uint32_t checksum;
+    /* Status LED: when the on-board LED goes dark on the board that is the active
+       output. The caps lock indicator, if it is standing in for it, is unaffected. */
+    uint8_t led_off_mode;    /* led_off_mode_e */
+    uint16_t led_off_sec;    /* Seconds of no input before it goes dark */
+    uint16_t led_switch_sec; /* Seconds after a switch it stays lit for */
+
+    /* One packed combo per entry in hotkeys[] (keyboard.c), in that order.
+       See HOTKEY_PACK in keyboard.h for the layout. Zero means "keep the compiled-in
+       default", which is what a config from before this field reads as. */
+    uint32_t hotkey_cfg[NUM_HOTKEYS];
+
+    /* Nothing pins the end of this struct any more: what is already in flash is a
+       key-value page keyed by api_field_map (config_store.c), and a page from before
+       that format is read as config_v9_t (config.h), which is frozen. Fields may be
+       appended here; each one needs an api_field_map entry to be stored at all. */
 } config_t;
 
 
@@ -164,6 +172,10 @@ typedef struct {
     bool config_mode_active; // True when config mode is active
     bool digitizer_active;   // True when digitizer Win/Mac workaround is active
 
+    /* Status LED timeout */
+    uint64_t last_switch_time; // When this board last became (or stopped being) the active output
+    bool led_suppressed;       // True when the timeout has taken the indicator dark
+
     /* Onboard LED blinky (provide feedback when e.g. mouse connected) */
     int32_t  blinks_left;     // How many blink transitions are left
     uint32_t last_led_change; // Timestamp of the last time led state transitioned
@@ -198,6 +210,19 @@ enum screensaver_mode_e {
     PONG       = 1,
     JITTER     = 2,
     MAX_SS_VAL = JITTER,
+};
+
+/* When the on-board LED stops showing which output is active. IDLE counts from the last
+   input this board's computer saw, SWITCH counts from the moment it became the active
+   output - so IDLE keeps the light on while you work, SWITCH shows it only briefly.
+   BOTH runs the two on their own timers and goes dark only once neither has anything
+   left to say. */
+enum led_off_mode_e {
+    LED_ALWAYS_ON          = 0,
+    LED_OFF_WHEN_IDLE      = 1,
+    LED_OFF_AFTER_SWITCH   = 2,
+    LED_OFF_IDLE_AND_SWITCH = 3,
+    MAX_LED_OFF_VAL        = LED_OFF_IDLE_AND_SWITCH,
 };
 
 extern const config_t default_config;

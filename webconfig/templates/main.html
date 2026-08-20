@@ -40,19 +40,46 @@
 </div>
 {%- endmacro %}
 
-{% macro chk(item, label) -%}
-<label class="chk">{{ api(item, '', '', 'checkbox') }}<span>{{ label }}</span></label>
+{% macro chk(item, label, hint='') -%}
+<div class="chk-f">
+  <label class="chk">{{ api(item, '', '', 'checkbox') }}<span>{{ label }}</span></label>
+  {%- if hint %}
+  <span class="hint">{{ hint }}</span>
+  {%- endif %}
+</div>
 {%- endmacro %}
 
-{% macro secs(item, o, n, label) -%}
+{# Seconds in the form, whatever the field is stored in: scale is what one second is
+   worth on the wire - 1000000 for the screensaver timers, 1 for a field already in
+   seconds. script.js reads it from data-scale in both directions. #}
+{% macro secs(item, o, n, label, scale=1000000, min=0) -%}
 <label class="fld">
   <span class="hint">{{ label }}</span>
   <span class="num">
-    <input type="number" min="0" max="4200" data-for="k{{ item.key }}" class="sec">
+    <input type="number" min="{{ min }}" max="4200" data-scale="{{ scale }}" data-for="k{{ item.key }}" class="sec">
     <span class="num-u">sec</span>
   </span>
 </label>
 {{- api(item, o, n) }}
+{%- endmacro %}
+
+{# One row of the shortcut list: what it does, the combo, and a way back to the
+   default. Both buttons point at the same hidden field; renderView draws them. #}
+{% macro hotkey(item) -%}
+<div class="hk-row">
+  <span class="hk-n">{{ item.name }}</span>
+  <button type="button" class="hk" data-for="k{{ item.key }}"
+          data-def="{{ item['values'].combo }}"
+          aria-label="Shortcut for {{ item.name }}"></button>
+  {#- data-hk rather than data-for: anything carrying data-for is drawn by renderView,
+      which would write the stored number over the label. #}
+  <button type="button" class="hk-p" data-hk="k{{ item.key }}" data-name="{{ item.name }}"
+          title="Set it without pressing it"
+          aria-label="Set the shortcut for {{ item.name }} without pressing it">Pick</button>
+  <button type="button" class="hk-x" data-for="k{{ item.key }}"
+          aria-label="Restore the default shortcut for {{ item.name }}">Default</button>
+</div>
+{{- api(item, '', '') }}
 {%- endmacro %}
 
 <!DOCTYPE html>
@@ -244,9 +271,10 @@
               </div>
               <span class="note">Easier from the keyboard: park the pointer on the larger screen at
                 the height of the smaller screen's top edge and press <b class="kbd">Right Shift</b>
-                <b class="kbd">F12</b> <b class="kbd">Y</b> &mdash; the LED and caps lock flash to
-                confirm. Repeat at the bottom edge; the device picks top or bottom from which half
-                the pointer is in. It saves straight away, so press Read to pull the values in here.</span>
+                <b class="kbd">F12</b> <b class="kbd">Y</b>, or whatever that is set to under
+                Shortcuts &mdash; the LED and caps lock flash to confirm. Repeat at the bottom edge;
+                the device picks top or bottom from which half the pointer is in. It saves straight
+                away, so press Read to pull the values in here.</span>
             </div>
 
           </div>
@@ -333,10 +361,11 @@
 
     {# ---- shared ---- #}
     <div class="shared">
-      <div class="sect">
-        <span class="sect-t">Shared settings</span>
+      {# The same bar the outputs get, and pinned the same way: this is the third thing on
+         the page, not a footnote under the other two. #}
+      <div class="sbar">
+        <span class="out-n">Shared Settings</span>
         <span class="sect-s">apply to both outputs</span>
-        <span class="sect-l"></span>
       </div>
 
       <div class="shared-in">
@@ -384,20 +413,100 @@
 
         <span class="lbl">Mouse</span>
         <div class="grp">
-          {{ chk(C['Force Mouse Boot Mode'], 'Force Mouse Boot Mode') }}
-          {{ chk(C['Enable Acceleration'], 'Enable Acceleration') }}
+          {{ chk(C['Force Mouse Boot Mode'], 'Force Mouse Boot Mode',
+                 'Ask the mouse for the plain boot format - three buttons and movement - instead of
+                  its own. Worth a try if a mouse misbehaves; the wheel and any extra buttons may go
+                  with it, though plenty of mice send them anyway.') }}
+          {{ chk(C['Enable Acceleration'], 'Enable Acceleration',
+                 'Carry the pointer further the faster the mouse moves, on a curve up to four times
+                  the distance. Off passes the movement through as it comes.') }}
         </div>
 
         <span class="lbl">Device flags</span>
         <div class="grp">
-          {{ chk(C['Force KBD Boot Protocol'], 'Force KBD Boot Protocol') }}
-          {{ chk(C['KBD LED as Indicator'], 'KBD LED as Indicator') }}
+          {{ chk(C['Force KBD Boot Protocol'], 'Force KBD Boot Protocol',
+                 'Ask the keyboard for the plain 8-byte boot format instead of its own. Fixes
+                  keyboards whose reports are read wrongly, at the price of n-key rollover: six keys
+                  at once, plus the modifiers.') }}
+          {{ chk(C['KBD LED as Indicator'], 'KBD LED as Indicator',
+                 'Give up the keyboard\'s caps lock light to show which computer is selected - lit
+                  means Output B. Num and scroll lock go on doing their own job.') }}
         </div>
 
         <span class="lbl">Wiring</span>
         <div class="grp">
-          {{ chk(C['Enforce Ports'], 'Enforce Ports') }}
-          <span class="hint">Requires the keyboard and mouse to be plugged into their designated ports.</span>
+          {{ chk(C['Enforce Ports'], 'Enforce Ports',
+                 'Requires the keyboard and mouse to be plugged into their designated ports.') }}
+        </div>
+
+        <span class="lbl">Status LED</span>
+        <div class="grp">
+          {{ seg(C['Status LED'], '', 'ledmode', 'Status LED') }}
+          <span class="hint" id="led-note"></span>
+
+          <div class="led-times">
+            <div class="led-part" data-led="idle">
+              {{ secs(C['Status LED Idle Time'], '', 'ledsec', 'No input for', scale=1, min=1) }}
+            </div>
+            <div class="led-part" data-led="switch">
+              {{ secs(C['Status LED Switch Time'], '', 'ledswitch', 'Since switching', scale=1, min=1) }}
+            </div>
+          </div>
+        </div>
+
+        <span class="lbl">Shortcuts</span>
+        <div class="grp">
+          <span class="hint">Two ways to change one. Click it and hold the combination you want,
+            then let go - up to two keys besides the modifiers, and Esc on its own cancels. Or press
+            <b>Pick</b> and assemble it without pressing anything. These are read by the board the
+            keyboard is plugged into and take effect on that board - config mode, for one, brings
+            its drive up on that board's computer rather than the one you happen to be looking
+            at.</span>
+
+          <span class="hint">Pick is the only way to reach the combinations the browser keeps for
+            itself and never passes on to a page. In Chrome and Edge those are
+            <b class="kbd">Ctrl</b> <b class="kbd">T</b>, <b class="kbd">N</b>,
+            <b class="kbd">W</b> and their <b class="kbd">Shift</b> forms,
+            <b class="kbd">Ctrl</b> <b class="kbd">Tab</b>,
+            <b class="kbd">Ctrl</b> <b class="kbd">Shift</b> <b class="kbd">Tab</b>,
+            <b class="kbd">Ctrl</b> <b class="kbd">Page Up</b> / <b class="kbd">Page Down</b>,
+            <b class="kbd">Ctrl</b> <b class="kbd">1</b>-<b class="kbd">9</b>,
+            <b class="kbd">Ctrl</b> <b class="kbd">L</b>, <b class="kbd">F12</b> and
+            <b class="kbd">Ctrl</b> <b class="kbd">Shift</b>
+            <b class="kbd">I</b>/<b class="kbd">J</b>/<b class="kbd">C</b>, plus anything the
+            operating system takes first, such as <b class="kbd">Alt</b> <b class="kbd">Tab</b> or
+            <b class="kbd">Alt</b> <b class="kbd">F4</b>. The device has no such reservations, so a
+            shortcut set here works whatever the browser thinks of it.</span>
+
+          <div class="hk-list">
+          {%- for item in hotkeys %}
+            {{ hotkey(item) }}
+          {%- endfor %}
+          </div>
+
+          {# Pick opens this: the same combination, set by hand, for anything the browser
+             will not let the page hear. One editor for the whole list. #}
+          <div class="hk-ed" id="hk-ed" hidden>
+            <span class="hk-ed-t" id="hk-ed-t"></span>
+            <div class="hk-mods" id="hk-mods">
+              <button type="button" data-m="1" aria-pressed="false">L Ctrl</button>
+              <button type="button" data-m="2" aria-pressed="false">L Shift</button>
+              <button type="button" data-m="4" aria-pressed="false">L Alt</button>
+              <button type="button" data-m="8" aria-pressed="false">L Gui</button>
+              <button type="button" data-m="16" aria-pressed="false">R Ctrl</button>
+              <button type="button" data-m="32" aria-pressed="false">R Shift</button>
+              <button type="button" data-m="64" aria-pressed="false">R Alt</button>
+              <button type="button" data-m="128" aria-pressed="false">R Gui</button>
+            </div>
+            <div class="hk-ed-keys">
+              <label>Key <select id="hk-k1"></select></label>
+              <label>and <select id="hk-k2"></select></label>
+            </div>
+            <div class="row-btn">
+              <button type="button" class="btn btn-quiet" id="hk-ed-set">Set</button>
+              <button type="button" class="btn btn-quiet" id="hk-ed-cancel">Cancel</button>
+            </div>
+          </div>
         </div>
 
         <span class="lbl">Diagnostics</span>

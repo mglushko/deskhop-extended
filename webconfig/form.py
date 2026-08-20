@@ -11,15 +11,22 @@ class FormField:
     data_type: str = "int32"
     elem: str | None = None
 
-SHORTCUTS = {
-    0x73: "None",
-    0x2A: "Backspace",
-    0x39: "Caps Lock",
-    0x2B: "Tab",
-    0x46: "Print Screen",
-    0x47: "Scroll Lock",
-    0x53: "Num Lock",
-    }
+# Modifier bits and the handful of HID usages the compiled-in combos name, so the
+# defaults below read as the combos they are. Everything else the page can capture is
+# named in script.js, which has to turn a keypress into the same numbers.
+MOD_LCTRL, MOD_LSHIFT, MOD_LALT, MOD_LGUI = 0x01, 0x02, 0x04, 0x08
+MOD_RCTRL, MOD_RSHIFT, MOD_RALT, MOD_RGUI = 0x10, 0x20, 0x40, 0x80
+
+KEY_A, KEY_B, KEY_C, KEY_D = 0x04, 0x05, 0x06, 0x07
+KEY_G, KEY_J, KEY_K, KEY_L = 0x0A, 0x0D, 0x0E, 0x0F
+KEY_O, KEY_S, KEY_X, KEY_Y = 0x12, 0x16, 0x1B, 0x1C
+KEY_CAPS_LOCK, KEY_F12 = 0x39, 0x45
+
+
+def combo(modifier, first=0, second=0):
+    """One hotkey packed the way config_t stores it - see HOTKEY_PACK in
+    src/include/keyboard.h."""
+    return modifier | (first << 8) | (second << 16)
 
 STATUS_ = [
     FormField(78, "Running FW version", None, {}, "uint16", elem="fw_version"),
@@ -48,6 +55,47 @@ CONFIG_ = [
 
     # Config page layout only - which output is drawn in the left-hand column.
     FormField(87, "Swap Columns", 1, {}, "uint8", "checkbox"),
+
+    FormField(1004, "Status LED", elem="label"),
+    FormField(88, "Status LED", 0,
+              {0: "Always on", 1: "When idle", 2: "After switching", 3: "Idle + switch"}, "uint8"),
+    # Seconds here, not microseconds: both of these are stored in seconds.
+    FormField(89, "Status LED Idle Time", 30, {"min": 1, "max": 4200}, "uint16"),
+    FormField(103, "Status LED Switch Time", 10, {"min": 1, "max": 4200}, "uint16"),
+]
+
+# One row per entry in hotkeys[] (src/keyboard.c), in that order - the firmware stores
+# them as an array and matches by position, so these cannot be reordered. The combo in
+# `values` is what that entry is compiled with; the page shows it for a hotkey that has
+# nothing stored, and a stored zero means exactly that. Keep them in step with the table
+# in src/keyboard.c.
+HOTKEYS_ = [
+    FormField(90, "Switch output", 0,
+              {"combo": combo(MOD_LCTRL, KEY_CAPS_LOCK)}, "uint32", "hotkey"),
+    FormField(91, "Slow mouse", 0,
+              {"combo": combo(MOD_RALT | MOD_RCTRL)}, "uint32", "hotkey"),
+    FormField(92, "Lock switching", 0,
+              {"combo": combo(MOD_RCTRL, KEY_K)}, "uint32", "hotkey"),
+    FormField(93, "Lock both screens", 0,
+              {"combo": combo(MOD_RCTRL, KEY_L)}, "uint32", "hotkey"),
+    FormField(94, "Gaming mode", 0,
+              {"combo": combo(MOD_LCTRL | MOD_RSHIFT, KEY_G)}, "uint32", "hotkey"),
+    FormField(95, "Keep awake: pong", 0,
+              {"combo": combo(MOD_LCTRL | MOD_RSHIFT, KEY_S)}, "uint32", "hotkey"),
+    FormField(96, "Keep awake: jitter", 0,
+              {"combo": combo(MOD_LCTRL | MOD_RSHIFT, KEY_J)}, "uint32", "hotkey"),
+    FormField(97, "Keep awake: off", 0,
+              {"combo": combo(MOD_LCTRL | MOD_RSHIFT, KEY_X)}, "uint32", "hotkey"),
+    FormField(98, "Wipe config", 0,
+              {"combo": combo(MOD_RSHIFT, KEY_F12, KEY_D)}, "uint32", "hotkey"),
+    FormField(99, "Record screen alignment", 0,
+              {"combo": combo(MOD_RSHIFT, KEY_F12, KEY_Y)}, "uint32", "hotkey"),
+    FormField(100, "Config mode", 0,
+              {"combo": combo(MOD_LCTRL | MOD_RSHIFT, KEY_C, KEY_O)}, "uint32", "hotkey"),
+    FormField(101, "Firmware upgrade, board A", 0,
+              {"combo": combo(MOD_LSHIFT | MOD_RSHIFT, KEY_A)}, "uint32", "hotkey"),
+    FormField(102, "Firmware upgrade, board B", 0,
+              {"combo": combo(MOD_LSHIFT | MOD_RSHIFT, KEY_B)}, "uint32", "hotkey"),
 ]
 
 OUTPUT_ = [
@@ -91,3 +139,7 @@ def output_status():
 
 def output_config():
     return generate_output(0, data=CONFIG_)
+
+
+def output_hotkeys():
+    return generate_output(0, data=HOTKEYS_)

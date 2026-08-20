@@ -32,8 +32,9 @@ void set_keyboard_leds(uint8_t requested_led_state, device_t *state) {
 }
 
 void restore_leds(device_t *state) {
-    /* Light up on-board LED if current board is active output */
-    state->onboard_led_state = (state->active_output == BOARD_ROLE);
+    /* Light up on-board LED if current board is active output, unless the status LED
+       timeout has taken it dark (led_timeout_task below). */
+    state->onboard_led_state = (state->active_output == BOARD_ROLE) && !state->led_suppressed;
     gpio_put(GPIO_LED_PIN, state->onboard_led_state);
 
     /* Light up appropriate keyboard leds (if it's connected locally) */
@@ -92,6 +93,72 @@ void led_blinking_task(device_t *state) {
     state->last_led_change = time_us_32();
 
     /* Restore LEDs in the last pass */
+    if (state->blinks_left == 0)
+        restore_leds(state);
+}
+
+/* Take the indicator dark once this board has nothing left to say with it.
+
+   Each mode is one or two rules, and a rule is a timestamp with a timeout: "no input for
+   this long" measures from last_activity[BOARD_ROLE] - the same timestamp the keep-awake
+   modes use, which the inter-board link keeps current for input arriving from the other
+   board - and "this long since the switch" measures from last_switch_time. Any rule that
+   is still running keeps the light on, so the two can be combined without one cutting the
+   other short.
+
+   Only the board that is the active output has anything lit, so this does nothing on the
+   other one. The caps lock indicator (kbd_led_as_indicator) is deliberately left alone:
+   led_sync_task drives the keyboard's LEDs from keyboard_leds_desired and would undo any
+   suppression here within a frame. */
+static bool led_rule_running(uint64_t now, uint64_t since, uint16_t seconds) {
+    /* Zero seconds means never, so a rule left unset keeps the indicator rather than
+       putting it out on a half-configured device. */
+    return seconds == 0 || (now - since) <= (uint64_t)seconds * 1000000;
+}
+
+void led_timeout_task(device_t *state) {
+    const config_t *config = &state->config;
+    uint64_t now = time_us_64();
+    uint64_t idle_since = state->last_activity[BOARD_ROLE];
+    uint64_t switch_since = state->last_switch_time;
+    bool lit = true;
+
+    switch (config->led_off_mode) {
+        case LED_OFF_WHEN_IDLE:
+            /* Becoming the active output starts the clock as much as a keypress does.
+               Without it, switching by hotkey onto a computer left alone since the
+               morning would light the LED and put it straight back out. */
+            lit = led_rule_running(now, idle_since, config->led_off_sec)
+               || led_rule_running(now, switch_since, config->led_off_sec);
+            break;
+
+        case LED_OFF_AFTER_SWITCH:
+            lit = led_rule_running(now, switch_since, config->led_switch_sec);
+            break;
+
+        case LED_OFF_IDLE_AND_SWITCH:
+            /* Each on its own timer, so a short one on the switch can mark the change
+               without shortening the one on your typing, and the other way round. */
+            lit = led_rule_running(now, idle_since, config->led_off_sec)
+               || led_rule_running(now, switch_since, config->led_switch_sec);
+            break;
+
+        default:
+            /* LED_ALWAYS_ON, and anything a newer config page might have stored. */
+            break;
+    }
+
+    /* Config mode blinks once a second and that blink is the only sign the device is in
+       it, so it outranks every rule above. */
+    bool suppress = !lit && !state->config_mode_active;
+
+    if (suppress == state->led_suppressed)
+        return;
+
+    state->led_suppressed = suppress;
+
+    /* Mid-blink the blinking task owns the pin and ends by calling restore_leds()
+       itself, which picks this up - stepping in here would cut it short. */
     if (state->blinks_left == 0)
         restore_leds(state);
 }

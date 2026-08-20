@@ -578,6 +578,8 @@ function syncControl(element) {
     refreshOutput(element.dataset.o);
   else if (element.dataset.n === 'dtap')
     refreshSwitching();
+  else if (element.dataset.n === 'ledmode')
+    refreshLed();
 
   if (element.hasAttribute('data-fw-ver'))
     refreshVersions();
@@ -603,7 +605,16 @@ function renderView(view, element) {
   } else if (list.contains('sw')) {
     view.setAttribute('aria-checked', element.checked);
   } else if (list.contains('sec')) {
-    view.value = Math.round((parseInt(value, 10) || 0) / 1000000);
+    view.value = Math.round((parseInt(value, 10) || 0) / (Number(view.dataset.scale) || 1));
+  } else if (list.contains('hk')) {
+    /* Nothing stored means the combo the firmware was built with, which the page knows
+       from form.py rather than from the device - the device only reports the zero. */
+    const stored = parseInt(value, 10) || 0;
+
+    view.textContent = comboLabel(stored || (parseInt(view.dataset.def, 10) || 0));
+    view.classList.toggle('hk-set', !!stored);
+  } else if (list.contains('hk-x')) {
+    view.disabled = !(parseInt(value, 10) || 0);
   } else if (list.contains('swap')) {
     view.setAttribute('aria-pressed', value != 0);
   } else if (list.contains('pctv')) {
@@ -731,9 +742,259 @@ function refreshSwitching() {
   });
 }
 
+/* A timer only means anything once the mode has given the LED a reason to go dark, so
+   each one follows the mode - the same way the double-tap knobs follow their switch. */
+const LED_TIMERS = {'0': [], '1': ['idle'], '2': ['switch'], '3': ['idle', 'switch']};
+
+const LED_NOTES = {
+  '0': 'The board driving the computer you are on keeps its LED lit.',
+  '1': 'The LED goes dark once that computer has gone this long without a keypress or a ' +
+       'mouse move, and comes back on with the next one. Switching to it starts the clock too.',
+  '2': 'The LED is lit for this long after the output changes, then goes dark until the next ' +
+       'switch, whatever you type in between.',
+  '3': 'Either timer keeps the LED lit, so it goes dark once the computer has been quiet for ' +
+       'the first and the switch is older than the second.',
+};
+
+function refreshLed() {
+  const master = document.querySelector('.api[data-n="ledmode"]');
+  const mode = master ? String(getValue(master)) : '0';
+  const shown = LED_TIMERS[mode] || [];
+
+  el('led-note').textContent = LED_NOTES[mode] || LED_NOTES['0'];
+
+  document.querySelectorAll('.led-part').forEach(part => {
+    const off = shown.indexOf(part.dataset.led) === -1;
+
+    part.classList.toggle('off', off);
+    part.querySelectorAll('button, input').forEach(control => { control.disabled = off; });
+  });
+}
+
 function useFullEdge(output) {
   setApi(apiValue(output, 'bt'), 0);
   setApi(apiValue(output, 'bb'), MAX_SCREEN_COORD);
+}
+
+/* --------------------------------------------------------------- shortcuts */
+
+/* event.code -> HID usage. The firmware matches the usage the keyboard sends, so what
+   counts is the physical key and not what the host layout makes of it - which is the
+   point for anyone typing on a custom one. A key missing from here cannot go into a
+   shortcut, because there would be no number to store for it. */
+const KEY_CODES = {
+  Enter: 0x28, Escape: 0x29, Backspace: 0x2a, Tab: 0x2b, Space: 0x2c, Minus: 0x2d,
+  Equal: 0x2e, BracketLeft: 0x2f, BracketRight: 0x30, Backslash: 0x31, Semicolon: 0x33,
+  Quote: 0x34, Backquote: 0x35, Comma: 0x36, Period: 0x37, Slash: 0x38, CapsLock: 0x39,
+  PrintScreen: 0x46, ScrollLock: 0x47, Pause: 0x48, Insert: 0x49, Home: 0x4a,
+  PageUp: 0x4b, Delete: 0x4c, End: 0x4d, PageDown: 0x4e, ArrowRight: 0x4f,
+  ArrowLeft: 0x50, ArrowDown: 0x51, ArrowUp: 0x52, NumLock: 0x53,
+};
+
+/* The runs the HID tables lay out consecutively, rather than 60 more lines of them. */
+for (let i = 0; i < 26; i++)
+  KEY_CODES['Key' + String.fromCharCode(65 + i)] = 0x04 + i;
+
+for (let i = 1; i <= 9; i++)
+  KEY_CODES['Digit' + i] = 0x1d + i;
+
+KEY_CODES.Digit0 = 0x27;
+
+for (let i = 1; i <= 12; i++) {
+  KEY_CODES['F' + i] = 0x39 + i;         /* F1 - F12  are 0x3a - 0x45 */
+  KEY_CODES['F' + (i + 12)] = 0x67 + i;  /* F13 - F24 are 0x68 - 0x73 */
+}
+
+/* Modifier bits, matching KEYBOARD_MODIFIER_* in TinyUSB and the mask config_t stores. */
+const MOD_CODES = {
+  ControlLeft: 0x01, ShiftLeft: 0x02, AltLeft: 0x04, MetaLeft: 0x08,
+  ControlRight: 0x10, ShiftRight: 0x20, AltRight: 0x40, MetaRight: 0x80,
+};
+
+const MOD_NAMES = ['Left Ctrl', 'Left Shift', 'Left Alt', 'Left Gui',
+                   'Right Ctrl', 'Right Shift', 'Right Alt', 'Right Gui'];
+
+const KEY_NAMES = {
+  0x28: 'Enter', 0x29: 'Esc', 0x2a: 'Backspace', 0x2b: 'Tab', 0x2c: 'Space', 0x2d: '-',
+  0x2e: '=', 0x2f: '[', 0x30: ']', 0x31: '\\', 0x33: ';', 0x34: "'", 0x35: '`',
+  0x36: ',', 0x37: '.', 0x38: '/', 0x39: 'Caps Lock', 0x46: 'Print Screen',
+  0x47: 'Scroll Lock', 0x48: 'Pause', 0x49: 'Insert', 0x4a: 'Home', 0x4b: 'Page Up',
+  0x4c: 'Delete', 0x4d: 'End', 0x4e: 'Page Down', 0x4f: 'Right', 0x50: 'Left',
+  0x51: 'Down', 0x52: 'Up', 0x53: 'Num Lock',
+};
+
+function keyLabel(usage) {
+  if (KEY_NAMES[usage])
+    return KEY_NAMES[usage];
+
+  if (usage >= 0x04 && usage <= 0x1d)
+    return String.fromCharCode(65 + usage - 0x04);
+
+  if (usage >= 0x1e && usage <= 0x26)
+    return String(usage - 0x1d);
+
+  if (usage === 0x27)
+    return '0';
+
+  if (usage >= 0x3a && usage <= 0x45)
+    return 'F' + (usage - 0x39);
+
+  if (usage >= 0x68 && usage <= 0x73)
+    return 'F' + (usage - 0x67 + 12);
+
+  /* Something the device holds that this page has no name for - show it as it is
+     stored rather than pretending the shortcut is unset. */
+  return '0x' + usage.toString(16);
+}
+
+/* A combo packed the way config_t stores it: modifier mask, then up to two keys.
+   See HOTKEY_PACK in src/include/keyboard.h. */
+function comboLabel(packed) {
+  const parts = [];
+
+  MOD_NAMES.forEach((name, bit) => {
+    if (packed & (1 << bit))
+      parts.push(name);
+  });
+
+  [(packed >> 8) & 0xff, (packed >> 16) & 0xff].forEach(usage => {
+    if (usage)
+      parts.push(keyLabel(usage));
+  });
+
+  return parts.length ? parts.join(' + ') : 'Not set';
+}
+
+var capturing = null;
+var captureMods = 0;
+var captureKeys = [];
+
+function packCapture() {
+  return captureMods | ((captureKeys[0] || 0) << 8) | ((captureKeys[1] || 0) << 16);
+}
+
+function startCapture(button) {
+  stopCapture(false);
+  closeHotkeyEditor();
+
+  capturing = button;
+  captureMods = 0;
+  captureKeys = [];
+
+  button.classList.add('hk-cap');
+  button.textContent = 'Press the combination';
+}
+
+function stopCapture(commit) {
+  const button = capturing;
+
+  if (!button)
+    return;
+
+  capturing = null;
+  button.classList.remove('hk-cap');
+
+  if (commit && (captureMods || captureKeys.length))
+    setApi(el(button.dataset.for), packCapture());
+
+  /* Unconditionally, because setApi says nothing when the combo has not changed and
+     the button would be left reading "Press the combination". */
+  renderView(button, el(button.dataset.for));
+}
+
+function captureKeydown(event) {
+  if (!capturing)
+    return;
+
+  event.preventDefault();
+
+  /* Esc on its own backs out. Held with anything else it is just another key. */
+  if (event.code === 'Escape' && !captureMods && !captureKeys.length)
+    return stopCapture(false);
+
+  const bit = MOD_CODES[event.code];
+
+  if (bit)
+    captureMods |= bit;
+  else {
+    const usage = KEY_CODES[event.code];
+
+    /* No HID usage to store - ignore it rather than record something the device
+       could never match. */
+    if (!usage)
+      return;
+
+    if (captureKeys.indexOf(usage) === -1 && captureKeys.length < 2)
+      captureKeys.push(usage);
+  }
+
+  capturing.textContent = comboLabel(packCapture());
+}
+
+/* Letting go of anything ends it, so a combo is recorded as it is released rather
+   than growing for as long as the keyboard is held down. */
+function captureKeyup(event) {
+  if (!capturing)
+    return;
+
+  event.preventDefault();
+  stopCapture(true);
+}
+
+/* Setting a combination without pressing it.
+
+   The browser keeps a few combinations for itself - Ctrl+Shift+Tab and Ctrl+W among them -
+   and a page never sees the keydown, so recording cannot reach them. Pick opens this on the
+   combination as it stands and lets it be assembled instead. */
+var editing = null;
+
+function fillKeyOptions(select) {
+  const usages = [...new Set(Object.values(KEY_CODES))].sort((a, b) => a - b);
+
+  select.appendChild(new Option('None', '0'));
+  usages.forEach(usage => select.appendChild(new Option(keyLabel(usage), String(usage))));
+}
+
+function openHotkeyEditor(pick) {
+  stopCapture(false);
+
+  editing = el(pick.dataset.hk);
+
+  /* What the row shows: the stored combination, or the compiled-in one it is sitting on. */
+  const view = document.querySelector(`.hk[data-for="${editing.id}"]`);
+  const packed = (parseInt(editing.value, 10) || 0) || (parseInt(view.dataset.def, 10) || 0);
+
+  el('hk-ed-t').textContent = pick.dataset.name;
+
+  document.querySelectorAll('#hk-mods button').forEach(button => {
+    button.setAttribute('aria-pressed', String(!!(packed & Number(button.dataset.m))));
+  });
+
+  el('hk-k1').value = String((packed >> 8) & 0xff);
+  el('hk-k2').value = String((packed >> 16) & 0xff);
+  el('hk-ed').hidden = false;
+  el('hk-ed').scrollIntoView({ block: 'nearest' });
+}
+
+function applyHotkeyEditor() {
+  if (!editing)
+    return;
+
+  let packed = (Number(el('hk-k1').value) || 0) << 8 | (Number(el('hk-k2').value) || 0) << 16;
+
+  document.querySelectorAll('#hk-mods button').forEach(button => {
+    if (button.getAttribute('aria-pressed') === 'true')
+      packed |= Number(button.dataset.m);
+  });
+
+  /* Nothing chosen is the same thing Default says: fall back to the compiled-in combo. */
+  setApi(editing, packed);
+  closeHotkeyEditor();
+}
+
+function closeHotkeyEditor() {
+  editing = null;
+  el('hk-ed').hidden = true;
 }
 
 /* ------------------------------------------------------------- listeners */
@@ -770,6 +1031,29 @@ function panelClick(event) {
 
   if (!button || button.disabled)
     return;
+
+  /* Reaching for anything else abandons a shortcut being recorded. */
+  if (capturing && button !== capturing)
+    stopCapture(false);
+
+  if (button.classList.contains('hk'))
+    return startCapture(button);
+
+  if (button.classList.contains('hk-p'))
+    return openHotkeyEditor(button);
+
+  if (button.classList.contains('hk-x'))
+    return setApi(el(button.dataset.for), 0);
+
+  if (button.dataset.m)
+    return button.setAttribute('aria-pressed',
+                               String(button.getAttribute('aria-pressed') !== 'true'));
+
+  if (button.id === 'hk-ed-set')
+    return applyHotkeyEditor();
+
+  if (button.id === 'hk-ed-cancel')
+    return closeHotkeyEditor();
 
   const group = button.closest('.seg');
   if (group)
@@ -827,18 +1111,22 @@ function coordChanged(event) {
   }
 }
 
-/* Idle/Max time are µs on the wire, seconds in the form. The wire value is a
-   uint32, so seconds are capped short of 2^32 µs. */
+/* Seconds in the form, whatever the field holds on the wire - data-scale says what one
+   second is worth there. The screensaver timers are µs in a uint32, which is where the
+   4200 second ceiling comes from; the LED timeout is already seconds. */
 function secondsChanged(event) {
   const field = event.target;
 
   if (!field.classList.contains('sec'))
     return;
 
-  const seconds = Math.max(0, Math.min(4200, Math.round(Number(field.value) || 0)));
+  const scale = Number(field.dataset.scale) || 1;
+  const floor = Number(field.min) || 0;
+  const ceiling = Number(field.max) || 4200;
+  const seconds = Math.max(floor, Math.min(ceiling, Math.round(Number(field.value) || 0)));
 
   field.value = seconds;
-  setApi(el(field.dataset.for), seconds * 1000000);
+  setApi(el(field.dataset.for), seconds * scale);
 }
 
 window.addEventListener('load', function () {
@@ -883,11 +1171,21 @@ window.addEventListener('load', function () {
         closeDevice();
     });
 
+  fillKeyOptions(el('hk-k1'));
+  fillKeyOptions(el('hk-k2'));
+
+  window.addEventListener('keydown', captureKeydown, true);
+  window.addEventListener('keyup', captureKeyup, true);
+
+  /* A shortcut half recorded when the window loses focus is not a shortcut. */
+  window.addEventListener('blur', function () { stopCapture(false); });
+
   document.querySelectorAll('.api').forEach(syncControl);
   refreshColumnOrder();
   refreshVersions();
   refreshOutput('A');
   refreshOutput('B');
   refreshSwitching();
+  refreshLed();
   setConnected(false);
 });

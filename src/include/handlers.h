@@ -68,4 +68,5 @@ void handle_write_fw_msg(uart_packet_t *, device_t *);
  *  Functions related to managing the active output.
  *==============================================================================*/
 
+void note_output_switch(device_t *);
 void set_active_output(device_t *, uint8_t);

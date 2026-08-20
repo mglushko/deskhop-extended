@@ -64,6 +64,9 @@ const config_t default_config = {
     /* Which output the config page draws on the left. Output A by default; flip it from
        the page if the boards sit the other way round on your desk. */
     .swap_columns = 0,
+    .led_off_mode = LED_OFF_MODE,
+    .led_off_sec = LED_OFF_SEC,
+    .led_switch_sec = LED_SWITCH_SEC,
     .switch_double_tap_enable = SWITCH_DOUBLE_TAP_ENABLE,
     .switch_double_tap_ms = SWITCH_DOUBLE_TAP_MS,
     .switch_double_tap_margin = SWITCH_DOUBLE_TAP_MARGIN,

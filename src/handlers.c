@@ -207,6 +207,7 @@ void handle_output_select_msg(uart_packet_t *packet, device_t *state) {
     if (state->tud_connected)
         release_all_keys(state);
 
+    note_output_switch(state);
     restore_leds(state);
 }
 
@@ -257,6 +258,7 @@ void handle_flash_led_msg(uart_packet_t *packet, device_t *state) {
 void handle_wipe_config_msg(uart_packet_t *packet, device_t *state) {
     wipe_config();
     load_config(state);
+    hotkeys_apply_config(state);
 }
 
 /* Update screensaver state after received message */
@@ -307,6 +309,10 @@ void handle_api_msgs(uart_packet_t *packet, device_t *state) {
             return;
 
         memcpy(ptr, &packet->data[1], map->len);
+
+        /* hotkeys[] is a copy of the stored combos, so it has to be told. */
+        if (value_idx >= HOTKEY_CFG_FIRST_KEY && value_idx < HOTKEY_CFG_FIRST_KEY + NUM_HOTKEYS)
+            hotkeys_apply_config(state);
     }
     else if (packet->type == GET_VAL_MSG) {
         uart_packet_t response = {.type=GET_VAL_MSG, .data={[0] = value_idx}};
@@ -400,9 +406,18 @@ void handle_heartbeat_msg(uart_packet_t *packet, device_t *state) {
  * ==============  Output Switch Routines  ============ *
  * ==================================================== */
 
+/* Light the indicator back up and restart whichever timeout the status LED is on.
+   Called from both sides of a switch: the board that performed it, and the board that
+   hears about it over the link. */
+void note_output_switch(device_t *state) {
+    state->last_switch_time = time_us_64();
+    state->led_suppressed   = false;
+}
+
 /* Update output variable, set LED on/off and notify the other board so they are in sync. */
 void set_active_output(device_t *state, uint8_t new_output) {
     state->active_output = new_output;
+    note_output_switch(state);
     restore_leds(state);
     send_value(new_output, OUTPUT_SELECT_MSG);
 

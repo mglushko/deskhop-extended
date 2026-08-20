@@ -28,6 +28,14 @@
    in flash: keys that are gone are skipped, keys that are new keep their default. */
 #define CONFIG_STORE_FORMAT 0x4B560001  /* 'KV', format 1 */
 
+/* How much of the config sector a stored page may use. Two flash pages rather than one:
+   the entries are {key, length, value} and the field map outgrew 256 bytes, at which
+   point config_store_pack starts dropping settings off the end rather than overrunning.
+   FLASH_CONFIG is 4 kB (misc/memory_map.ld) and ADDR_CONFIG is sector-aligned, so the
+   first page still carries the erase and the rest follow it. */
+#define CONFIG_STORE_PAGES 2
+#define CONFIG_STORE_SIZE  (CONFIG_STORE_PAGES * FLASH_PAGE_SIZE)
+
 /* config.version is writable over the API but must never be restored from storage -
    it describes the layout, not a user setting. */
 #define CONFIG_VERSION_KEY  70
@@ -39,6 +47,42 @@ typedef struct {
     uint8_t count;     /* how many entries those bytes hold */
     uint8_t _pad;
 } config_store_header_t;
+
+/* The pre key-value layout, frozen.
+
+   config_store_load_legacy() reads a stored page as this and nothing else, so config_t
+   is free to grow: a page written by a firmware older than the key-value format is 144
+   bytes of exactly these fields in exactly this order, whatever config_t looks like now.
+   Do not edit this struct - it describes what is already in other people's flash. */
+typedef struct {
+    uint32_t magic_header;
+    uint32_t version;
+
+    uint8_t force_mouse_boot_mode;
+    uint8_t force_kbd_boot_protocol;
+
+    uint8_t kbd_led_as_indicator;
+    uint8_t hotkey_toggle;
+    uint8_t enable_acceleration;
+
+    uint8_t enforce_ports;
+    uint16_t jump_threshold;
+
+    uint8_t switch_double_tap_enable;
+    uint16_t switch_double_tap_ms;
+    uint16_t switch_double_tap_margin;
+
+    output_t output[NUM_SCREENS];
+
+    uint8_t swap_columns;
+    uint8_t _reserved[3];
+
+    uint32_t checksum;
+} config_v9_t;
+
+/* output_t sits inside the frozen layout, so a change to it moves bytes that are already
+   written. If this fires, config_v9_t needs its own copy of the old output_t. */
+_Static_assert(sizeof(config_v9_t) == 144, "the pre key-value config layout has moved");
 
 /*==============================================================================
  *  Configuration Data
