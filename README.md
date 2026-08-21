@@ -15,7 +15,7 @@ Windows.
 DeskHop EX is a downstream integration build of
 [hrvach/deskhop](https://github.com/hrvach/deskhop). All the hardware, the design and effectively
 all of the firmware are upstream's work. This repository exists to run upstream *plus* the fixes
-that are still waiting on review there, plus two features and a rewritten config page that suit
+that are still waiting on review there, plus a few features and a rewritten config page that suit
 how I use the device day to day. Upstream remains the canonical project and is the better
 starting point for most people; this build is here for anyone who would rather not wait for those
 fixes to land. [Changes from DeskHop](#changes-from-deskhop) is the complete list; everything after
