@@ -55,7 +55,7 @@
 
 /* Entries in hotkeys[] (keyboard.c). Pinned here because config_t stores one packed
    combo per entry; keyboard.c asserts the table still matches. */
-#define NUM_HOTKEYS 13
+#define NUM_HOTKEYS 12
 
 /*==============================================================================
  *  Utility Macros

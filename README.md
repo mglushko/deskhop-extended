@@ -77,17 +77,22 @@ configuration.</em></p>
 
 <p align="center"><img src="img/config-led.png" alt="The status LED modes and their two timers"></p>
 
-- **Every shortcut can be changed** - all thirteen, `Right Shift + F12 + D` included, are set from
-  the page by clicking one and pressing the combination you want, read as the physical key so a
-  custom layout picks the right one. Combinations the browser keeps for itself, `Ctrl + W` among
-  them, are assembled by hand under Pick instead, and `config.hotkey_toggle` - stored, defaulted
-  and writable upstream but never read - finally takes effect.
+- **Every shortcut can be changed** - all twelve are set from the page by clicking one and pressing
+  the combination you want, read as the physical key so a custom layout picks the right one.
+  Combinations the browser keeps for itself, `Ctrl + W` among them, are assembled by hand under Pick
+  instead, and `config.hotkey_toggle` - stored, defaulted and writable upstream but never read -
+  finally takes effect.
   [0215c72](https://github.com/mglushko/deskhop-extended/commit/0215c72)
 
-<p align="center"><img src="img/config-hotkeys.png" alt="The thirteen shortcuts, each with Pick and Default"></p>
+<p align="center"><img src="img/config-hotkeys.png" alt="The twelve shortcuts, each with Pick and Default"></p>
 
-Upstream's README below is reproduced unchanged, so its screenshots and its instruction to "click
-*exit* in the menu" still show upstream's page; on this build Exit sits in the header. See
+Wiping the configuration has no shortcut here at all - upstream's `Right Shift + F12 + D` is gone,
+since a combination that erases every setting is too easy to reach by accident. Wipe Config on the
+page does the same thing to both boards.
+
+Upstream's README below is reproduced unchanged, so its screenshots, its shortcut list and its
+instruction to "click *exit* in the menu" still show upstream's build; on this one Exit sits in the
+header and that wipe combination does nothing. See
 [Web configuration mode](#web-configuration-mode) for how to reach the page.
 
 ### Pending upstream pull requests

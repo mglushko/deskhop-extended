@@ -97,7 +97,7 @@ with sync_playwright() as p:
 
     # ---- shortcuts ---------------------------------------------------------
     rows = page.locator(".hk-row")
-    check("one row per hotkey", rows.count() == 13, rows.count())
+    check("one row per hotkey", rows.count() == 12, rows.count())
 
     first = page.locator('.hk[data-for="k90"]')
     check("an unset shortcut shows the compiled-in default",
@@ -105,9 +105,9 @@ with sync_playwright() as p:
     check("its Default button is disabled while nothing is stored",
           page.eval_on_selector('.hk-x[data-for="k90"]', "e => e.disabled"))
 
-    wipe = page.locator('.hk[data-for="k98"]')
+    align = page.locator('.hk[data-for="k99"]')
     check("a two-key default reads back whole",
-          wipe.text_content() == "Right Shift + F12 + D", wipe.text_content())
+          align.text_content() == "Right Shift + F12 + Y", align.text_content())
 
     slow = page.locator('.hk[data-for="k91"]')
     # Listed in bit order, which is not the order src/keyboard.c happens to write them.

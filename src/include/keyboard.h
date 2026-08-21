@@ -36,9 +36,6 @@ keyboard_t *get_or_add_keyboard(hid_interface_t *iface, uint8_t report_id);
 #define HOTKEY_KEY1(packed) ((uint8_t)(((packed) >> 8) & 0xff))
 #define HOTKEY_KEY2(packed) ((uint8_t)(((packed) >> 16) & 0xff))
 
-/* api_field_map index of hotkey_cfg[0]; the rest follow it in order (protocol.c). */
-#define HOTKEY_CFG_FIRST_KEY 90
-
 extern hotkey_combo_t hotkeys[];
 
 bool check_specific_hotkey(hotkey_combo_t, const hid_keyboard_report_t *);

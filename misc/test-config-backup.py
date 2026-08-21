@@ -52,10 +52,10 @@ with sync_playwright() as p:
                   "  setValue(e, e.type === 'checkbox' ? (i % 2) : (i + 3))); markClean(); }")
 
     writable = page.evaluate("() => document.querySelectorAll('.api:not([readonly])').length")
-    # 50 of the firmware's 54 writable fields; the page deliberately does not expose
+    # 49 of the firmware's 53 writable fields; the page deliberately does not expose
     # output[].number (x2), config.version or hotkey_toggle - the last of which the
     # Shortcuts section supersedes.
-    check("page exposes 50 writable fields", writable == 50, writable)
+    check("page exposes 49 writable fields", writable == 49, writable)
 
     page.evaluate("() => exportHandler()")
     exported = json.loads(page.eval_on_selector("#backup-text", "e => e.value"))

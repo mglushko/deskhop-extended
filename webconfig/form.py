@@ -17,7 +17,7 @@ class FormField:
 MOD_LCTRL, MOD_LSHIFT, MOD_LALT, MOD_LGUI = 0x01, 0x02, 0x04, 0x08
 MOD_RCTRL, MOD_RSHIFT, MOD_RALT, MOD_RGUI = 0x10, 0x20, 0x40, 0x80
 
-KEY_A, KEY_B, KEY_C, KEY_D = 0x04, 0x05, 0x06, 0x07
+KEY_A, KEY_B, KEY_C = 0x04, 0x05, 0x06
 KEY_G, KEY_J, KEY_K, KEY_L = 0x0A, 0x0D, 0x0E, 0x0F
 KEY_O, KEY_S, KEY_X, KEY_Y = 0x12, 0x16, 0x1B, 0x1C
 KEY_CAPS_LOCK, KEY_F12 = 0x39, 0x45
@@ -86,8 +86,6 @@ HOTKEYS_ = [
               {"combo": combo(MOD_LCTRL | MOD_RSHIFT, KEY_J)}, "uint32", "hotkey"),
     FormField(97, "Keep awake: off", 0,
               {"combo": combo(MOD_LCTRL | MOD_RSHIFT, KEY_X)}, "uint32", "hotkey"),
-    FormField(98, "Wipe config", 0,
-              {"combo": combo(MOD_RSHIFT, KEY_F12, KEY_D)}, "uint32", "hotkey"),
     FormField(99, "Record screen alignment", 0,
               {"combo": combo(MOD_RSHIFT, KEY_F12, KEY_Y)}, "uint32", "hotkey"),
     FormField(100, "Config mode", 0,

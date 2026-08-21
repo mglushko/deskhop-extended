@@ -67,7 +67,12 @@ const field_map_t api_field_map[] = {
     { 103, false, UINT16, 2, offsetof(device_t, config.led_switch_sec) },
 
     /* Hotkeys, one packed combo per entry in hotkeys[] (keyboard.c) and in that order.
-       HOTKEY_CFG_FIRST_KEY (keyboard.h) has to stay pointing at the first of them. */
+
+       A key belongs to an action, not to a slot: hotkey_cfg is indexed by position, so
+       when an entry leaves the table the keys after it keep their numbers and move down
+       an index, and the key that left is retired rather than reused. A config written
+       before the change then still lands on the action it was set for. 98 was Wipe
+       config, which no longer has a shortcut at all. */
     { 90,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[0])  },  /* Switch output */
     { 91,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[1])  },  /* Slow mouse */
     { 92,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[2])  },  /* Switch lock */
@@ -76,11 +81,10 @@ const field_map_t api_field_map[] = {
     { 95,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[5])  },  /* Keep awake: pong */
     { 96,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[6])  },  /* Keep awake: jitter */
     { 97,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[7])  },  /* Keep awake: off */
-    { 98,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[8])  },  /* Wipe config */
-    { 99,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[9])  },  /* Record screen alignment */
-    { 100, false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[10]) },  /* Config mode */
-    { 101, false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[11]) },  /* Firmware upgrade, board A */
-    { 102, false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[12]) },  /* Firmware upgrade, board B */
+    { 99,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[8])  },  /* Record screen alignment */
+    { 100, false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[9])  },  /* Config mode */
+    { 101, false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[10]) },  /* Firmware upgrade, board A */
+    { 102, false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[11]) },  /* Firmware upgrade, board B */
 
     /* Firmware */
     { 78, true,  UINT16, 2, offsetof(device_t, _running_fw.version) },

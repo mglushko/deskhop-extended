@@ -182,10 +182,10 @@ VALUES = {
     # for a moment after a switch. Mode 3 is also the one that poses the section best -
     # it is the only one with neither timer greyed out.
     88: 3, 89: 60, 103: 10,
-    # Shortcuts, 90-102, one per entry in hotkeys[]. Zero is what a device that has never
-    # had one changed holds, and the page draws the compiled-in combo for it - which is
-    # what the shots should show.
-    **{key: 0 for key in range(90, 103)},
+    # Shortcuts, one per entry in hotkeys[]; 98 is retired, since wiping the config has no
+    # shortcut. Zero is what a device that has never had one changed holds, and the page
+    # draws the compiled-in combo for it - which is what the shots should show.
+    **{key: 0 for key in range(90, 103) if key != 98},
 }
 
 DRIVE = """

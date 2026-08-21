@@ -102,13 +102,6 @@ void screenlock_hotkey_handler(device_t *state, hid_keyboard_report_t *report) {
     }
 }
 
-/* When pressed, erases stored config in flash and loads defaults on both boards */
-void wipe_config_hotkey_handler(device_t *state, hid_keyboard_report_t *report) {
-    wipe_config();
-    load_config(state);
-    send_value(ENABLE, WIPE_CONFIG_MSG);
-}
-
 /* When pressed, toggles the current mouse zoom mode state */
 void mouse_zoom_hotkey_handler(device_t *state, hid_keyboard_report_t *report) {
     state->mouse_zoom ^= 1;
@@ -310,8 +303,11 @@ void handle_api_msgs(uart_packet_t *packet, device_t *state) {
 
         memcpy(ptr, &packet->data[1], map->len);
 
-        /* hotkeys[] is a copy of the stored combos, so it has to be told. */
-        if (value_idx >= HOTKEY_CFG_FIRST_KEY && value_idx < HOTKEY_CFG_FIRST_KEY + NUM_HOTKEYS)
+        /* hotkeys[] is a copy of the stored combos, so it has to be told. Asked of the
+           offset rather than the key, since the keys are no longer one run: one was
+           retired when its action lost its shortcut. */
+        if (map->offset >= offsetof(device_t, config.hotkey_cfg)
+            && map->offset < offsetof(device_t, config.hotkey_cfg) + sizeof(state->config.hotkey_cfg))
             hotkeys_apply_config(state);
     }
     else if (packet->type == GET_VAL_MSG) {

@@ -73,13 +73,6 @@ hotkey_combo_t hotkeys[] = {
      .acknowledge    = true,
      .action_handler = &disable_screensaver_hotkey_handler},
 
-    /* Erase stored config */
-    {.modifier       = KEYBOARD_MODIFIER_RIGHTSHIFT,
-     .keys           = {HID_KEY_F12, HID_KEY_D},
-     .key_count      = 2,
-     .acknowledge    = true,
-     .action_handler = &wipe_config_hotkey_handler},
-
     /* Record switch y coordinate  */
     {.modifier       = KEYBOARD_MODIFIER_RIGHTSHIFT,
      .keys           = {HID_KEY_F12, HID_KEY_Y},
