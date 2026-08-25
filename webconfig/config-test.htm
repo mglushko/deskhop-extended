@@ -53,6 +53,13 @@
   --warn-fg: #a2461a;
   --warn-tx: #7b4526;
   --danger: #c8541f;
+  /* The quiet end of the accent, for controls that should read as green without
+     shouting it: a line on the button group, one step softer on the box beside it, and
+     the two fills that go under them. */
+  --grn-bd: #78a765;
+  --grn-bd-soft: #93b782;
+  --grn-bg: #f6faf3;
+  --grn-bg-soft: #fcfdfb;
   --scr: #eef7e8;
   --scr-main: #beffa1;
 }
@@ -458,15 +465,15 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 .hk-n { min-width: 0; font-size: 13px; color: var(--fg); }
 .hk {
   height: 28px; padding: 0 10px;
-  border: 1px solid var(--bd-soft); border-radius: 4px;
-  background: #fff; color: var(--muted); font-size: 12px; cursor: pointer;
+  border: 1px solid var(--grn-bd-soft); border-radius: 4px;
+  background: var(--grn-bg-soft); color: var(--muted); font-size: 12px; cursor: pointer;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .hk:hover { border-color: var(--accent); color: var(--accent-dk); }
 /* Listed but not settable: same box, nothing to press. A button centres its own text
    and a span does not, so this says so to match the rows above it. */
 .hk-fix { line-height: 26px; text-align: center; background: var(--chip); cursor: default; }
-.hk-fix:hover { border-color: var(--bd-soft); color: var(--muted); }
+.hk-fix:hover { border-color: var(--grn-bd-soft); color: var(--muted); }
 /* Sits where the three buttons do, in the one column they share. */
 .hk-note { text-align: center; white-space: nowrap; font-size: 12px; color: var(--muted); }
 /* Turned off, so the box names the state instead of a combination. */
@@ -479,15 +486,15 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
    two of them used to take. */
 .hk-acts {
   display: flex; align-items: stretch; height: 28px; overflow: hidden;
-  border: 1px solid var(--accent); border-radius: 4px; background: var(--scr);
+  border: 1px solid var(--grn-bd); border-radius: 4px; background: var(--grn-bg);
 }
 .hk-p, .hk-x, .hk-o {
   height: 28px; padding: 0 8px;
-  border: 0; background: transparent; color: var(--accent-dk); font-size: 12px; cursor: pointer;
+  border: 0; background: transparent; color: var(--muted); font-size: 12px; cursor: pointer;
 }
-.hk-x, .hk-o { border-left: 1px solid var(--accent); }
+.hk-x, .hk-o { border-left: 1px solid var(--grn-bd); }
 .hk-p:hover, .hk-x:hover, .hk-o:hover { background: var(--accent); color: #fff; }
-.hk-x[disabled], .hk-o[disabled] { background: #f7faf6; color: var(--bd-lock); cursor: default; }
+.hk-x[disabled], .hk-o[disabled] { background: #f7f9f6; color: var(--bd-lock); cursor: default; }
 
 /* Pick opens this under the list, for the combinations the browser keeps to itself. */
 .hk-ed {
