@@ -453,7 +453,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 /* One grid for the whole list rather than a flex line per row, so the columns line up with
    each other: config mode ends its row with a note instead of two buttons, and a row that
    sizes itself would put its combination 16px off the rest. */
-.hk-list { display: grid; grid-template-columns: minmax(max-content, 1fr) 214px auto auto auto; align-items: center; gap: 6px 8px; }
+.hk-list { display: grid; grid-template-columns: minmax(max-content, 1fr) 214px auto; align-items: center; gap: 6px 8px; }
 .hk-row { display: contents; }
 .hk-n { min-width: 0; font-size: 13px; color: var(--fg); }
 .hk {
@@ -467,19 +467,27 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
    and a span does not, so this says so to match the rows above it. */
 .hk-fix { line-height: 26px; text-align: center; background: var(--chip); cursor: default; }
 .hk-fix:hover { border-color: var(--bd-soft); color: var(--muted); }
-/* Sits where Pick, Default and Off do, centred across all three of their columns. */
-.hk-note { grid-column: span 3; text-align: center; white-space: nowrap; font-size: 12px; color: var(--muted); }
+/* Sits where the three buttons do, in the one column they share. */
+.hk-note { text-align: center; white-space: nowrap; font-size: 12px; color: var(--muted); }
 /* Turned off, so the box names the state instead of a combination. */
 .hk-off { background: var(--chip); font-style: italic; }
 /* Set on this device, rather than left at what the firmware was built with. */
 .hk-set { border-color: var(--bd); color: var(--fg); font-weight: 700; }
 .hk-cap { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
-.hk-p, .hk-x, .hk-o {
-  height: 28px; padding: 0 6px;
-  border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer;
+/* Pick, Default and Off share one box with dividers between them, the way .step does.
+   One border instead of three and no gaps between them, so the three fit the column the
+   two of them used to take. */
+.hk-acts {
+  display: flex; align-items: stretch; height: 28px; overflow: hidden;
+  border: 1px solid var(--accent); border-radius: 4px; background: var(--scr);
 }
-.hk-p:hover, .hk-x:hover, .hk-o:hover { color: var(--accent-dk); }
-.hk-x[disabled], .hk-o[disabled] { color: var(--bd-lock); cursor: default; }
+.hk-p, .hk-x, .hk-o {
+  height: 28px; padding: 0 8px;
+  border: 0; background: transparent; color: var(--accent-dk); font-size: 12px; cursor: pointer;
+}
+.hk-x, .hk-o { border-left: 1px solid var(--accent); }
+.hk-p:hover, .hk-x:hover, .hk-o:hover { background: var(--accent); color: #fff; }
+.hk-x[disabled], .hk-o[disabled] { background: #f7faf6; color: var(--bd-lock); cursor: default; }
 
 /* Pick opens this under the list, for the combinations the browser keeps to itself. */
 .hk-ed {
@@ -1140,14 +1148,16 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k90"
           data-def="14593"
           aria-label="Shortcut for Switch output"></button>
-  <button type="button" class="hk-p" data-hk="k90" data-name="Switch output"
-          title="Set it without pressing it"
-          aria-label="Set the shortcut for Switch output without pressing it">Pick</button>
-  <button type="button" class="hk-x" data-for="k90"
-          aria-label="Restore the default shortcut for Switch output">Default</button>
-  <button type="button" class="hk-o" data-for="k90"
-          title="Turn it off, so the keys reach the computer"
-          aria-label="Turn off the shortcut for Switch output">Off</button>
+  <div class="hk-acts">
+    <button type="button" class="hk-p" data-hk="k90" data-name="Switch output"
+            title="Set it without pressing it"
+            aria-label="Set the shortcut for Switch output without pressing it">Pick</button>
+    <button type="button" class="hk-x" data-for="k90"
+            aria-label="Restore the default shortcut for Switch output">Default</button>
+    <button type="button" class="hk-o" data-for="k90"
+            title="Turn it off, so the keys reach the computer"
+            aria-label="Turn off the shortcut for Switch output">Off</button>
+  </div>
 </div><input class="api " type="hidden" id="k90" data-key="90" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1155,14 +1165,16 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k91"
           data-def="80"
           aria-label="Shortcut for Slow mouse"></button>
-  <button type="button" class="hk-p" data-hk="k91" data-name="Slow mouse"
-          title="Set it without pressing it"
-          aria-label="Set the shortcut for Slow mouse without pressing it">Pick</button>
-  <button type="button" class="hk-x" data-for="k91"
-          aria-label="Restore the default shortcut for Slow mouse">Default</button>
-  <button type="button" class="hk-o" data-for="k91"
-          title="Turn it off, so the keys reach the computer"
-          aria-label="Turn off the shortcut for Slow mouse">Off</button>
+  <div class="hk-acts">
+    <button type="button" class="hk-p" data-hk="k91" data-name="Slow mouse"
+            title="Set it without pressing it"
+            aria-label="Set the shortcut for Slow mouse without pressing it">Pick</button>
+    <button type="button" class="hk-x" data-for="k91"
+            aria-label="Restore the default shortcut for Slow mouse">Default</button>
+    <button type="button" class="hk-o" data-for="k91"
+            title="Turn it off, so the keys reach the computer"
+            aria-label="Turn off the shortcut for Slow mouse">Off</button>
+  </div>
 </div><input class="api " type="hidden" id="k91" data-key="91" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1170,14 +1182,16 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k92"
           data-def="3600"
           aria-label="Shortcut for Lock switching"></button>
-  <button type="button" class="hk-p" data-hk="k92" data-name="Lock switching"
-          title="Set it without pressing it"
-          aria-label="Set the shortcut for Lock switching without pressing it">Pick</button>
-  <button type="button" class="hk-x" data-for="k92"
-          aria-label="Restore the default shortcut for Lock switching">Default</button>
-  <button type="button" class="hk-o" data-for="k92"
-          title="Turn it off, so the keys reach the computer"
-          aria-label="Turn off the shortcut for Lock switching">Off</button>
+  <div class="hk-acts">
+    <button type="button" class="hk-p" data-hk="k92" data-name="Lock switching"
+            title="Set it without pressing it"
+            aria-label="Set the shortcut for Lock switching without pressing it">Pick</button>
+    <button type="button" class="hk-x" data-for="k92"
+            aria-label="Restore the default shortcut for Lock switching">Default</button>
+    <button type="button" class="hk-o" data-for="k92"
+            title="Turn it off, so the keys reach the computer"
+            aria-label="Turn off the shortcut for Lock switching">Off</button>
+  </div>
 </div><input class="api " type="hidden" id="k92" data-key="92" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1185,14 +1199,16 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k93"
           data-def="3856"
           aria-label="Shortcut for Lock both screens"></button>
-  <button type="button" class="hk-p" data-hk="k93" data-name="Lock both screens"
-          title="Set it without pressing it"
-          aria-label="Set the shortcut for Lock both screens without pressing it">Pick</button>
-  <button type="button" class="hk-x" data-for="k93"
-          aria-label="Restore the default shortcut for Lock both screens">Default</button>
-  <button type="button" class="hk-o" data-for="k93"
-          title="Turn it off, so the keys reach the computer"
-          aria-label="Turn off the shortcut for Lock both screens">Off</button>
+  <div class="hk-acts">
+    <button type="button" class="hk-p" data-hk="k93" data-name="Lock both screens"
+            title="Set it without pressing it"
+            aria-label="Set the shortcut for Lock both screens without pressing it">Pick</button>
+    <button type="button" class="hk-x" data-for="k93"
+            aria-label="Restore the default shortcut for Lock both screens">Default</button>
+    <button type="button" class="hk-o" data-for="k93"
+            title="Turn it off, so the keys reach the computer"
+            aria-label="Turn off the shortcut for Lock both screens">Off</button>
+  </div>
 </div><input class="api " type="hidden" id="k93" data-key="93" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1200,14 +1216,16 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k94"
           data-def="2593"
           aria-label="Shortcut for Gaming mode"></button>
-  <button type="button" class="hk-p" data-hk="k94" data-name="Gaming mode"
-          title="Set it without pressing it"
-          aria-label="Set the shortcut for Gaming mode without pressing it">Pick</button>
-  <button type="button" class="hk-x" data-for="k94"
-          aria-label="Restore the default shortcut for Gaming mode">Default</button>
-  <button type="button" class="hk-o" data-for="k94"
-          title="Turn it off, so the keys reach the computer"
-          aria-label="Turn off the shortcut for Gaming mode">Off</button>
+  <div class="hk-acts">
+    <button type="button" class="hk-p" data-hk="k94" data-name="Gaming mode"
+            title="Set it without pressing it"
+            aria-label="Set the shortcut for Gaming mode without pressing it">Pick</button>
+    <button type="button" class="hk-x" data-for="k94"
+            aria-label="Restore the default shortcut for Gaming mode">Default</button>
+    <button type="button" class="hk-o" data-for="k94"
+            title="Turn it off, so the keys reach the computer"
+            aria-label="Turn off the shortcut for Gaming mode">Off</button>
+  </div>
 </div><input class="api " type="hidden" id="k94" data-key="94" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1215,14 +1233,16 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k95"
           data-def="5665"
           aria-label="Shortcut for Keep awake: pong"></button>
-  <button type="button" class="hk-p" data-hk="k95" data-name="Keep awake: pong"
-          title="Set it without pressing it"
-          aria-label="Set the shortcut for Keep awake: pong without pressing it">Pick</button>
-  <button type="button" class="hk-x" data-for="k95"
-          aria-label="Restore the default shortcut for Keep awake: pong">Default</button>
-  <button type="button" class="hk-o" data-for="k95"
-          title="Turn it off, so the keys reach the computer"
-          aria-label="Turn off the shortcut for Keep awake: pong">Off</button>
+  <div class="hk-acts">
+    <button type="button" class="hk-p" data-hk="k95" data-name="Keep awake: pong"
+            title="Set it without pressing it"
+            aria-label="Set the shortcut for Keep awake: pong without pressing it">Pick</button>
+    <button type="button" class="hk-x" data-for="k95"
+            aria-label="Restore the default shortcut for Keep awake: pong">Default</button>
+    <button type="button" class="hk-o" data-for="k95"
+            title="Turn it off, so the keys reach the computer"
+            aria-label="Turn off the shortcut for Keep awake: pong">Off</button>
+  </div>
 </div><input class="api " type="hidden" id="k95" data-key="95" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1230,14 +1250,16 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k96"
           data-def="3361"
           aria-label="Shortcut for Keep awake: jitter"></button>
-  <button type="button" class="hk-p" data-hk="k96" data-name="Keep awake: jitter"
-          title="Set it without pressing it"
-          aria-label="Set the shortcut for Keep awake: jitter without pressing it">Pick</button>
-  <button type="button" class="hk-x" data-for="k96"
-          aria-label="Restore the default shortcut for Keep awake: jitter">Default</button>
-  <button type="button" class="hk-o" data-for="k96"
-          title="Turn it off, so the keys reach the computer"
-          aria-label="Turn off the shortcut for Keep awake: jitter">Off</button>
+  <div class="hk-acts">
+    <button type="button" class="hk-p" data-hk="k96" data-name="Keep awake: jitter"
+            title="Set it without pressing it"
+            aria-label="Set the shortcut for Keep awake: jitter without pressing it">Pick</button>
+    <button type="button" class="hk-x" data-for="k96"
+            aria-label="Restore the default shortcut for Keep awake: jitter">Default</button>
+    <button type="button" class="hk-o" data-for="k96"
+            title="Turn it off, so the keys reach the computer"
+            aria-label="Turn off the shortcut for Keep awake: jitter">Off</button>
+  </div>
 </div><input class="api " type="hidden" id="k96" data-key="96" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1245,14 +1267,16 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k97"
           data-def="6945"
           aria-label="Shortcut for Keep awake: off"></button>
-  <button type="button" class="hk-p" data-hk="k97" data-name="Keep awake: off"
-          title="Set it without pressing it"
-          aria-label="Set the shortcut for Keep awake: off without pressing it">Pick</button>
-  <button type="button" class="hk-x" data-for="k97"
-          aria-label="Restore the default shortcut for Keep awake: off">Default</button>
-  <button type="button" class="hk-o" data-for="k97"
-          title="Turn it off, so the keys reach the computer"
-          aria-label="Turn off the shortcut for Keep awake: off">Off</button>
+  <div class="hk-acts">
+    <button type="button" class="hk-p" data-hk="k97" data-name="Keep awake: off"
+            title="Set it without pressing it"
+            aria-label="Set the shortcut for Keep awake: off without pressing it">Pick</button>
+    <button type="button" class="hk-x" data-for="k97"
+            aria-label="Restore the default shortcut for Keep awake: off">Default</button>
+    <button type="button" class="hk-o" data-for="k97"
+            title="Turn it off, so the keys reach the computer"
+            aria-label="Turn off the shortcut for Keep awake: off">Off</button>
+  </div>
 </div><input class="api " type="hidden" id="k97" data-key="97" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1260,14 +1284,16 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k99"
           data-def="1852704"
           aria-label="Shortcut for Record screen alignment"></button>
-  <button type="button" class="hk-p" data-hk="k99" data-name="Record screen alignment"
-          title="Set it without pressing it"
-          aria-label="Set the shortcut for Record screen alignment without pressing it">Pick</button>
-  <button type="button" class="hk-x" data-for="k99"
-          aria-label="Restore the default shortcut for Record screen alignment">Default</button>
-  <button type="button" class="hk-o" data-for="k99"
-          title="Turn it off, so the keys reach the computer"
-          aria-label="Turn off the shortcut for Record screen alignment">Off</button>
+  <div class="hk-acts">
+    <button type="button" class="hk-p" data-hk="k99" data-name="Record screen alignment"
+            title="Set it without pressing it"
+            aria-label="Set the shortcut for Record screen alignment without pressing it">Pick</button>
+    <button type="button" class="hk-x" data-for="k99"
+            aria-label="Restore the default shortcut for Record screen alignment">Default</button>
+    <button type="button" class="hk-o" data-for="k99"
+            title="Turn it off, so the keys reach the computer"
+            aria-label="Turn off the shortcut for Record screen alignment">Off</button>
+  </div>
 </div><input class="api " type="hidden" id="k99" data-key="99" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1281,14 +1307,16 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k101"
           data-def="1058"
           aria-label="Shortcut for Firmware upgrade, board A"></button>
-  <button type="button" class="hk-p" data-hk="k101" data-name="Firmware upgrade, board A"
-          title="Set it without pressing it"
-          aria-label="Set the shortcut for Firmware upgrade, board A without pressing it">Pick</button>
-  <button type="button" class="hk-x" data-for="k101"
-          aria-label="Restore the default shortcut for Firmware upgrade, board A">Default</button>
-  <button type="button" class="hk-o" data-for="k101"
-          title="Turn it off, so the keys reach the computer"
-          aria-label="Turn off the shortcut for Firmware upgrade, board A">Off</button>
+  <div class="hk-acts">
+    <button type="button" class="hk-p" data-hk="k101" data-name="Firmware upgrade, board A"
+            title="Set it without pressing it"
+            aria-label="Set the shortcut for Firmware upgrade, board A without pressing it">Pick</button>
+    <button type="button" class="hk-x" data-for="k101"
+            aria-label="Restore the default shortcut for Firmware upgrade, board A">Default</button>
+    <button type="button" class="hk-o" data-for="k101"
+            title="Turn it off, so the keys reach the computer"
+            aria-label="Turn off the shortcut for Firmware upgrade, board A">Off</button>
+  </div>
 </div><input class="api " type="hidden" id="k101" data-key="101" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1296,14 +1324,16 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk" data-for="k102"
           data-def="1314"
           aria-label="Shortcut for Firmware upgrade, board B"></button>
-  <button type="button" class="hk-p" data-hk="k102" data-name="Firmware upgrade, board B"
-          title="Set it without pressing it"
-          aria-label="Set the shortcut for Firmware upgrade, board B without pressing it">Pick</button>
-  <button type="button" class="hk-x" data-for="k102"
-          aria-label="Restore the default shortcut for Firmware upgrade, board B">Default</button>
-  <button type="button" class="hk-o" data-for="k102"
-          title="Turn it off, so the keys reach the computer"
-          aria-label="Turn off the shortcut for Firmware upgrade, board B">Off</button>
+  <div class="hk-acts">
+    <button type="button" class="hk-p" data-hk="k102" data-name="Firmware upgrade, board B"
+            title="Set it without pressing it"
+            aria-label="Set the shortcut for Firmware upgrade, board B without pressing it">Pick</button>
+    <button type="button" class="hk-x" data-for="k102"
+            aria-label="Restore the default shortcut for Firmware upgrade, board B">Default</button>
+    <button type="button" class="hk-o" data-for="k102"
+            title="Turn it off, so the keys reach the computer"
+            aria-label="Turn off the shortcut for Firmware upgrade, board B">Off</button>
+  </div>
 </div><input class="api " type="hidden" id="k102" data-key="102" data-type="uint32" fetched-value="" >
           </div>
 
@@ -2734,7 +2764,7 @@ window.addEventListener('load', function () {
 
   /* This tree's version, as the uint16 the boards exchange. The checksum is invented -
      the page only ever prints it - but it is fixed, so it does not churn screenshots. */
-  const FW_VERSION = 1108;
+  const FW_VERSION = 1109;
   const CHECKSUM = 0x7d3ed9ba;
 
   /* What the emulated boards start out holding: a plausible saved configuration, not a
