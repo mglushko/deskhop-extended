@@ -93,6 +93,7 @@ configuration.</em></p>
   none but slow mouse may be modifiers alone - a combination naming no key matches everything typed
   while those modifiers are held, and one stored against an early action used to swallow every
   action below it.
+  [2ac2c87](https://github.com/mglushko/deskhop-extended/commit/2ac2c87)
 
 Wiping the configuration has no shortcut here at all - upstream's `Right Shift + F12 + D` is gone,
 since a combination that erases every setting is too easy to reach by accident. Wipe Config on the
