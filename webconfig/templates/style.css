@@ -434,18 +434,18 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   background: var(--grn-bg-soft); color: var(--muted); font-size: 12px; cursor: pointer;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.hk:hover { border-color: var(--accent); color: var(--accent-dk); }
+.hk:hover { border-color: var(--accent); background: var(--accent); color: #fff; }
 /* Listed but not settable: same box, nothing to press. A button centres its own text
    and a span does not, so this says so to match the rows above it. */
 .hk-fix { line-height: 26px; text-align: center; background: var(--chip); cursor: default; }
-.hk-fix:hover { border-color: var(--grn-bd-soft); color: var(--muted); }
+.hk-fix:hover { border-color: var(--grn-bd-soft); background: var(--chip); color: var(--muted); }
 /* Sits where the three buttons do, in the one column they share. */
 .hk-note { text-align: center; white-space: nowrap; font-size: 12px; color: var(--muted); }
 /* Turned off, so the box names the state instead of a combination. */
 .hk-off { background: var(--chip); font-style: italic; }
 /* Set on this device, rather than left at what the firmware was built with. */
 .hk-set { border-color: var(--bd); color: var(--fg); font-weight: 700; }
-.hk-cap { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
+.hk-cap, .hk-cap:hover { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
 /* Pick, Default and Off share one box with dividers between them, the way .step does.
    One border instead of three and no gaps between them, so the three fit the column the
    two of them used to take. */
