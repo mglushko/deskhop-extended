@@ -94,12 +94,12 @@ configuration.</em></p>
   on anything typed while those modifiers are held, and one set on an early action used to take
   over every action below it.
   [2ac2c87](https://github.com/mglushko/deskhop-extended/commit/2ac2c87)
-- **An edit waits for Save** - every control pushed its value the moment it changed and Save only
-  wrote flash, which for a shortcut meant it took effect before you pressed anything:
-  `handle_api_msgs` copies the combination into the running config and calls `hotkeys_apply_config`
-  there and then, so the new one was answering keystrokes while the page still read *Unsaved
-  changes*, and disconnecting without saving left it in force until the board rebooted. Nothing
-  reaches the device now until Save, which is what the page has said all along.
+- **An edit waits for Save** - every control sent its value to the device the moment it changed,
+  and Save only wrote it to flash. For a shortcut that meant the new combination started working
+  before you pressed anything, because the device puts one into use as soon as it arrives. It was
+  live while the page still read *Unsaved changes*, and disconnecting without saving left it that
+  way until the board rebooted. Nothing reaches the device now until Save, which is what the page
+  has said all along.
   [64aea93](https://github.com/mglushko/deskhop-extended/commit/64aea93)
 - **A shortcut can be turned off** - press **Off** on any of the eleven settable rows and that
   shortcut stops working. The row reads *Disabled*, **Default** brings it back, and the
