@@ -69,6 +69,13 @@ CONFIG_ = [
 # `values` is what that entry is compiled with; the page shows it for a hotkey that has
 # nothing stored, and a stored zero means exactly that. Keep them in step with the table
 # in src/keyboard.c.
+#
+# Config mode carries "fixed", which draws the row without the buttons and without the
+# hidden field the others are set through - key 100 is retired in src/protocol.c to match,
+# so the page has nothing to send even if it tried. It is the only combination that
+# reaches this page, and this page is the only way to undo a shortcut, so it stays on what
+# the firmware was built with. It is still listed, because a shortcut nobody can see is one
+# people go looking for.
 HOTKEYS_ = [
     FormField(90, "Switch output", 0,
               {"combo": combo(MOD_LCTRL, KEY_CAPS_LOCK)}, "uint32", "hotkey"),
@@ -89,7 +96,8 @@ HOTKEYS_ = [
     FormField(99, "Record screen alignment", 0,
               {"combo": combo(MOD_RSHIFT, KEY_F12, KEY_Y)}, "uint32", "hotkey"),
     FormField(100, "Config mode", 0,
-              {"combo": combo(MOD_LCTRL | MOD_RSHIFT, KEY_C, KEY_O)}, "uint32", "hotkey"),
+              {"combo": combo(MOD_LCTRL | MOD_RSHIFT, KEY_C, KEY_O), "fixed": True},
+              "uint32", "hotkey"),
     FormField(101, "Firmware upgrade, board A", 0,
               {"combo": combo(MOD_LSHIFT | MOD_RSHIFT, KEY_A)}, "uint32", "hotkey"),
     FormField(102, "Firmware upgrade, board B", 0,

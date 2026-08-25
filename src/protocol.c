@@ -72,7 +72,12 @@ const field_map_t api_field_map[] = {
        when an entry leaves the table the keys after it keep their numbers and move down
        an index, and the key that left is retired rather than reused. A config written
        before the change then still lands on the action it was set for. 98 was Wipe
-       config, which no longer has a shortcut at all. */
+       config, which no longer has a shortcut at all. 100 was Config mode, which is now
+       fixed at the combination this firmware was built with: it is the only way to the
+       page, and the page is the only way to undo a shortcut, so it is the one entry that
+       must not be settable. Dropping the key here is also what retires a value an earlier
+       build stored, since config_store_unpack skips anything the field map does not
+       name. */
     { 90,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[0])  },  /* Switch output */
     { 91,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[1])  },  /* Slow mouse */
     { 92,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[2])  },  /* Switch lock */
@@ -82,7 +87,6 @@ const field_map_t api_field_map[] = {
     { 96,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[6])  },  /* Keep awake: jitter */
     { 97,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[7])  },  /* Keep awake: off */
     { 99,  false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[8])  },  /* Record screen alignment */
-    { 100, false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[9])  },  /* Config mode */
     { 101, false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[10]) },  /* Firmware upgrade, board A */
     { 102, false, UINT32, 4, offsetof(device_t, config.hotkey_cfg[11]) },  /* Firmware upgrade, board B */
 

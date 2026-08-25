@@ -116,9 +116,57 @@ static volatile bool hotkeys_updating = false;
    the first call - which is initial_setup, before any config has been applied. That is
    what an entry set back to zero returns to, and what a wiped config restores, without
    needing a reboot. */
+/* The keys a packed combo actually names, written in order, and how many there were.
+   HID_KEY_NONE pads the empty slots of every keyboard report there is, so a combo that
+   asked for it would match everything and take the keyboard with it; the second key
+   standing alone becomes the first. */
+static uint8_t unpack_keys(uint32_t packed, uint8_t *keys) {
+    uint8_t count = 0;
+
+    if (HOTKEY_KEY1(packed) != HID_KEY_NONE)
+        keys[count++] = HOTKEY_KEY1(packed);
+
+    if (HOTKEY_KEY2(packed) != HID_KEY_NONE)
+        keys[count++] = HOTKEY_KEY2(packed);
+
+    return count;
+}
+
+/* A packed combo as an entry, so a stored value and a table row can be compared as one
+   thing. Only the three fields a match is decided on are filled in. */
+static hotkey_combo_t combo_of(uint32_t packed) {
+    hotkey_combo_t combo = {.modifier = HOTKEY_MOD(packed)};
+
+    combo.key_count = unpack_keys(packed, combo.keys);
+
+    return combo;
+}
+
+/* Whether an entry already stands for this combination. The same modifiers, and the same
+   keys in any order - check_specific_hotkey asks only that each key it names is somewhere
+   in the report, so which slot holds which is not part of what a combination is. */
+static bool same_combo(const hotkey_combo_t *entry, uint8_t modifier, const uint8_t *keys,
+                       uint8_t count) {
+    if (entry->modifier != modifier || entry->key_count != count)
+        return false;
+
+    for (uint8_t k = 0; k < count; k++) {
+        bool found = false;
+
+        for (uint8_t j = 0; j < count; j++)
+            found = found || entry->keys[j] == keys[k];
+
+        if (!found)
+            return false;
+    }
+
+    return true;
+}
+
 void hotkeys_apply_config(device_t *state) {
     static uint32_t compiled_in[NUM_HOTKEYS];
     static bool captured = false;
+    hotkey_combo_t config_combo = {0};
 
     /* This runs on core0, from the config endpoint, while core1 is matching keyboard
        reports against the same table. Rather than reason about a half-written entry,
@@ -132,8 +180,70 @@ void hotkeys_apply_config(device_t *state) {
         captured = true;
     }
 
+    /* Held apart because it is the entry that cannot give way. It is fixed, so where it and
+       a stored combo collide the stored one is always the one to go, whichever side of it
+       in the table that entry sits. */
+    config_combo = combo_of(compiled_in[HOTKEY_CONFIG_IDX]);
+
     for (int n = 0; n < NUM_HOTKEYS; n++) {
         uint32_t packed = state->config.hotkey_cfg[n];
+
+        /* Both of these clear the stored value rather than stepping around it. Zero already
+           means "use the combo this firmware was built with", which is what the entry falls
+           back to below, so hotkeys[], what the config API reports back and what the page
+           draws all say the same thing - and a config already in flash stops being read as
+           an instruction the moment it is loaded, rather than being refused again on every
+           boot. They sit ahead of the hotkey_toggle branch deliberately: gating the stored
+           value leaves the fallback chain below untouched, where gating the result would
+           make a refused entry mean the compiled combo on this call and the hotkey_toggle
+           one on the next. */
+
+        /* The config page is the only way to undo a shortcut, and this combo is the only
+           way to the config page, so it is not something a shortcut may be set to. */
+        if (n == HOTKEY_CONFIG_IDX)
+            packed = state->config.hotkey_cfg[n] = 0;
+
+        /* A combo naming no key is matched on its modifiers alone, so it fires on every
+           report that merely holds them, and check_all_hotkeys would hand it every report
+           an action further down was waiting for. Only an entry compiled without a key of
+           its own is meant to work that way. The modifier == 0 half catches a value that is
+           non-zero only in the unused top byte, which would otherwise sit in flash forever
+           saying nothing. */
+        if (packed
+            && HOTKEY_KEY1(packed) == HID_KEY_NONE && HOTKEY_KEY2(packed) == HID_KEY_NONE
+            && (HOTKEY_MOD(packed) == 0 || HOTKEY_KEY1(compiled_in[n]) != HID_KEY_NONE))
+            packed = state->config.hotkey_cfg[n] = 0;
+
+        /* Two entries standing for one combination means the lower of them never fires,
+           since check_all_hotkeys hands the report to the first that fits. Refuse the stored
+           one rather than let an action go quietly dead. Compared against the entries
+           already decided this pass and against config mode; an entry further down that
+           collides is caught when its own turn comes, because by then this one is decided. */
+        if (packed) {
+            hotkey_combo_t want = combo_of(packed);
+            bool taken = same_combo(&config_combo, want.modifier, want.keys, want.key_count);
+
+            for (int m = 0; m < NUM_HOTKEYS && !taken; m++) {
+                if (m == n)
+                    continue;
+
+                /* Entries already decided this pass are read from the table. Ones still to
+                   come are only worth comparing where nothing is stored against them, so
+                   they are going to land on what they were compiled with and cannot move
+                   out of the way; where something is stored, that entry does the comparing
+                   when its own turn arrives and this one is decided by then. */
+                if (m < n)
+                    taken = same_combo(&hotkeys[m], want.modifier, want.keys, want.key_count);
+                else if (!state->config.hotkey_cfg[m]) {
+                    hotkey_combo_t theirs = combo_of(compiled_in[m]);
+
+                    taken = same_combo(&theirs, want.modifier, want.keys, want.key_count);
+                }
+            }
+
+            if (taken)
+                packed = state->config.hotkey_cfg[n] = 0;
+        }
 
         /* config.hotkey_toggle names the key for the switch combo and predates this
            array. Nothing has ever read it - it is stored, defaulted and writable over the
@@ -152,20 +262,12 @@ void hotkeys_apply_config(device_t *state) {
 
         uint8_t modifier = HOTKEY_MOD(packed);
         uint8_t keys[2]  = {0};
-        uint8_t count    = 0;
+        uint8_t count    = unpack_keys(packed, keys);
 
-        /* HID_KEY_NONE pads the empty slots of every keyboard report there is, so a
-           combo that asks for it matches everything and takes the keyboard with it.
-           Only the keys actually set are carried over, and the second key standing
-           alone becomes the first. */
-        if (HOTKEY_KEY1(packed) != HID_KEY_NONE)
-            keys[count++] = HOTKEY_KEY1(packed);
-
-        if (HOTKEY_KEY2(packed) != HID_KEY_NONE)
-            keys[count++] = HOTKEY_KEY2(packed);
-
-        /* A combo with neither a key nor a modifier can never fire - leave the entry
-           as it stands rather than store something inert. */
+        /* A backstop now that the stored value is cleared above: nothing configurable can
+           reach here empty, only a compiled-in combo that was itself left empty. Worth the
+           two lines, because check_specific_hotkey answers true for every report when both
+           of these are zero, which is the worst this table can do. */
         if (count == 0 && modifier == 0)
             continue;
 
@@ -212,17 +314,40 @@ bool check_specific_hotkey(hotkey_combo_t keypress, const hid_keyboard_report_t 
 
 /* Go through the list of hotkeys, check if any of them match. */
 hotkey_combo_t *check_all_hotkeys(hid_keyboard_report_t *report, device_t *state) {
+    hotkey_combo_t *keyless = NULL;
+
     /* Set while the other core is rewriting the table (hotkeys_apply_config above). */
     if (hotkeys_updating)
         return NULL;
 
+    /* Asked before the loop so that nothing standing above it in the table can answer
+       first. Every other entry is settable, and one set to a combination this one contains
+       would otherwise take the only way back to the page with it. */
+    if (check_specific_hotkey(hotkeys[HOTKEY_CONFIG_IDX], report))
+        return &hotkeys[HOTKEY_CONFIG_IDX];
+
     for (int n = 0; n < ARRAY_SIZE(hotkeys); n++) {
-        if (check_specific_hotkey(hotkeys[n], report)) {
-            return &hotkeys[n];
+        /* Read once and matched as a copy, so a rewrite landing mid-loop cannot show this
+           one entry and then another. */
+        hotkey_combo_t combo = hotkeys[n];
+
+        if (!check_specific_hotkey(combo, report))
+            continue;
+
+        /* An entry with no key of its own is matched on its modifiers, so it also matches
+           every combination built on top of those modifiers. Hold it back and let an entry
+           that named a key which was actually pressed answer instead. */
+        if (combo.key_count == 0) {
+            if (keyless == NULL)
+                keyless = &hotkeys[n];
+
+            continue;
         }
+
+        return &hotkeys[n];
     }
 
-    return NULL;
+    return keyless;
 }
 
 /* ==================================================== *

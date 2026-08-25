@@ -52,10 +52,11 @@ with sync_playwright() as p:
                   "  setValue(e, e.type === 'checkbox' ? (i % 2) : (i + 3))); markClean(); }")
 
     writable = page.evaluate("() => document.querySelectorAll('.api:not([readonly])').length")
-    # 49 of the firmware's 53 writable fields; the page deliberately does not expose
+    # 48 of the firmware's 52 writable fields; the page deliberately does not expose
     # output[].number (x2), config.version or hotkey_toggle - the last of which the
-    # Shortcuts section supersedes.
-    check("page exposes 49 writable fields", writable == 49, writable)
+    # Shortcuts section supersedes. Config mode is listed in that section but has no field
+    # of its own: it is fixed, and key 100 is retired in src/protocol.c to match.
+    check("page exposes 48 writable fields", writable == 48, writable)
 
     page.evaluate("() => exportHandler()")
     exported = json.loads(page.eval_on_selector("#backup-text", "e => e.value"))

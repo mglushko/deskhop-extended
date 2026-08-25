@@ -460,6 +460,10 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .hk:hover { border-color: var(--accent); color: var(--accent-dk); }
+/* Listed but not settable: same box, nothing to press. */
+.hk-fix { display: inline-block; line-height: 26px; background: var(--chip); cursor: default; }
+.hk-fix:hover { border-color: var(--bd-soft); color: var(--muted); }
+.hk-note { flex: 0 0 auto; font-size: 12px; color: var(--muted); }
 /* Set on this device, rather than left at what the firmware was built with. */
 .hk-set { border-color: var(--bd); color: var(--fg); font-weight: 700; }
 .hk-cap { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
@@ -491,6 +495,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   background: #fff; color: var(--fg); font-size: 12.5px;
 }
 .hk-ed .row-btn { margin-bottom: 0; }
+.hk-m { color: var(--warn-tx); }
+/* .grp is a flex column with a gap, so an empty span would still take up a row. */
+.hk-m:empty { display: none; }
 .row-btn { display: flex; gap: 8px; margin-bottom: 24px; }
 .box { padding: 16px; background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: 4px; }
 .box .lbl { color: var(--warn-fg); margin-bottom: 6px; }
@@ -1094,7 +1101,15 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           <span class="hint">Two ways to change one. Click it and hold the combination you want,
             then let go - up to two keys besides the modifiers, and Esc on its own cancels. Or press
             <b>Pick</b> and assemble it without pressing anything. These are read by the board your
-            keyboard is plugged into, and act on that board.</span>
+            keyboard is plugged into, and act on that board. Each one needs a key besides the
+            modifiers, except <b>Slow mouse</b>, which the firmware is built without one for:
+            modifiers on their own match everything typed while they are held, and would take
+            the shortcuts below them with it.</span>
+
+          <span class="hint">Config mode is listed but cannot be changed. It is the only way
+            to reach this page, and this page is the only way to undo a shortcut, so it stays
+            on what the firmware was built with. Two shortcuts cannot share a combination
+            either - the second would never fire.</span>
 
           <span class="hint">Pick is the only way to reach the combinations the browser keeps for
             itself and never passes on to a page. In Chrome and Edge those are
@@ -1112,7 +1127,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
             shortcut set here works whatever the browser thinks of it.</span>
 
           <div class="hk-list">
-            <div class="hk-row">
+            
+<div class="hk-row">
   <span class="hk-n">Switch output</span>
   <button type="button" class="hk" data-for="k90"
           data-def="14593"
@@ -1123,7 +1139,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk-x" data-for="k90"
           aria-label="Restore the default shortcut for Switch output">Default</button>
 </div><input class="api " type="hidden" id="k90" data-key="90" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
-            <div class="hk-row">
+            
+<div class="hk-row">
   <span class="hk-n">Slow mouse</span>
   <button type="button" class="hk" data-for="k91"
           data-def="80"
@@ -1134,7 +1151,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk-x" data-for="k91"
           aria-label="Restore the default shortcut for Slow mouse">Default</button>
 </div><input class="api " type="hidden" id="k91" data-key="91" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
-            <div class="hk-row">
+            
+<div class="hk-row">
   <span class="hk-n">Lock switching</span>
   <button type="button" class="hk" data-for="k92"
           data-def="3600"
@@ -1145,7 +1163,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk-x" data-for="k92"
           aria-label="Restore the default shortcut for Lock switching">Default</button>
 </div><input class="api " type="hidden" id="k92" data-key="92" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
-            <div class="hk-row">
+            
+<div class="hk-row">
   <span class="hk-n">Lock both screens</span>
   <button type="button" class="hk" data-for="k93"
           data-def="3856"
@@ -1156,7 +1175,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk-x" data-for="k93"
           aria-label="Restore the default shortcut for Lock both screens">Default</button>
 </div><input class="api " type="hidden" id="k93" data-key="93" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
-            <div class="hk-row">
+            
+<div class="hk-row">
   <span class="hk-n">Gaming mode</span>
   <button type="button" class="hk" data-for="k94"
           data-def="2593"
@@ -1167,7 +1187,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk-x" data-for="k94"
           aria-label="Restore the default shortcut for Gaming mode">Default</button>
 </div><input class="api " type="hidden" id="k94" data-key="94" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
-            <div class="hk-row">
+            
+<div class="hk-row">
   <span class="hk-n">Keep awake: pong</span>
   <button type="button" class="hk" data-for="k95"
           data-def="5665"
@@ -1178,7 +1199,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk-x" data-for="k95"
           aria-label="Restore the default shortcut for Keep awake: pong">Default</button>
 </div><input class="api " type="hidden" id="k95" data-key="95" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
-            <div class="hk-row">
+            
+<div class="hk-row">
   <span class="hk-n">Keep awake: jitter</span>
   <button type="button" class="hk" data-for="k96"
           data-def="3361"
@@ -1189,7 +1211,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk-x" data-for="k96"
           aria-label="Restore the default shortcut for Keep awake: jitter">Default</button>
 </div><input class="api " type="hidden" id="k96" data-key="96" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
-            <div class="hk-row">
+            
+<div class="hk-row">
   <span class="hk-n">Keep awake: off</span>
   <button type="button" class="hk" data-for="k97"
           data-def="6945"
@@ -1200,7 +1223,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk-x" data-for="k97"
           aria-label="Restore the default shortcut for Keep awake: off">Default</button>
 </div><input class="api " type="hidden" id="k97" data-key="97" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
-            <div class="hk-row">
+            
+<div class="hk-row">
   <span class="hk-n">Record screen alignment</span>
   <button type="button" class="hk" data-for="k99"
           data-def="1852704"
@@ -1211,18 +1235,14 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk-x" data-for="k99"
           aria-label="Restore the default shortcut for Record screen alignment">Default</button>
 </div><input class="api " type="hidden" id="k99" data-key="99" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
-            <div class="hk-row">
+            
+<div class="hk-row">
   <span class="hk-n">Config mode</span>
-  <button type="button" class="hk" data-for="k100"
-          data-def="1181217"
-          aria-label="Shortcut for Config mode"></button>
-  <button type="button" class="hk-p" data-hk="k100" data-name="Config mode"
-          title="Set it without pressing it"
-          aria-label="Set the shortcut for Config mode without pressing it">Pick</button>
-  <button type="button" class="hk-x" data-for="k100"
-          aria-label="Restore the default shortcut for Config mode">Default</button>
-</div><input class="api " type="hidden" id="k100" data-key="100" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
-            <div class="hk-row">
+  <span class="hk hk-fix" data-def="1181217"></span>
+  <span class="hk-note">cannot be changed</span>
+</div>
+            
+<div class="hk-row">
   <span class="hk-n">Firmware upgrade, board A</span>
   <button type="button" class="hk" data-for="k101"
           data-def="1058"
@@ -1233,7 +1253,8 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" class="hk-x" data-for="k101"
           aria-label="Restore the default shortcut for Firmware upgrade, board A">Default</button>
 </div><input class="api " type="hidden" id="k101" data-key="101" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
-            <div class="hk-row">
+            
+<div class="hk-row">
   <span class="hk-n">Firmware upgrade, board B</span>
   <button type="button" class="hk" data-for="k102"
           data-def="1314"
@@ -1245,6 +1266,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Restore the default shortcut for Firmware upgrade, board B">Default</button>
 </div><input class="api " type="hidden" id="k102" data-key="102" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
           </div>
+
+          
+          <span class="hint hk-m" id="hk-m" role="status" aria-live="polite"></span>
 
           
           <div class="hk-ed" id="hk-ed" hidden>
@@ -2180,6 +2204,84 @@ function comboLabel(packed) {
   return parts.length ? parts.join(' + ') : 'Not set';
 }
 
+/* A row that is listed but not settable carries no hidden field, so renderView never draws
+   it. Written once at load from the combination the firmware was built with, which is the
+   only one it can ever be. */
+function drawFixedHotkeys() {
+  document.querySelectorAll('.hk-fix').forEach(view => {
+    view.textContent = comboLabel(parseInt(view.dataset.def, 10) || 0);
+  });
+}
+
+/* Whether this row has to name a key. data-def is the combination the firmware was built
+   with: an action built without a key of its own is meant to be matched on its modifiers,
+   and any other one would answer for every report that merely holds them and take the
+   actions below it. hotkeys_apply_config() in src/keyboard.c clears one either way; this is
+   so the refusal is visible here rather than arriving as a row that silently reverts. */
+function keyRequired(view) {
+  const def = parseInt(view.dataset.def, 10) || 0;
+
+  return !!(((def >> 8) & 0xff) | ((def >> 16) & 0xff));
+}
+
+/* True when a combination names modifiers and no key, on a row that is not allowed one. */
+function comboNeedsKey(view, packed) {
+  return !!packed && !((packed >> 8) & 0xff) && !((packed >> 16) & 0xff) && keyRequired(view);
+}
+
+/* What a row stands for right now: what is stored against it, or the combination the
+   firmware was built with, which is what an empty row falls back to. */
+function comboOf(view) {
+  const input = view.dataset.for ? el(view.dataset.for) : null;
+
+  return (input && (parseInt(input.value, 10) || 0)) || (parseInt(view.dataset.def, 10) || 0);
+}
+
+/* Which row already stands for this combination, or null. Modifiers have to match, and the
+   two keys as a pair rather than in order - the device does not care which slot holds
+   which. Fixed rows are in the search: config mode cannot move out of the way. */
+function comboTaken(view, packed) {
+  const keys = [(packed >> 8) & 0xff, (packed >> 16) & 0xff].filter(Boolean).sort();
+
+  return [...document.querySelectorAll('.hk')].find(other => {
+    if (other === view)
+      return false;
+
+    const theirs = comboOf(other);
+    const mine = [(theirs >> 8) & 0xff, (theirs >> 16) & 0xff].filter(Boolean).sort();
+
+    return (theirs & 0xff) === (packed & 0xff) && String(mine) === String(keys);
+  }) || null;
+}
+
+const HOTKEY_NEEDS_KEY = 'needs a key besides the modifiers - on its own it would match '
+  + 'everything typed while they are held. Nothing was changed.';
+
+/* Says which row was refused and why, or clears the line. */
+function hotkeyNote(view, message) {
+  el('hk-m').textContent = message
+    ? view.closest('.hk-row').querySelector('.hk-n').textContent + ': ' + message
+    : '';
+}
+
+/* Why this combination cannot be stored against this row, or '' if it can. Zero is always
+   allowed - it is what Default writes, and means the compiled-in combination stands. */
+function hotkeyRefusal(view, packed) {
+  if (!packed)
+    return '';
+
+  if (comboNeedsKey(view, packed))
+    return HOTKEY_NEEDS_KEY;
+
+  const clash = comboTaken(view, packed);
+
+  if (clash)
+    return 'is already ' + clash.closest('.hk-row').querySelector('.hk-n').textContent
+      + ', and the second of two would never fire. Nothing was changed.';
+
+  return '';
+}
+
 var capturing = null;
 var captureMods = 0;
 var captureKeys = [];
@@ -2191,6 +2293,7 @@ function packCapture() {
 function startCapture(button) {
   stopCapture(false);
   closeHotkeyEditor();
+  el('hk-m').textContent = '';
 
   capturing = button;
   captureMods = 0;
@@ -2209,8 +2312,14 @@ function stopCapture(commit) {
   capturing = null;
   button.classList.remove('hk-cap');
 
-  if (commit && (captureMods || captureKeys.length))
-    setApi(el(button.dataset.for), packCapture());
+  if (commit && (captureMods || captureKeys.length)) {
+    const refusal = hotkeyRefusal(button, packCapture());
+
+    hotkeyNote(button, refusal);
+
+    if (!refusal)
+      setApi(el(button.dataset.for), packCapture());
+  }
 
   /* Unconditionally, because setApi says nothing when the combo has not changed and
      the button would be left reading "Press the combination". */
@@ -2272,6 +2381,7 @@ function fillKeyOptions(select) {
 
 function openHotkeyEditor(pick) {
   stopCapture(false);
+  el('hk-m').textContent = '';
 
   editing = el(pick.dataset.hk);
 
@@ -2302,7 +2412,16 @@ function applyHotkeyEditor() {
       packed |= Number(button.dataset.m);
   });
 
-  /* Nothing chosen is the same thing Default says: fall back to the compiled-in combo. */
+  /* Nothing chosen is the same thing Default says: fall back to the compiled-in combo, so
+     zero stays allowed. Modifiers with no key do not, on a row built with one - left open
+     rather than closed, since the key is the one thing missing. */
+  const view = document.querySelector(`.hk[data-for="${editing.id}"]`);
+  const refusal = hotkeyRefusal(view, packed);
+
+  hotkeyNote(view, refusal);
+
+  if (refusal)
+    return;
   setApi(editing, packed);
   closeHotkeyEditor();
 }
@@ -2357,8 +2476,14 @@ function panelClick(event) {
   if (button.classList.contains('hk-p'))
     return openHotkeyEditor(button);
 
-  if (button.classList.contains('hk-x'))
+  if (button.classList.contains('hk-x')) {
+    /* Closes the editor too, or Set would write the combination it still holds back over
+       the default that was just restored. */
+    closeHotkeyEditor();
+    hotkeyNote(button, '');
+
     return setApi(el(button.dataset.for), 0);
+  }
 
   if (button.dataset.m)
     return button.setAttribute('aria-pressed',
@@ -2488,6 +2613,7 @@ window.addEventListener('load', function () {
 
   fillKeyOptions(el('hk-k1'));
   fillKeyOptions(el('hk-k2'));
+  drawFixedHotkeys();
 
   window.addEventListener('keydown', captureKeydown, true);
   window.addEventListener('keyup', captureKeyup, true);

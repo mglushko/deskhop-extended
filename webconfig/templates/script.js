@@ -865,6 +865,84 @@ function comboLabel(packed) {
   return parts.length ? parts.join(' + ') : 'Not set';
 }
 
+/* A row that is listed but not settable carries no hidden field, so renderView never draws
+   it. Written once at load from the combination the firmware was built with, which is the
+   only one it can ever be. */
+function drawFixedHotkeys() {
+  document.querySelectorAll('.hk-fix').forEach(view => {
+    view.textContent = comboLabel(parseInt(view.dataset.def, 10) || 0);
+  });
+}
+
+/* Whether this row has to name a key. data-def is the combination the firmware was built
+   with: an action built without a key of its own is meant to be matched on its modifiers,
+   and any other one would answer for every report that merely holds them and take the
+   actions below it. hotkeys_apply_config() in src/keyboard.c clears one either way; this is
+   so the refusal is visible here rather than arriving as a row that silently reverts. */
+function keyRequired(view) {
+  const def = parseInt(view.dataset.def, 10) || 0;
+
+  return !!(((def >> 8) & 0xff) | ((def >> 16) & 0xff));
+}
+
+/* True when a combination names modifiers and no key, on a row that is not allowed one. */
+function comboNeedsKey(view, packed) {
+  return !!packed && !((packed >> 8) & 0xff) && !((packed >> 16) & 0xff) && keyRequired(view);
+}
+
+/* What a row stands for right now: what is stored against it, or the combination the
+   firmware was built with, which is what an empty row falls back to. */
+function comboOf(view) {
+  const input = view.dataset.for ? el(view.dataset.for) : null;
+
+  return (input && (parseInt(input.value, 10) || 0)) || (parseInt(view.dataset.def, 10) || 0);
+}
+
+/* Which row already stands for this combination, or null. Modifiers have to match, and the
+   two keys as a pair rather than in order - the device does not care which slot holds
+   which. Fixed rows are in the search: config mode cannot move out of the way. */
+function comboTaken(view, packed) {
+  const keys = [(packed >> 8) & 0xff, (packed >> 16) & 0xff].filter(Boolean).sort();
+
+  return [...document.querySelectorAll('.hk')].find(other => {
+    if (other === view)
+      return false;
+
+    const theirs = comboOf(other);
+    const mine = [(theirs >> 8) & 0xff, (theirs >> 16) & 0xff].filter(Boolean).sort();
+
+    return (theirs & 0xff) === (packed & 0xff) && String(mine) === String(keys);
+  }) || null;
+}
+
+const HOTKEY_NEEDS_KEY = 'needs a key besides the modifiers - on its own it would match '
+  + 'everything typed while they are held. Nothing was changed.';
+
+/* Says which row was refused and why, or clears the line. */
+function hotkeyNote(view, message) {
+  el('hk-m').textContent = message
+    ? view.closest('.hk-row').querySelector('.hk-n').textContent + ': ' + message
+    : '';
+}
+
+/* Why this combination cannot be stored against this row, or '' if it can. Zero is always
+   allowed - it is what Default writes, and means the compiled-in combination stands. */
+function hotkeyRefusal(view, packed) {
+  if (!packed)
+    return '';
+
+  if (comboNeedsKey(view, packed))
+    return HOTKEY_NEEDS_KEY;
+
+  const clash = comboTaken(view, packed);
+
+  if (clash)
+    return 'is already ' + clash.closest('.hk-row').querySelector('.hk-n').textContent
+      + ', and the second of two would never fire. Nothing was changed.';
+
+  return '';
+}
+
 var capturing = null;
 var captureMods = 0;
 var captureKeys = [];
@@ -876,6 +954,7 @@ function packCapture() {
 function startCapture(button) {
   stopCapture(false);
   closeHotkeyEditor();
+  el('hk-m').textContent = '';
 
   capturing = button;
   captureMods = 0;
@@ -894,8 +973,14 @@ function stopCapture(commit) {
   capturing = null;
   button.classList.remove('hk-cap');
 
-  if (commit && (captureMods || captureKeys.length))
-    setApi(el(button.dataset.for), packCapture());
+  if (commit && (captureMods || captureKeys.length)) {
+    const refusal = hotkeyRefusal(button, packCapture());
+
+    hotkeyNote(button, refusal);
+
+    if (!refusal)
+      setApi(el(button.dataset.for), packCapture());
+  }
 
   /* Unconditionally, because setApi says nothing when the combo has not changed and
      the button would be left reading "Press the combination". */
@@ -957,6 +1042,7 @@ function fillKeyOptions(select) {
 
 function openHotkeyEditor(pick) {
   stopCapture(false);
+  el('hk-m').textContent = '';
 
   editing = el(pick.dataset.hk);
 
@@ -987,7 +1073,16 @@ function applyHotkeyEditor() {
       packed |= Number(button.dataset.m);
   });
 
-  /* Nothing chosen is the same thing Default says: fall back to the compiled-in combo. */
+  /* Nothing chosen is the same thing Default says: fall back to the compiled-in combo, so
+     zero stays allowed. Modifiers with no key do not, on a row built with one - left open
+     rather than closed, since the key is the one thing missing. */
+  const view = document.querySelector(`.hk[data-for="${editing.id}"]`);
+  const refusal = hotkeyRefusal(view, packed);
+
+  hotkeyNote(view, refusal);
+
+  if (refusal)
+    return;
   setApi(editing, packed);
   closeHotkeyEditor();
 }
@@ -1042,8 +1137,14 @@ function panelClick(event) {
   if (button.classList.contains('hk-p'))
     return openHotkeyEditor(button);
 
-  if (button.classList.contains('hk-x'))
+  if (button.classList.contains('hk-x')) {
+    /* Closes the editor too, or Set would write the combination it still holds back over
+       the default that was just restored. */
+    closeHotkeyEditor();
+    hotkeyNote(button, '');
+
     return setApi(el(button.dataset.for), 0);
+  }
 
   if (button.dataset.m)
     return button.setAttribute('aria-pressed',
@@ -1173,6 +1274,7 @@ window.addEventListener('load', function () {
 
   fillKeyOptions(el('hk-k1'));
   fillKeyOptions(el('hk-k2'));
+  drawFixedHotkeys();
 
   window.addEventListener('keydown', captureKeydown, true);
   window.addEventListener('keyup', captureKeyup, true);

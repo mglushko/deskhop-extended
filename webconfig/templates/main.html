@@ -66,6 +66,16 @@
 {# One row of the shortcut list: what it does, the combo, and a way back to the
    default. Both buttons point at the same hidden field; renderView draws them. #}
 {% macro hotkey(item) -%}
+{%- if item['values'].fixed %}
+{#- Listed but not settable, so no buttons and no hidden field: the key it would be sent
+    with is retired in src/protocol.c. renderView never sees it either, since that goes by
+    data-for - drawFixedHotkeys writes the label once, off data-def. #}
+<div class="hk-row">
+  <span class="hk-n">{{ item.name }}</span>
+  <span class="hk hk-fix" data-def="{{ item['values'].combo }}"></span>
+  <span class="hk-note">cannot be changed</span>
+</div>
+{%- else %}
 <div class="hk-row">
   <span class="hk-n">{{ item.name }}</span>
   <button type="button" class="hk" data-for="k{{ item.key }}"
@@ -80,6 +90,7 @@
           aria-label="Restore the default shortcut for {{ item.name }}">Default</button>
 </div>
 {{- api(item, '', '') }}
+{%- endif %}
 {%- endmacro %}
 
 <!DOCTYPE html>
@@ -459,7 +470,15 @@
           <span class="hint">Two ways to change one. Click it and hold the combination you want,
             then let go - up to two keys besides the modifiers, and Esc on its own cancels. Or press
             <b>Pick</b> and assemble it without pressing anything. These are read by the board your
-            keyboard is plugged into, and act on that board.</span>
+            keyboard is plugged into, and act on that board. Each one needs a key besides the
+            modifiers, except <b>Slow mouse</b>, which the firmware is built without one for:
+            modifiers on their own match everything typed while they are held, and would take
+            the shortcuts below them with it.</span>
+
+          <span class="hint">Config mode is listed but cannot be changed. It is the only way
+            to reach this page, and this page is the only way to undo a shortcut, so it stays
+            on what the firmware was built with. Two shortcuts cannot share a combination
+            either - the second would never fire.</span>
 
           <span class="hint">Pick is the only way to reach the combinations the browser keeps for
             itself and never passes on to a page. In Chrome and Edge those are
@@ -481,6 +500,10 @@
             {{ hotkey(item) }}
           {%- endfor %}
           </div>
+
+          {# Why nothing was stored, when a combination is refused. Outside .hk-list on
+             purpose: misc/shoot-config-page.py crops the shortcut screenshot to that box. #}
+          <span class="hint hk-m" id="hk-m" role="status" aria-live="polite"></span>
 
           {# Pick opens this: the same combination, set by hand, for anything the browser
              will not let the page hear. One editor for the whole list. #}

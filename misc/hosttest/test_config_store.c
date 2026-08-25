@@ -208,3 +208,7 @@ int main(void) {
     printf("\n%s\n", failures ? "FAILURES" : "ALL PASS");
     return failures ? 1 : 0;
 }
+
+/* protocol.c reaches for these; nothing here goes near them. */
+bool queue_try_add(queue_t *queue, const void *value) { (void)queue; (void)value; return true; }
+void write_raw_packet(uint8_t *dst, uart_packet_t *packet) { (void)dst; (void)packet; }
