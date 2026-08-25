@@ -147,6 +147,9 @@ async function handleInputReport(event) {
   updateElement(key, event);
 }
 
+/* Writes one control to both boards. Only saveHandler calls this - a set lands in the
+   live config the moment it arrives, and for a shortcut the device rebuilds its hotkey
+   table on the spot, so sending on edit would apply it before Save. */
 async function valueChangedHandler(element) {
   var key = element.getAttribute('data-key');
   var dataType = element.getAttribute('data-type');
@@ -562,9 +565,10 @@ function setApi(element, value) {
     element.value = value;
   }
 
-  /* Marks the form dirty and redraws through the shared input listener. */
+  /* Marks the form dirty and redraws through the shared input listener. Nothing is sent
+     here: saveHandler writes everything that differs from fetched-value, so an edit made
+     through a proxy control stays on the page until Save, the same as a typed one. */
   element.dispatchEvent(new Event('input', { bubbles: true }));
-  valueChangedHandler(element);
 }
 
 function syncControl(element) {

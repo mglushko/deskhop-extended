@@ -561,20 +561,20 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
       <div class="meta">
         <span class="meta-i">
           <span class="meta-k">This board</span>
-          <input class="api meta-v" type="text" id="k78" data-key="78" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-fw-ver data-fw-self readonly>
+          <input class="api meta-v" type="text" id="k78" data-key="78" data-type="uint16" fetched-value="" data-fw-ver data-fw-self readonly>
           <span class="meta-tag">beta</span>
         </span>
         <span class="meta-sep"></span>
         <span class="meta-i">
           <span class="meta-k">Other board</span>
-          <input class="api meta-v" type="text" id="k86" data-key="86" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-fw-ver readonly>
+          <input class="api meta-v" type="text" id="k86" data-key="86" data-type="uint16" fetched-value="" data-fw-ver readonly>
           <span class="meta-tag" id="other-tag" hidden>beta</span>
           <span class="meta-tag meta-warn" id="ver-differ" hidden>differ</span>
         </span>
         <span class="meta-sep"></span>
         <span class="meta-i">
           <span class="meta-k">Checksum</span>
-          <input class="api meta-v mono" type="text" id="k79" data-key="79" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" data-hex readonly>
+          <input class="api meta-v mono" type="text" id="k79" data-key="79" data-type="uint32" fetched-value="" data-hex readonly>
         </span>
       </div>
 
@@ -621,7 +621,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
         <button type="button" class="swap" data-for="k87"
                 title="Draw the outputs the other way round, to match how they sit on your desk">
           <span class="swap-i" aria-hidden="true">&#8644;</span> Swap
-        </button><input class="api " type="hidden" id="k87" data-key="87" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" >
+        </button><input class="api " type="hidden" id="k87" data-key="87" data-type="uint8" fetched-value="" >
         <div class="duo">
           <div class="out">
             <span class="out-n">Output A</span>
@@ -642,7 +642,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" role="radio" aria-checked="false" data-v="3">Windows</button>
   <button type="button" role="radio" aria-checked="false" data-v="4">Android</button>
   <button type="button" role="radio" aria-checked="false" data-v="255">Other</button>
-</div><input class="api " type="hidden" id="k16" data-key="16" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="os" >
+</div><input class="api " type="hidden" id="k16" data-key="16" data-type="uint8" fetched-value="" data-o="A" data-n="os" >
         </div>
         <div class="fld">
           <span class="lbl">Operating system</span>
@@ -652,7 +652,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" role="radio" aria-checked="false" data-v="3">Windows</button>
   <button type="button" role="radio" aria-checked="false" data-v="4">Android</button>
   <button type="button" role="radio" aria-checked="false" data-v="255">Other</button>
-</div><input class="api " type="hidden" id="k46" data-key="46" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="os" >
+</div><input class="api " type="hidden" id="k46" data-key="46" data-type="uint8" fetched-value="" data-o="B" data-n="os" >
         </div>
       </div>
 
@@ -672,14 +672,14 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
                   <span class="step-v">1</span>
                   <button type="button" data-d="1" title="Add screen">+</button>
                 </div>
-                <input class="api " type="hidden" id="k11" data-key="11" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="count" >
+                <input class="api " type="hidden" id="k11" data-key="11" data-type="uint32" fetched-value="" data-o="A" data-n="count" >
               </div>
               <div class="arr-grp">
                 <span class="lbl">Screen side</span>
                 <div class="seg seg-sm" role="radiogroup" aria-label="Screen side" data-for="k17">
   <button type="button" role="radio" aria-checked="false" data-v="1">Left</button>
   <button type="button" role="radio" aria-checked="false" data-v="2">Right</button>
-</div><input class="api " type="hidden" id="k17" data-key="17" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="side" >
+</div><input class="api " type="hidden" id="k17" data-key="17" data-type="uint8" fetched-value="" data-o="A" data-n="side" >
               </div>
             </div>
 
@@ -713,11 +713,11 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
                 keeps its height when it crosses. Highlighted on the screen above.</span>
               <div class="align-row">
                 <span class="val">Top edge</span>
-                <input class="api coord" type="number" id="k14" data-key="14" data-type="int32" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="bt" min="0" max="32767" step="1" aria-label="Top edge in device coordinates">
+                <input class="api coord" type="number" id="k14" data-key="14" data-type="int32" fetched-value="" data-o="A" data-n="bt" min="0" max="32767" step="1" aria-label="Top edge in device coordinates">
               </div>
               <div class="align-row">
                 <span class="val">Bottom edge</span>
-                <input class="api coord" type="number" id="k15" data-key="15" data-type="int32" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="bb" min="0" max="32767" step="1" aria-label="Bottom edge in device coordinates">
+                <input class="api coord" type="number" id="k15" data-key="15" data-type="int32" fetched-value="" data-o="A" data-n="bb" min="0" max="32767" step="1" aria-label="Bottom edge in device coordinates">
               </div>
               <span class="note">Easier from the keyboard: park the pointer on the larger screen at
                 the height of the smaller screen's top edge and press <b class="kbd">Right Shift</b>
@@ -738,14 +738,14 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
                   <span class="step-v">1</span>
                   <button type="button" data-d="1" title="Add screen">+</button>
                 </div>
-                <input class="api " type="hidden" id="k41" data-key="41" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="count" >
+                <input class="api " type="hidden" id="k41" data-key="41" data-type="uint32" fetched-value="" data-o="B" data-n="count" >
               </div>
               <div class="arr-grp">
                 <span class="lbl">Screen side</span>
                 <div class="seg seg-sm" role="radiogroup" aria-label="Screen side" data-for="k47">
   <button type="button" role="radio" aria-checked="false" data-v="1">Left</button>
   <button type="button" role="radio" aria-checked="false" data-v="2">Right</button>
-</div><input class="api " type="hidden" id="k47" data-key="47" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="side" >
+</div><input class="api " type="hidden" id="k47" data-key="47" data-type="uint8" fetched-value="" data-o="B" data-n="side" >
               </div>
             </div>
 
@@ -779,11 +779,11 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
                 keeps its height when it crosses. Highlighted on the screen above.</span>
               <div class="align-row">
                 <span class="val">Top edge</span>
-                <input class="api coord" type="number" id="k44" data-key="44" data-type="int32" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="bt" min="0" max="32767" step="1" aria-label="Top edge in device coordinates">
+                <input class="api coord" type="number" id="k44" data-key="44" data-type="int32" fetched-value="" data-o="B" data-n="bt" min="0" max="32767" step="1" aria-label="Top edge in device coordinates">
               </div>
               <div class="align-row">
                 <span class="val">Bottom edge</span>
-                <input class="api coord" type="number" id="k45" data-key="45" data-type="int32" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="bb" min="0" max="32767" step="1" aria-label="Bottom edge in device coordinates">
+                <input class="api coord" type="number" id="k45" data-key="45" data-type="int32" fetched-value="" data-o="B" data-n="bb" min="0" max="32767" step="1" aria-label="Bottom edge in device coordinates">
               </div>
               <span class="note">Easier from the keyboard: park the pointer on the larger screen at
                 the height of the smaller screen's top edge and press <b class="kbd">Right Shift</b>
@@ -810,7 +810,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" role="radio" aria-checked="false" data-v="0">Top</button>
   <button type="button" role="radio" aria-checked="false" data-v="1">Bottom</button>
   <button type="button" role="radio" aria-checked="false" data-v="3">Previous</button>
-</div><input class="api " type="hidden" id="k18" data-key="18" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="park" >
+</div><input class="api " type="hidden" id="k18" data-key="18" data-type="uint8" fetched-value="" data-o="A" data-n="park" >
               <div class="pv">
                 <div class="pv-scr">
                   <svg class="cur" data-o="A" data-pv="park" viewBox="2.5 0.5 12 15.5"><path d="M3 1l11 8.4-4.7.5 2.6 5.2-2.2 1.1-2.6-5.2L3 14.6z"/></svg>
@@ -823,11 +823,11 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
             <div class="fld">
   <div class="rowb"><span class="k">Speed X =</span><span class="val " data-for="k12"></span></div>
-  <input class="api " type="range" id="k12" data-key="12" data-type="int32" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="spx" min="1" max="100" aria-label="Speed X">
+  <input class="api " type="range" id="k12" data-key="12" data-type="int32" fetched-value="" data-o="A" data-n="spx" min="1" max="100" aria-label="Speed X">
 </div>
             <div class="fld">
   <div class="rowb"><span class="k">Speed Y =</span><span class="val " data-for="k13"></span></div>
-  <input class="api " type="range" id="k13" data-key="13" data-type="int32" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="spy" min="1" max="100" aria-label="Speed Y">
+  <input class="api " type="range" id="k13" data-key="13" data-type="int32" fetched-value="" data-o="A" data-n="spy" min="1" max="100" aria-label="Speed Y">
 </div>
 
           </div>
@@ -838,7 +838,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" role="radio" aria-checked="false" data-v="0">Top</button>
   <button type="button" role="radio" aria-checked="false" data-v="1">Bottom</button>
   <button type="button" role="radio" aria-checked="false" data-v="3">Previous</button>
-</div><input class="api " type="hidden" id="k48" data-key="48" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="park" >
+</div><input class="api " type="hidden" id="k48" data-key="48" data-type="uint8" fetched-value="" data-o="B" data-n="park" >
               <div class="pv">
                 <div class="pv-scr">
                   <svg class="cur" data-o="B" data-pv="park" viewBox="2.5 0.5 12 15.5"><path d="M3 1l11 8.4-4.7.5 2.6 5.2-2.2 1.1-2.6-5.2L3 14.6z"/></svg>
@@ -851,11 +851,11 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
             <div class="fld">
   <div class="rowb"><span class="k">Speed X =</span><span class="val " data-for="k42"></span></div>
-  <input class="api " type="range" id="k42" data-key="42" data-type="int32" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="spx" min="1" max="100" aria-label="Speed X">
+  <input class="api " type="range" id="k42" data-key="42" data-type="int32" fetched-value="" data-o="B" data-n="spx" min="1" max="100" aria-label="Speed X">
 </div>
             <div class="fld">
   <div class="rowb"><span class="k">Speed Y =</span><span class="val " data-for="k43"></span></div>
-  <input class="api " type="range" id="k43" data-key="43" data-type="int32" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="spy" min="1" max="100" aria-label="Speed Y">
+  <input class="api " type="range" id="k43" data-key="43" data-type="int32" fetched-value="" data-o="B" data-n="spy" min="1" max="100" aria-label="Speed Y">
 </div>
 
           </div>
@@ -876,7 +876,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" role="radio" aria-checked="false" data-v="0">Disabled</button>
   <button type="button" role="radio" aria-checked="false" data-v="1">Pong</button>
   <button type="button" role="radio" aria-checked="false" data-v="2">Jitter</button>
-</div><input class="api " type="hidden" id="k19" data-key="19" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="mode" >
+</div><input class="api " type="hidden" id="k19" data-key="19" data-type="uint8" fetched-value="" data-o="A" data-n="mode" >
                 <div class="pv">
                   <div class="pv-scr" data-o="A" data-pv="awake">
                     <div class="pv-in"><div class="pv-x"><div class="pv-y">
@@ -893,7 +893,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
             <div class="fld awake-part" data-o="A">
               <div class="sw-row">
                 <button type="button" class="sw" role="switch" aria-checked="false" data-for="k20"><span></span></button>
-                <input class="api " type="checkbox" id="k20" data-key="20" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="inact" hidden>
+                <input class="api " type="checkbox" id="k20" data-key="20" data-type="uint8" fetched-value="" data-o="A" data-n="inact" hidden>
                 <span>Only when this output is idle</span>
               </div>
               <span class="hint">Off: keeps this computer awake at all times. On: only while you're on the other computer.</span>
@@ -906,14 +906,14 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
     <input type="number" min="0" max="4200" data-scale="1000000" data-for="k21" class="sec">
     <span class="num-u">sec</span>
   </span>
-</label><input class="api " type="hidden" id="k21" data-key="21" data-type="uint64" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="idle" >
+</label><input class="api " type="hidden" id="k21" data-key="21" data-type="uint64" fetched-value="" data-o="A" data-n="idle" >
               <label class="fld">
   <span class="hint">Stops after</span>
   <span class="num">
     <input type="number" min="0" max="4200" data-scale="1000000" data-for="k22" class="sec">
     <span class="num-u">sec</span>
   </span>
-</label><input class="api " type="hidden" id="k22" data-key="22" data-type="uint64" fetched-value="" onchange="valueChangedHandler(this)" data-o="A" data-n="maxt" >
+</label><input class="api " type="hidden" id="k22" data-key="22" data-type="uint64" fetched-value="" data-o="A" data-n="maxt" >
               <span class="hint" data-o="A" data-note="times"></span>
             </div>
 
@@ -926,7 +926,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" role="radio" aria-checked="false" data-v="0">Disabled</button>
   <button type="button" role="radio" aria-checked="false" data-v="1">Pong</button>
   <button type="button" role="radio" aria-checked="false" data-v="2">Jitter</button>
-</div><input class="api " type="hidden" id="k49" data-key="49" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="mode" >
+</div><input class="api " type="hidden" id="k49" data-key="49" data-type="uint8" fetched-value="" data-o="B" data-n="mode" >
                 <div class="pv">
                   <div class="pv-scr" data-o="B" data-pv="awake">
                     <div class="pv-in"><div class="pv-x"><div class="pv-y">
@@ -943,7 +943,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
             <div class="fld awake-part" data-o="B">
               <div class="sw-row">
                 <button type="button" class="sw" role="switch" aria-checked="false" data-for="k50"><span></span></button>
-                <input class="api " type="checkbox" id="k50" data-key="50" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="inact" hidden>
+                <input class="api " type="checkbox" id="k50" data-key="50" data-type="uint8" fetched-value="" data-o="B" data-n="inact" hidden>
                 <span>Only when this output is idle</span>
               </div>
               <span class="hint">Off: keeps this computer awake at all times. On: only while you're on the other computer.</span>
@@ -956,14 +956,14 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
     <input type="number" min="0" max="4200" data-scale="1000000" data-for="k51" class="sec">
     <span class="num-u">sec</span>
   </span>
-</label><input class="api " type="hidden" id="k51" data-key="51" data-type="uint64" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="idle" >
+</label><input class="api " type="hidden" id="k51" data-key="51" data-type="uint64" fetched-value="" data-o="B" data-n="idle" >
               <label class="fld">
   <span class="hint">Stops after</span>
   <span class="num">
     <input type="number" min="0" max="4200" data-scale="1000000" data-for="k52" class="sec">
     <span class="num-u">sec</span>
   </span>
-</label><input class="api " type="hidden" id="k52" data-key="52" data-type="uint64" fetched-value="" onchange="valueChangedHandler(this)" data-o="B" data-n="maxt" >
+</label><input class="api " type="hidden" id="k52" data-key="52" data-type="uint64" fetched-value="" data-o="B" data-n="maxt" >
               <span class="hint" data-o="B" data-note="times"></span>
             </div>
 
@@ -988,7 +988,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
         <div class="grp">
           <div class="fld">
   <div class="rowb"><span class="k">Jump Threshold =</span><span class="val " data-for="k77"></span></div>
-  <input class="api " type="range" id="k77" data-key="77" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-n="jump" min="0" max="3000" aria-label="Jump Threshold">
+  <input class="api " type="range" id="k77" data-key="77" data-type="uint16" fetched-value="" data-n="jump" min="0" max="3000" aria-label="Jump Threshold">
 </div>
           <span class="hint">How far past the edge the pointer has to be pushed before it crosses to
             the other computer. Moving between screens on the same computer is unaffected.</span>
@@ -998,7 +998,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
         <div class="grp">
           <div class="sw-row">
             <button type="button" class="sw" role="switch" aria-checked="false" data-for="k83"><span></span></button>
-            <input class="api " type="checkbox" id="k83" data-key="83" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-n="dtap" hidden>
+            <input class="api " type="checkbox" id="k83" data-key="83" data-type="uint8" fetched-value="" data-n="dtap" hidden>
             <span>Require a double tap at the edge</span>
           </div>
           <span class="hint">Off: the pointer crosses as soon as it is pushed past the edge. On: the
@@ -1022,11 +1022,11 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
             </div>
             <div class="fld">
   <div class="rowb"><span class="k">Double-tap window (ms) =</span><span class="val " data-for="k84"></span></div>
-  <input class="api " type="range" id="k84" data-key="84" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-n="dtapms" min="50" max="2000" aria-label="Double-tap window (ms)">
+  <input class="api " type="range" id="k84" data-key="84" data-type="uint16" fetched-value="" data-n="dtapms" min="50" max="2000" aria-label="Double-tap window (ms)">
 </div>
             <div class="fld">
   <div class="rowb"><span class="k">Pull back at least =</span><span class="val pctv" data-for="k85"></span></div>
-  <input class="api " type="range" id="k85" data-key="85" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-n="dtapmargin" min="50" max="5000" aria-label="Pull back at least">
+  <input class="api " type="range" id="k85" data-key="85" data-type="uint16" fetched-value="" data-n="dtapmargin" min="50" max="5000" aria-label="Pull back at least">
 </div>
           </div>
         </div>
@@ -1034,13 +1034,13 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
         <span class="lbl">Mouse</span>
         <div class="grp">
           <div class="chk-f">
-  <label class="chk"><input class="api " type="checkbox" id="k71" data-key="71" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Force Mouse Boot Mode</span></label>
+  <label class="chk"><input class="api " type="checkbox" id="k71" data-key="71" data-type="uint8" fetched-value="" ><span>Force Mouse Boot Mode</span></label>
   <span class="hint">Ask the mouse for the plain boot format - three buttons and movement - instead of
                   its own. Worth a try if a mouse misbehaves; the wheel and any extra buttons may go
                   with it, though plenty of mice send them anyway.</span>
 </div>
           <div class="chk-f">
-  <label class="chk"><input class="api " type="checkbox" id="k75" data-key="75" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Enable Acceleration</span></label>
+  <label class="chk"><input class="api " type="checkbox" id="k75" data-key="75" data-type="uint8" fetched-value="" ><span>Enable Acceleration</span></label>
   <span class="hint">Carry the pointer further the faster the mouse moves, on a curve up to four times
                   the distance. Off passes the movement through as it comes.</span>
 </div>
@@ -1049,13 +1049,13 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
         <span class="lbl">Device flags</span>
         <div class="grp">
           <div class="chk-f">
-  <label class="chk"><input class="api " type="checkbox" id="k72" data-key="72" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Force KBD Boot Protocol</span></label>
+  <label class="chk"><input class="api " type="checkbox" id="k72" data-key="72" data-type="uint8" fetched-value="" ><span>Force KBD Boot Protocol</span></label>
   <span class="hint">Ask the keyboard for the plain 8-byte boot format instead of its own. Fixes
                   keyboards whose reports are read wrongly, at the price of n-key rollover: six keys
                   at once, plus the modifiers.</span>
 </div>
           <div class="chk-f">
-  <label class="chk"><input class="api " type="checkbox" id="k73" data-key="73" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>KBD LED as Indicator</span></label>
+  <label class="chk"><input class="api " type="checkbox" id="k73" data-key="73" data-type="uint8" fetched-value="" ><span>KBD LED as Indicator</span></label>
   <span class="hint">Give up the keyboard's caps lock light to show which computer is selected - lit
                   means Output B. Num and scroll lock go on doing their own job.</span>
 </div>
@@ -1064,7 +1064,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
         <span class="lbl">Wiring</span>
         <div class="grp">
           <div class="chk-f">
-  <label class="chk"><input class="api " type="checkbox" id="k76" data-key="76" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" ><span>Enforce Ports</span></label>
+  <label class="chk"><input class="api " type="checkbox" id="k76" data-key="76" data-type="uint8" fetched-value="" ><span>Enforce Ports</span></label>
   <span class="hint">Requires the keyboard and mouse to be plugged into their designated ports.</span>
 </div>
         </div>
@@ -1076,7 +1076,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <button type="button" role="radio" aria-checked="false" data-v="1">When idle</button>
   <button type="button" role="radio" aria-checked="false" data-v="2">After switching</button>
   <button type="button" role="radio" aria-checked="false" data-v="3">Idle + switch</button>
-</div><input class="api " type="hidden" id="k88" data-key="88" data-type="uint8" fetched-value="" onchange="valueChangedHandler(this)" data-n="ledmode" >
+</div><input class="api " type="hidden" id="k88" data-key="88" data-type="uint8" fetched-value="" data-n="ledmode" >
           <span class="hint" id="led-note"></span>
 
           <div class="led-times">
@@ -1087,7 +1087,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
     <input type="number" min="1" max="4200" data-scale="1" data-for="k89" class="sec">
     <span class="num-u">sec</span>
   </span>
-</label><input class="api " type="hidden" id="k89" data-key="89" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-n="ledsec" >
+</label><input class="api " type="hidden" id="k89" data-key="89" data-type="uint16" fetched-value="" data-n="ledsec" >
             </div>
             <div class="led-part" data-led="switch">
               <label class="fld">
@@ -1096,7 +1096,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
     <input type="number" min="1" max="4200" data-scale="1" data-for="k103" class="sec">
     <span class="num-u">sec</span>
   </span>
-</label><input class="api " type="hidden" id="k103" data-key="103" data-type="uint16" fetched-value="" onchange="valueChangedHandler(this)" data-n="ledswitch" >
+</label><input class="api " type="hidden" id="k103" data-key="103" data-type="uint16" fetched-value="" data-n="ledswitch" >
             </div>
           </div>
         </div>
@@ -1143,7 +1143,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Switch output without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k90"
           aria-label="Restore the default shortcut for Switch output">Default</button>
-</div><input class="api " type="hidden" id="k90" data-key="90" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+</div><input class="api " type="hidden" id="k90" data-key="90" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
   <span class="hk-n">Slow mouse</span>
@@ -1155,7 +1155,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Slow mouse without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k91"
           aria-label="Restore the default shortcut for Slow mouse">Default</button>
-</div><input class="api " type="hidden" id="k91" data-key="91" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+</div><input class="api " type="hidden" id="k91" data-key="91" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
   <span class="hk-n">Lock switching</span>
@@ -1167,7 +1167,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Lock switching without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k92"
           aria-label="Restore the default shortcut for Lock switching">Default</button>
-</div><input class="api " type="hidden" id="k92" data-key="92" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+</div><input class="api " type="hidden" id="k92" data-key="92" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
   <span class="hk-n">Lock both screens</span>
@@ -1179,7 +1179,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Lock both screens without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k93"
           aria-label="Restore the default shortcut for Lock both screens">Default</button>
-</div><input class="api " type="hidden" id="k93" data-key="93" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+</div><input class="api " type="hidden" id="k93" data-key="93" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
   <span class="hk-n">Gaming mode</span>
@@ -1191,7 +1191,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Gaming mode without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k94"
           aria-label="Restore the default shortcut for Gaming mode">Default</button>
-</div><input class="api " type="hidden" id="k94" data-key="94" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+</div><input class="api " type="hidden" id="k94" data-key="94" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
   <span class="hk-n">Keep awake: pong</span>
@@ -1203,7 +1203,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Keep awake: pong without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k95"
           aria-label="Restore the default shortcut for Keep awake: pong">Default</button>
-</div><input class="api " type="hidden" id="k95" data-key="95" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+</div><input class="api " type="hidden" id="k95" data-key="95" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
   <span class="hk-n">Keep awake: jitter</span>
@@ -1215,7 +1215,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Keep awake: jitter without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k96"
           aria-label="Restore the default shortcut for Keep awake: jitter">Default</button>
-</div><input class="api " type="hidden" id="k96" data-key="96" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+</div><input class="api " type="hidden" id="k96" data-key="96" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
   <span class="hk-n">Keep awake: off</span>
@@ -1227,7 +1227,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Keep awake: off without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k97"
           aria-label="Restore the default shortcut for Keep awake: off">Default</button>
-</div><input class="api " type="hidden" id="k97" data-key="97" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+</div><input class="api " type="hidden" id="k97" data-key="97" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
   <span class="hk-n">Record screen alignment</span>
@@ -1239,7 +1239,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Record screen alignment without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k99"
           aria-label="Restore the default shortcut for Record screen alignment">Default</button>
-</div><input class="api " type="hidden" id="k99" data-key="99" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+</div><input class="api " type="hidden" id="k99" data-key="99" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
   <span class="hk-n">Config mode</span>
@@ -1257,7 +1257,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Firmware upgrade, board A without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k101"
           aria-label="Restore the default shortcut for Firmware upgrade, board A">Default</button>
-</div><input class="api " type="hidden" id="k101" data-key="101" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+</div><input class="api " type="hidden" id="k101" data-key="101" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
   <span class="hk-n">Firmware upgrade, board B</span>
@@ -1269,7 +1269,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Firmware upgrade, board B without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k102"
           aria-label="Restore the default shortcut for Firmware upgrade, board B">Default</button>
-</div><input class="api " type="hidden" id="k102" data-key="102" data-type="uint32" fetched-value="" onchange="valueChangedHandler(this)" >
+</div><input class="api " type="hidden" id="k102" data-key="102" data-type="uint32" fetched-value="" >
           </div>
 
           
@@ -1491,6 +1491,9 @@ async function handleInputReport(event) {
   updateElement(key, event);
 }
 
+/* Writes one control to both boards. Only saveHandler calls this - a set lands in the
+   live config the moment it arrives, and for a shortcut the device rebuilds its hotkey
+   table on the spot, so sending on edit would apply it before Save. */
 async function valueChangedHandler(element) {
   var key = element.getAttribute('data-key');
   var dataType = element.getAttribute('data-type');
@@ -1906,9 +1909,10 @@ function setApi(element, value) {
     element.value = value;
   }
 
-  /* Marks the form dirty and redraws through the shared input listener. */
+  /* Marks the form dirty and redraws through the shared input listener. Nothing is sent
+     here: saveHandler writes everything that differs from fetched-value, so an edit made
+     through a proxy control stays on the page until Save, the same as a typed one. */
   element.dispatchEvent(new Event('input', { bubbles: true }));
-  valueChangedHandler(element);
 }
 
 function syncControl(element) {

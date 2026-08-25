@@ -94,6 +94,12 @@ configuration.</em></p>
   while those modifiers are held, and one stored against an early action used to swallow every
   action below it.
   [2ac2c87](https://github.com/mglushko/deskhop-extended/commit/2ac2c87)
+- **An edit waits for Save** - every control pushed its value the moment it changed and Save only
+  wrote flash, which for a shortcut meant it took effect before you pressed anything:
+  `handle_api_msgs` copies the combination into the running config and calls `hotkeys_apply_config`
+  there and then, so the new one was answering keystrokes while the page still read *Unsaved
+  changes*, and disconnecting without saving left it in force until the board rebooted. Nothing
+  reaches the device now until Save, which is what the page has said all along.
 
 Wiping the configuration has no shortcut here at all - upstream's `Right Shift + F12 + D` is gone,
 since a combination that erases every setting is too easy to reach by accident. Wipe Config on the
@@ -236,7 +242,8 @@ continuing upstream's 0.x, and the config page marks it **beta**. Minor numbers 
 (v1.00, v1.01, v1.02); only the printed form is padded. The number is deliberately above upstream's,
 because a board pulls firmware from the other one only when that board reports a *higher* version
 (`handle_heartbeat_msg`); [Going back to DeskHop](#going-back-to-deskhop) above is what that means
-in practice.
+in practice. There is no third number: the uint16 has no room for one, and a release the boards
+cannot tell apart from the one before it would not travel between them anyway.
 [ac858f2](https://github.com/mglushko/deskhop-extended/commit/ac858f2),
 [1afd118](https://github.com/mglushko/deskhop-extended/commit/1afd118)
 

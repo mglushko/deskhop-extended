@@ -1,10 +1,13 @@
 {# templates/main.html — single-page config, one column per output #}
 
 {#
-  Every control that talks to the device is a real input carrying
-  class="api", data-key, data-type, fetched-value and onchange. Anything that
-  looks like a button, stepper or toggle is a proxy: it carries data-for="kNNN"
-  pointing at the hidden input it drives. script.js keeps the two in sync.
+  Every control that talks to the device is a real input carrying class="api",
+  data-key, data-type and fetched-value. Anything that looks like a button,
+  stepper or toggle is a proxy: it carries data-for="kNNN" pointing at the hidden
+  input it drives. script.js keeps the two in sync.
+
+  Nothing is written to the device on edit: fetched-value is what the device last
+  reported, and Save is what sends every control that no longer matches it.
 #}
 
 {% set A = {} %}{% for i in screen_A %}{% set _ = A.update({i.name: i}) %}{% endfor %}
@@ -21,7 +24,7 @@
 {% set MAX_COORD = 32767 %}
 
 {% macro api(item, o='', n='', type='hidden', extra='', cls='') -%}
-<input class="api {{ cls }}" type="{{ type }}" id="k{{ item.key }}" data-key="{{ item.key }}" data-type="{{ item.type }}" fetched-value="" onchange="valueChangedHandler(this)"{% if o %} data-o="{{ o }}"{% endif %}{% if n %} data-n="{{ n }}"{% endif %} {{ extra }}>
+<input class="api {{ cls }}" type="{{ type }}" id="k{{ item.key }}" data-key="{{ item.key }}" data-type="{{ item.type }}" fetched-value=""{% if o %} data-o="{{ o }}"{% endif %}{% if n %} data-n="{{ n }}"{% endif %} {{ extra }}>
 {%- endmacro %}
 
 {% macro seg(item, o, n, aria, cls='') -%}

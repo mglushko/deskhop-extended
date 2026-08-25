@@ -268,6 +268,61 @@ with sync_playwright() as p:
           page.eval_on_selector('#hk-m', "e => e.textContent") == "",
           page.eval_on_selector('#hk-m', "e => e.textContent"))
 
+    # ---- nothing reaches the device before Save ----------------------------
+    # Every control used to push its value the moment it changed, so a shortcut was live
+    # on the device while the page still read "Unsaved changes" - handle_api_msgs writes
+    # the combination into the running config and calls hotkeys_apply_config on the spot.
+    # A stand-in for the device records what actually goes out.
+    page.evaluate("""() => {
+        window.__sent = [];
+        device = {opened: true,
+                  sendReport: (id, bytes) => { window.__sent.push([...bytes]);
+                                               return Promise.resolve(); }};
+        markClean();
+    }""")
+
+    quiet = page.locator('.hk[data-for="k90"]')
+    quiet.click()
+    page.keyboard.down("Alt")
+    page.keyboard.down("F9")
+    page.keyboard.up("F9")
+    page.keyboard.up("Alt")
+    combo = 0x04 | (0x42 << 8)          # Left Alt + F9
+
+    # A proxy control that is not a shortcut, since they all went through the same push.
+    page.evaluate("""() => {
+        const seg = document.querySelector('.seg[data-for]');
+        const input = el(seg.dataset.for);
+        window.__seg = input.dataset.key;
+        [...seg.querySelectorAll('button')]
+            .find(b => b.dataset.v !== String(input.value)).click();
+    }""")
+
+    check("the shortcut is recorded on the page",
+          page.eval_on_selector('[data-key="90"]', "e => e.value") == str(combo),
+          page.eval_on_selector('[data-key="90"]', "e => e.value"))
+    check("but nothing is sent to the device", page.evaluate("() => __sent.length") == 0,
+          page.evaluate("() => __sent"))
+    check("and the page knows it is holding changes", page.evaluate("() => dirty") is True)
+
+    page.evaluate("async () => { await saveHandler(); }")
+
+    # Direct reports are 0xaa 0x55 <type> <payload>; the proxy copy that goes to the other
+    # board carries the type in data[0] instead, and is the same value either way.
+    sent = page.evaluate("() => __sent")
+    values = {b[3]: int.from_bytes(bytes(b[4:8]), "little")
+              for b in sent if b[2] == 21}
+
+    check("Save is what writes the shortcut", values.get(90) == combo, values.get(90))
+    check("and every other edit with it",
+          int(page.evaluate("() => __seg")) in values, sorted(values))
+    check("with the store-to-flash message last",
+          [b[2] for b in sent if b[2] in (18, 21)][-1] == 18,
+          [b[2] for b in sent])
+    check("and the page is clean again", page.evaluate("() => dirty") is False)
+
+    page.evaluate("() => { device = undefined; setConnected(true); }")
+
     # ---- export carries the new fields -------------------------------------
     keys = page.evaluate("() => [...backupFields()].map(e => e.dataset.key)")
     missing = [k for k in ["88", "89", "90", "96", "102", "103"] if k not in keys]
