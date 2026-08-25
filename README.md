@@ -101,14 +101,12 @@ configuration.</em></p>
   changes*, and disconnecting without saving left it in force until the board rebooted. Nothing
   reaches the device now until Save, which is what the page has said all along.
   [64aea93](https://github.com/mglushko/deskhop-extended/commit/64aea93)
-- **A shortcut can be turned off** - **Off** on any of the eleven settable rows, and that
-  combination stops being a shortcut at all. It matters because a shortcut that answers is
-  swallowed on the way and never reaches the computer, so switching output, built as
-  `Left Ctrl + Caps Lock`, took Caps Lock with it. Upstream's answer was to rebuild the firmware
-  with the combination pointed at `HID_KEY_F24` on the grounds that few keyboards have one. The
-  row then reads *Disabled*, **Default** puts it back, and the combination it gave up is free for
-  another shortcut to take. Config mode is the one that cannot be turned off, for the same reason
-  it cannot be reassigned.
+- **A shortcut can be turned off** - press **Off** on any of the eleven settable rows and that
+  shortcut stops working. The row reads *Disabled*, **Default** brings it back, and the
+  combination it gave up is free for another shortcut to take. There was no way to do this
+  before: upstream's suggestion was to rebuild the firmware with the combination pointed at
+  `HID_KEY_F24`, on the grounds that few keyboards have one. Config mode is the one that cannot
+  be turned off, for the same reason it cannot be reassigned.
   [a80bfc8](https://github.com/mglushko/deskhop-extended/commit/a80bfc8)
 
 Wiping the configuration has no shortcut here at all - upstream's `Right Shift + F12 + D` is gone,

@@ -78,8 +78,8 @@
  * are rare.
  *
  * On this build there is no need to reach for F24: press Off against Switch output
- * on the config page and the shortcut stops answering, so the key it was built with
- * reaches the computer like any other. Nothing here has to be rebuilt.
+ * on the config page and the shortcut stops working, so the key it was built with
+ * behaves normally again. Nothing here has to be rebuilt.
  *
  * */
 
