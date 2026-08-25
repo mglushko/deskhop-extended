@@ -109,6 +109,7 @@ configuration.</em></p>
   row then reads *Disabled*, **Default** puts it back, and the combination it gave up is free for
   another shortcut to take. Config mode is the one that cannot be turned off, for the same reason
   it cannot be reassigned.
+  [a80bfc8](https://github.com/mglushko/deskhop-extended/commit/a80bfc8)
 
 Wiping the configuration has no shortcut here at all - upstream's `Right Shift + F12 + D` is gone,
 since a combination that erases every setting is too easy to reach by accident. Wipe Config on the
