@@ -188,6 +188,12 @@ VALUES = {
     # 98 was retired with the wipe-config shortcut; 100 is config mode, which is listed
     # on the page but fixed, so it has no field of its own.
     **{key: 0 for key in range(90, 103) if key not in (98, 100)},
+    # One exception to the zeroes above: a row has to be turned off for the shots to show
+    # what that looks like, and a state nobody can see in the README is one people ask
+    # whether the page has. HOTKEY_OFF, src/include/keyboard.h. Lock switching is the one
+    # picked because it says least about the rest of the list: Keep awake: off would read
+    # as a row named off that is off, and Switch output is the example the text uses.
+    92: 0xff000000,
 }
 
 DRIVE = """
