@@ -100,6 +100,7 @@ configuration.</em></p>
   there and then, so the new one was answering keystrokes while the page still read *Unsaved
   changes*, and disconnecting without saving left it in force until the board rebooted. Nothing
   reaches the device now until Save, which is what the page has said all along.
+  [64aea93](https://github.com/mglushko/deskhop-extended/commit/64aea93)
 
 Wiping the configuration has no shortcut here at all - upstream's `Right Shift + F12 + D` is gone,
 since a combination that erases every setting is too easy to reach by accident. Wipe Config on the
