@@ -87,12 +87,12 @@ configuration.</em></p>
 <p align="center"><img src="img/config-hotkeys.png" alt="The twelve shortcuts, eleven with Pick, Default and Off, Lock switching turned off, and config mode fixed"></p>
 
 - **A shortcut cannot take the way back** - the twelfth is config mode, listed but fixed at
-  `Left Ctrl + Right Shift + C + O`. It is the only combination that reaches the page, and the page
-  is the only way to undo a shortcut, so nothing may be set to it and it answers before the rest.
-  Two shortcuts cannot share a combination either, since the second of them would never fire, and
-  none but slow mouse may be modifiers alone - a combination naming no key matches everything typed
-  while those modifiers are held, and one stored against an early action used to swallow every
-  action below it.
+  `Left Ctrl + Right Shift + C + O`. It is the only combination that opens the page, and the page
+  is the only way to undo a shortcut, so nothing else can be set to it and it is checked before
+  the rest. Two shortcuts cannot share a combination either, since only the first of them would
+  ever work, and only slow mouse may be modifiers with no key: a combination like that triggers
+  on anything typed while those modifiers are held, and one set on an early action used to take
+  over every action below it.
   [2ac2c87](https://github.com/mglushko/deskhop-extended/commit/2ac2c87)
 - **An edit waits for Save** - every control pushed its value the moment it changed and Save only
   wrote flash, which for a shortcut meant it took effect before you pressed anything:
