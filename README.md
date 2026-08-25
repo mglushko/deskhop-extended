@@ -183,7 +183,7 @@ below was read off a screen.
 
 A board pushes its firmware onto the other one as soon as that one reports a lower version
 (`handle_heartbeat_msg`, once a second), and this build numbers itself above upstream on purpose -
-v1.07 reports `1107` against upstream v0.78's `178`. So flashing a single board back to
+v1.08 reports `1108` against upstream v0.78's `178`. So flashing a single board back to
 [hrvach/deskhop](https://github.com/hrvach/deskhop) only gets it overwritten again the moment the
 two are powered up together. Both boards have to be done, one at a time, while neither is running:
 
