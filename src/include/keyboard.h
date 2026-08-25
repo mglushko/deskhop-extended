@@ -28,13 +28,21 @@ keyboard_t *get_or_add_keyboard(hid_interface_t *iface, uint8_t report_id);
  *==============================================================================*/
 
 /* A combo packed into the uint32 that config_t stores and the config API carries:
-   byte 0 the modifier mask, byte 1 the first key, byte 2 the second key, byte 3 unused.
-   All zero means nothing is stored and the combo compiled into hotkeys[] stands. */
+   byte 0 the modifier mask, byte 1 the first key, byte 2 the second key. All zero means
+   nothing is stored and the combo compiled into hotkeys[] stands. Byte 3 carries nothing
+   except the one value below. */
 #define HOTKEY_PACK(mod, k1, k2) \
     ((uint32_t)(uint8_t)(mod) | ((uint32_t)(uint8_t)(k1) << 8) | ((uint32_t)(uint8_t)(k2) << 16))
 #define HOTKEY_MOD(packed)  ((uint8_t)((packed) & 0xff))
 #define HOTKEY_KEY1(packed) ((uint8_t)(((packed) >> 8) & 0xff))
 #define HOTKEY_KEY2(packed) ((uint8_t)(((packed) >> 16) & 0xff))
+
+/* A shortcut turned off: it matches nothing and its keys reach the computer like any other.
+   It sits where no combo can reach, since HOTKEY_PACK never writes byte 3 - and where no
+   config already in flash can be sitting either, because hotkeys_apply_config cleared a
+   value that named nothing long before it meant this. A firmware without this reads it,
+   clears it the same way, and puts the shortcut back on what it was built with. */
+#define HOTKEY_OFF 0xff000000u
 
 extern hotkey_combo_t hotkeys[];
 

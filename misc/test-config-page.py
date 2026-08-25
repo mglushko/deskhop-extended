@@ -268,6 +268,69 @@ with sync_playwright() as p:
           page.eval_on_selector('#hk-m', "e => e.textContent") == "",
           page.eval_on_selector('#hk-m', "e => e.textContent"))
 
+    # ---- turning one off ---------------------------------------------------
+    # A shortcut that answers is swallowed on the way, so the only way to get the key back
+    # is to have the entry answer nothing at all. HOTKEY_OFF in src/include/keyboard.h.
+    HOTKEY_OFF = 0xff000000
+
+    gaming = page.locator('.hk[data-for="k94"]')
+    page.click('.hk-o[data-for="k94"]')
+    check("Off stores the value that stands for it",
+          page.eval_on_selector('[data-key="94"]', "e => e.value") == str(HOTKEY_OFF),
+          page.eval_on_selector('[data-key="94"]', "e => e.value"))
+    check("and the row says so rather than naming a combination",
+          gaming.text_content() == "Disabled", gaming.text_content())
+    check("the row does not read as one set to a combination",
+          "hk-set" not in (gaming.get_attribute("class") or ""),
+          gaming.get_attribute("class"))
+    check("Off has nothing left to offer once it is off",
+          page.eval_on_selector('.hk-o[data-for="k94"]', "e => e.disabled"))
+    check("and Default is what is left to press",
+          not page.eval_on_selector('.hk-x[data-for="k94"]', "e => e.disabled"))
+
+    # Pick has no combination to open on, so it offers the compiled-in one.
+    page.click('.hk-p[data-hk="k94"]')
+    check("Pick on a row that is off opens on the compiled-in combination",
+          page.evaluate(prefill) == [["1", "32"], "10", "0"], page.evaluate(prefill))
+    page.click('#hk-ed-cancel')
+
+    # What it was holding is nobody's now, so another row may take it. Keep awake: pong is
+    # built on the same two modifiers, so only the key has to change.
+    page.click('.hk-p[data-hk="k95"]')
+    page.select_option('#hk-k1', '10')           # G, which Gaming mode was built with
+    page.select_option('#hk-k2', '0')
+    page.click('#hk-ed-set')
+    check("a combination freed by a row that is off can be taken",
+          page.eval_on_selector('[data-key="95"]', "e => e.value")
+          == str(0x01 | 0x20 | (0x0a << 8)),
+          page.eval_on_selector('#hk-m', "e => e.textContent"))
+
+    page.click('.hk-x[data-for="k94"]')
+    check("Default turns it back on",
+          page.eval_on_selector('[data-key="94"]', "e => e.value") == "0")
+    check("and the compiled-in combination is back on the row",
+          gaming.text_content() == "Left Ctrl + Right Shift + G", gaming.text_content())
+    check("Off is offered again", not page.eval_on_selector('.hk-o[data-for="k94"]', "e => e.disabled"))
+
+    # Recording over a row that is off is the other way back on.
+    page.click('.hk-o[data-for="k95"]')
+    slowoff = page.locator('.hk[data-for="k95"]')
+    check("a second row can be turned off too", slowoff.text_content() == "Disabled",
+          slowoff.text_content())
+    slowoff.click()
+    page.keyboard.down("Control")
+    page.keyboard.down("F7")
+    page.keyboard.up("F7")
+    page.keyboard.up("Control")
+    check("recording a combination turns it back on",
+          page.eval_on_selector('[data-key="95"]', "e => e.value") == str(0x01 | (0x40 << 8)),
+          page.eval_on_selector('[data-key="95"]', "e => e.value"))
+
+    check("config mode has no way to be turned off",
+          page.locator('.hk-o[data-for="k100"]').count() == 0
+          and page.locator('.hk-o').count() == 11,
+          page.locator('.hk-o').count())
+
     # ---- nothing reaches the device before Save ----------------------------
     # Every control used to push its value the moment it changed, so a shortcut was live
     # on the device while the page still read "Unsaved changes" - handle_api_msgs writes
@@ -320,6 +383,28 @@ with sync_playwright() as p:
           [b[2] for b in sent if b[2] in (18, 21)][-1] == 18,
           [b[2] for b in sent])
     check("and the page is clean again", page.evaluate("() => dirty") is False)
+
+    # Off reaches the device as the value the firmware reads for it, and a row that arrives
+    # off is not written back on the next Save. That last one is what a sentinel with the
+    # top bit set would do forever, since saveHandler compares these as strings and the
+    # page would compose a negative number where the device reported a positive one.
+    page.evaluate("() => { __sent = []; markClean(); }")
+    page.click('.hk-o[data-for="k96"]')
+    page.evaluate("async () => { await saveHandler(); }")
+    off_sent = {b[3]: int.from_bytes(bytes(b[4:8]), "little")
+                for b in page.evaluate("() => __sent") if b[2] == 21}
+    check("Off is what reaches the device", off_sent.get(96) == HOTKEY_OFF, off_sent.get(96))
+
+    page.evaluate("() => { __sent = []; "
+                  "setValue(document.querySelector('[data-key=\"96\"]'), 4278190080); "
+                  "markClean(); }")
+    check("a row that arrives off from the device draws as off",
+          page.locator('.hk[data-for="k96"]').text_content() == "Disabled",
+          page.locator('.hk[data-for="k96"]').text_content())
+    page.evaluate("async () => { await saveHandler(); }")
+    check("and Save does not write it back again",
+          not [b for b in page.evaluate("() => __sent") if b[2] == 21 and b[3] == 96],
+          [b for b in page.evaluate("() => __sent") if b[2] == 21])
 
     page.evaluate("() => { device = undefined; setConnected(true); }")
 

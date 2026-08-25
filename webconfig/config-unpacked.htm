@@ -429,7 +429,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   background: #fff; border-bottom: 1px solid var(--chip);
 }
 /* Centred under its heading, rather than hugging the left edge below two columns. */
-.shared-in { margin: 16px auto 0; max-width: 520px; }
+.shared-in { margin: 16px auto 0; max-width: 548px; }
 .shared .lbl { margin-bottom: 10px; }
 .grp { display: flex; flex-direction: column; gap: 11px; margin-bottom: 24px; }
 .chk { display: flex; align-items: center; gap: 8px; }
@@ -453,7 +453,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 /* One grid for the whole list rather than a flex line per row, so the columns line up with
    each other: config mode ends its row with a note instead of two buttons, and a row that
    sizes itself would put its combination 16px off the rest. */
-.hk-list { display: grid; grid-template-columns: minmax(max-content, 1fr) 214px auto auto; align-items: center; gap: 6px 8px; }
+.hk-list { display: grid; grid-template-columns: minmax(max-content, 1fr) 214px auto auto auto; align-items: center; gap: 6px 8px; }
 .hk-row { display: contents; }
 .hk-n { min-width: 0; font-size: 13px; color: var(--fg); }
 .hk {
@@ -467,17 +467,19 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
    and a span does not, so this says so to match the rows above it. */
 .hk-fix { line-height: 26px; text-align: center; background: var(--chip); cursor: default; }
 .hk-fix:hover { border-color: var(--bd-soft); color: var(--muted); }
-/* Sits where Pick and Default do, centred across both of their columns. */
-.hk-note { grid-column: span 2; text-align: center; white-space: nowrap; font-size: 12px; color: var(--muted); }
+/* Sits where Pick, Default and Off do, centred across all three of their columns. */
+.hk-note { grid-column: span 3; text-align: center; white-space: nowrap; font-size: 12px; color: var(--muted); }
+/* Turned off, so the box names the state instead of a combination. */
+.hk-off { background: var(--chip); font-style: italic; }
 /* Set on this device, rather than left at what the firmware was built with. */
 .hk-set { border-color: var(--bd); color: var(--fg); font-weight: 700; }
 .hk-cap { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
-.hk-p, .hk-x {
+.hk-p, .hk-x, .hk-o {
   height: 28px; padding: 0 6px;
   border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer;
 }
-.hk-p:hover, .hk-x:hover { color: var(--accent-dk); }
-.hk-x[disabled] { color: var(--bd-lock); cursor: default; }
+.hk-p:hover, .hk-x:hover, .hk-o:hover { color: var(--accent-dk); }
+.hk-x[disabled], .hk-o[disabled] { color: var(--bd-lock); cursor: default; }
 
 /* Pick opens this under the list, for the combinations the browser keeps to itself. */
 .hk-ed {
@@ -1143,6 +1145,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Switch output without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k90"
           aria-label="Restore the default shortcut for Switch output">Default</button>
+  <button type="button" class="hk-o" data-for="k90"
+          title="Turn it off, so the keys reach the computer"
+          aria-label="Turn off the shortcut for Switch output">Off</button>
 </div><input class="api " type="hidden" id="k90" data-key="90" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1155,6 +1160,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Slow mouse without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k91"
           aria-label="Restore the default shortcut for Slow mouse">Default</button>
+  <button type="button" class="hk-o" data-for="k91"
+          title="Turn it off, so the keys reach the computer"
+          aria-label="Turn off the shortcut for Slow mouse">Off</button>
 </div><input class="api " type="hidden" id="k91" data-key="91" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1167,6 +1175,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Lock switching without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k92"
           aria-label="Restore the default shortcut for Lock switching">Default</button>
+  <button type="button" class="hk-o" data-for="k92"
+          title="Turn it off, so the keys reach the computer"
+          aria-label="Turn off the shortcut for Lock switching">Off</button>
 </div><input class="api " type="hidden" id="k92" data-key="92" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1179,6 +1190,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Lock both screens without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k93"
           aria-label="Restore the default shortcut for Lock both screens">Default</button>
+  <button type="button" class="hk-o" data-for="k93"
+          title="Turn it off, so the keys reach the computer"
+          aria-label="Turn off the shortcut for Lock both screens">Off</button>
 </div><input class="api " type="hidden" id="k93" data-key="93" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1191,6 +1205,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Gaming mode without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k94"
           aria-label="Restore the default shortcut for Gaming mode">Default</button>
+  <button type="button" class="hk-o" data-for="k94"
+          title="Turn it off, so the keys reach the computer"
+          aria-label="Turn off the shortcut for Gaming mode">Off</button>
 </div><input class="api " type="hidden" id="k94" data-key="94" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1203,6 +1220,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Keep awake: pong without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k95"
           aria-label="Restore the default shortcut for Keep awake: pong">Default</button>
+  <button type="button" class="hk-o" data-for="k95"
+          title="Turn it off, so the keys reach the computer"
+          aria-label="Turn off the shortcut for Keep awake: pong">Off</button>
 </div><input class="api " type="hidden" id="k95" data-key="95" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1215,6 +1235,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Keep awake: jitter without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k96"
           aria-label="Restore the default shortcut for Keep awake: jitter">Default</button>
+  <button type="button" class="hk-o" data-for="k96"
+          title="Turn it off, so the keys reach the computer"
+          aria-label="Turn off the shortcut for Keep awake: jitter">Off</button>
 </div><input class="api " type="hidden" id="k96" data-key="96" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1227,6 +1250,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Keep awake: off without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k97"
           aria-label="Restore the default shortcut for Keep awake: off">Default</button>
+  <button type="button" class="hk-o" data-for="k97"
+          title="Turn it off, so the keys reach the computer"
+          aria-label="Turn off the shortcut for Keep awake: off">Off</button>
 </div><input class="api " type="hidden" id="k97" data-key="97" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1239,6 +1265,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Record screen alignment without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k99"
           aria-label="Restore the default shortcut for Record screen alignment">Default</button>
+  <button type="button" class="hk-o" data-for="k99"
+          title="Turn it off, so the keys reach the computer"
+          aria-label="Turn off the shortcut for Record screen alignment">Off</button>
 </div><input class="api " type="hidden" id="k99" data-key="99" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1257,6 +1286,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Firmware upgrade, board A without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k101"
           aria-label="Restore the default shortcut for Firmware upgrade, board A">Default</button>
+  <button type="button" class="hk-o" data-for="k101"
+          title="Turn it off, so the keys reach the computer"
+          aria-label="Turn off the shortcut for Firmware upgrade, board A">Off</button>
 </div><input class="api " type="hidden" id="k101" data-key="101" data-type="uint32" fetched-value="" >
             
 <div class="hk-row">
@@ -1269,6 +1301,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
           aria-label="Set the shortcut for Firmware upgrade, board B without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k102"
           aria-label="Restore the default shortcut for Firmware upgrade, board B">Default</button>
+  <button type="button" class="hk-o" data-for="k102"
+          title="Turn it off, so the keys reach the computer"
+          aria-label="Turn off the shortcut for Firmware upgrade, board B">Off</button>
 </div><input class="api " type="hidden" id="k102" data-key="102" data-type="uint32" fetched-value="" >
           </div>
 
@@ -1956,13 +1991,20 @@ function renderView(view, element) {
     view.value = Math.round((parseInt(value, 10) || 0) / (Number(view.dataset.scale) || 1));
   } else if (list.contains('hk')) {
     /* Nothing stored means the combo the firmware was built with, which the page knows
-       from form.py rather than from the device - the device only reports the zero. */
+       from form.py rather than from the device - the device only reports the zero. Turned
+       off is neither, and names itself rather than a combination that is not in force. */
     const stored = parseInt(value, 10) || 0;
+    const off = stored === HOTKEY_OFF;
 
-    view.textContent = comboLabel(stored || (parseInt(view.dataset.def, 10) || 0));
-    view.classList.toggle('hk-set', !!stored);
+    view.textContent = off ? 'Disabled'
+                           : comboLabel(stored || (parseInt(view.dataset.def, 10) || 0));
+    view.classList.toggle('hk-off', off);
+    view.classList.toggle('hk-set', !!stored && !off);
   } else if (list.contains('hk-x')) {
     view.disabled = !(parseInt(value, 10) || 0);
+  } else if (list.contains('hk-o')) {
+    /* Default is what turns it back on, so Off has nothing left to offer once it is. */
+    view.disabled = (parseInt(value, 10) || 0) === HOTKEY_OFF;
   } else if (list.contains('swap')) {
     view.setAttribute('aria-pressed', value != 0);
   } else if (list.contains('pctv')) {
@@ -2162,6 +2204,12 @@ const MOD_CODES = {
 const MOD_NAMES = ['Left Ctrl', 'Left Shift', 'Left Alt', 'Left Gui',
                    'Right Ctrl', 'Right Shift', 'Right Alt', 'Right Gui'];
 
+/* A shortcut turned off, matching HOTKEY_OFF in src/include/keyboard.h. Byte 3, where a
+   combination never reaches, and written as a plain number rather than assembled with the
+   bitwise operators the rest of this uses - those give back a signed int32, and the value
+   is compared as a string against what the field holds. */
+const HOTKEY_OFF = 0xff000000;
+
 const KEY_NAMES = {
   0x28: 'Enter', 0x29: 'Esc', 0x2a: 'Backspace', 0x2b: 'Tab', 0x2c: 'Space', 0x2d: '-',
   0x2e: '=', 0x2f: '[', 0x30: ']', 0x31: '\\', 0x33: ';', 0x34: "'", 0x35: '`',
@@ -2239,11 +2287,16 @@ function comboNeedsKey(view, packed) {
 }
 
 /* What a row stands for right now: what is stored against it, or the combination the
-   firmware was built with, which is what an empty row falls back to. */
+   firmware was built with, which is what an empty row falls back to. A row that is turned
+   off stands for nothing, so what it used to hold is free for another row to take. */
 function comboOf(view) {
   const input = view.dataset.for ? el(view.dataset.for) : null;
+  const stored = (input && (parseInt(input.value, 10) || 0)) || 0;
 
-  return (input && (parseInt(input.value, 10) || 0)) || (parseInt(view.dataset.def, 10) || 0);
+  if (stored === HOTKEY_OFF)
+    return 0;
+
+  return stored || (parseInt(view.dataset.def, 10) || 0);
 }
 
 /* Which row already stands for this combination, or null. Modifiers have to match, and the
@@ -2276,7 +2329,7 @@ function hotkeyNote(view, message) {
 /* Why this combination cannot be stored against this row, or '' if it can. Zero is always
    allowed - it is what Default writes, and means the compiled-in combination stands. */
 function hotkeyRefusal(view, packed) {
-  if (!packed)
+  if (!packed || packed === HOTKEY_OFF)
     return '';
 
   if (comboNeedsKey(view, packed))
@@ -2394,9 +2447,12 @@ function openHotkeyEditor(pick) {
 
   editing = el(pick.dataset.hk);
 
-  /* What the row shows: the stored combination, or the compiled-in one it is sitting on. */
+  /* What the row shows: the stored combination, or the compiled-in one it is sitting on.
+     A row that is off has no combination to open on, so it offers the compiled-in one,
+     which is what setting anything here turns it back on to. */
   const view = document.querySelector(`.hk[data-for="${editing.id}"]`);
-  const packed = (parseInt(editing.value, 10) || 0) || (parseInt(view.dataset.def, 10) || 0);
+  const stored = parseInt(editing.value, 10) || 0;
+  const packed = (stored !== HOTKEY_OFF && stored) || (parseInt(view.dataset.def, 10) || 0);
 
   el('hk-ed-t').textContent = pick.dataset.name;
 
@@ -2484,6 +2540,15 @@ function panelClick(event) {
 
   if (button.classList.contains('hk-p'))
     return openHotkeyEditor(button);
+
+  if (button.classList.contains('hk-o')) {
+    /* Same reason the Default button closes it: Set would otherwise write the combination
+       the editor still holds back over the row that was just turned off. */
+    closeHotkeyEditor();
+    hotkeyNote(button, '');
+
+    return setApi(el(button.dataset.for), HOTKEY_OFF);
+  }
 
   if (button.classList.contains('hk-x')) {
     /* Closes the editor too, or Set would write the combination it still holds back over

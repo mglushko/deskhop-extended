@@ -29,6 +29,7 @@ typedef struct {
     action_handler_t action_handler;  // What to execute when the key combination is detected
     bool pass_to_os;                  // True if we are to pass the key to the OS too
     bool acknowledge;                 // True if we are to notify the user about registering keypress
+    bool disabled;                    // True if this one is turned off and answers nothing
 } hotkey_combo_t;
 
 typedef struct TU_ATTR_PACKED {

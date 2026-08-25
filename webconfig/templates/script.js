@@ -612,13 +612,20 @@ function renderView(view, element) {
     view.value = Math.round((parseInt(value, 10) || 0) / (Number(view.dataset.scale) || 1));
   } else if (list.contains('hk')) {
     /* Nothing stored means the combo the firmware was built with, which the page knows
-       from form.py rather than from the device - the device only reports the zero. */
+       from form.py rather than from the device - the device only reports the zero. Turned
+       off is neither, and names itself rather than a combination that is not in force. */
     const stored = parseInt(value, 10) || 0;
+    const off = stored === HOTKEY_OFF;
 
-    view.textContent = comboLabel(stored || (parseInt(view.dataset.def, 10) || 0));
-    view.classList.toggle('hk-set', !!stored);
+    view.textContent = off ? 'Disabled'
+                           : comboLabel(stored || (parseInt(view.dataset.def, 10) || 0));
+    view.classList.toggle('hk-off', off);
+    view.classList.toggle('hk-set', !!stored && !off);
   } else if (list.contains('hk-x')) {
     view.disabled = !(parseInt(value, 10) || 0);
+  } else if (list.contains('hk-o')) {
+    /* Default is what turns it back on, so Off has nothing left to offer once it is. */
+    view.disabled = (parseInt(value, 10) || 0) === HOTKEY_OFF;
   } else if (list.contains('swap')) {
     view.setAttribute('aria-pressed', value != 0);
   } else if (list.contains('pctv')) {
@@ -818,6 +825,12 @@ const MOD_CODES = {
 const MOD_NAMES = ['Left Ctrl', 'Left Shift', 'Left Alt', 'Left Gui',
                    'Right Ctrl', 'Right Shift', 'Right Alt', 'Right Gui'];
 
+/* A shortcut turned off, matching HOTKEY_OFF in src/include/keyboard.h. Byte 3, where a
+   combination never reaches, and written as a plain number rather than assembled with the
+   bitwise operators the rest of this uses - those give back a signed int32, and the value
+   is compared as a string against what the field holds. */
+const HOTKEY_OFF = 0xff000000;
+
 const KEY_NAMES = {
   0x28: 'Enter', 0x29: 'Esc', 0x2a: 'Backspace', 0x2b: 'Tab', 0x2c: 'Space', 0x2d: '-',
   0x2e: '=', 0x2f: '[', 0x30: ']', 0x31: '\\', 0x33: ';', 0x34: "'", 0x35: '`',
@@ -895,11 +908,16 @@ function comboNeedsKey(view, packed) {
 }
 
 /* What a row stands for right now: what is stored against it, or the combination the
-   firmware was built with, which is what an empty row falls back to. */
+   firmware was built with, which is what an empty row falls back to. A row that is turned
+   off stands for nothing, so what it used to hold is free for another row to take. */
 function comboOf(view) {
   const input = view.dataset.for ? el(view.dataset.for) : null;
+  const stored = (input && (parseInt(input.value, 10) || 0)) || 0;
 
-  return (input && (parseInt(input.value, 10) || 0)) || (parseInt(view.dataset.def, 10) || 0);
+  if (stored === HOTKEY_OFF)
+    return 0;
+
+  return stored || (parseInt(view.dataset.def, 10) || 0);
 }
 
 /* Which row already stands for this combination, or null. Modifiers have to match, and the
@@ -932,7 +950,7 @@ function hotkeyNote(view, message) {
 /* Why this combination cannot be stored against this row, or '' if it can. Zero is always
    allowed - it is what Default writes, and means the compiled-in combination stands. */
 function hotkeyRefusal(view, packed) {
-  if (!packed)
+  if (!packed || packed === HOTKEY_OFF)
     return '';
 
   if (comboNeedsKey(view, packed))
@@ -1050,9 +1068,12 @@ function openHotkeyEditor(pick) {
 
   editing = el(pick.dataset.hk);
 
-  /* What the row shows: the stored combination, or the compiled-in one it is sitting on. */
+  /* What the row shows: the stored combination, or the compiled-in one it is sitting on.
+     A row that is off has no combination to open on, so it offers the compiled-in one,
+     which is what setting anything here turns it back on to. */
   const view = document.querySelector(`.hk[data-for="${editing.id}"]`);
-  const packed = (parseInt(editing.value, 10) || 0) || (parseInt(view.dataset.def, 10) || 0);
+  const stored = parseInt(editing.value, 10) || 0;
+  const packed = (stored !== HOTKEY_OFF && stored) || (parseInt(view.dataset.def, 10) || 0);
 
   el('hk-ed-t').textContent = pick.dataset.name;
 
@@ -1140,6 +1161,15 @@ function panelClick(event) {
 
   if (button.classList.contains('hk-p'))
     return openHotkeyEditor(button);
+
+  if (button.classList.contains('hk-o')) {
+    /* Same reason the Default button closes it: Set would otherwise write the combination
+       the editor still holds back over the row that was just turned off. */
+    closeHotkeyEditor();
+    hotkeyNote(button, '');
+
+    return setApi(el(button.dataset.for), HOTKEY_OFF);
+  }
 
   if (button.classList.contains('hk-x')) {
     /* Closes the editor too, or Set would write the combination it still holds back over

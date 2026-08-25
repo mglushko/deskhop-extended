@@ -91,6 +91,9 @@
           aria-label="Set the shortcut for {{ item.name }} without pressing it">Pick</button>
   <button type="button" class="hk-x" data-for="k{{ item.key }}"
           aria-label="Restore the default shortcut for {{ item.name }}">Default</button>
+  <button type="button" class="hk-o" data-for="k{{ item.key }}"
+          title="Turn it off, so the keys reach the computer"
+          aria-label="Turn off the shortcut for {{ item.name }}">Off</button>
 </div>
 {{- api(item, '', '') }}
 {%- endif %}

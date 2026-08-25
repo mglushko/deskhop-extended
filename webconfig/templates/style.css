@@ -394,7 +394,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   background: #fff; border-bottom: 1px solid var(--chip);
 }
 /* Centred under its heading, rather than hugging the left edge below two columns. */
-.shared-in { margin: 16px auto 0; max-width: 520px; }
+.shared-in { margin: 16px auto 0; max-width: 548px; }
 .shared .lbl { margin-bottom: 10px; }
 .grp { display: flex; flex-direction: column; gap: 11px; margin-bottom: 24px; }
 .chk { display: flex; align-items: center; gap: 8px; }
@@ -418,7 +418,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 /* One grid for the whole list rather than a flex line per row, so the columns line up with
    each other: config mode ends its row with a note instead of two buttons, and a row that
    sizes itself would put its combination 16px off the rest. */
-.hk-list { display: grid; grid-template-columns: minmax(max-content, 1fr) 214px auto auto; align-items: center; gap: 6px 8px; }
+.hk-list { display: grid; grid-template-columns: minmax(max-content, 1fr) 214px auto auto auto; align-items: center; gap: 6px 8px; }
 .hk-row { display: contents; }
 .hk-n { min-width: 0; font-size: 13px; color: var(--fg); }
 .hk {
@@ -432,17 +432,19 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
    and a span does not, so this says so to match the rows above it. */
 .hk-fix { line-height: 26px; text-align: center; background: var(--chip); cursor: default; }
 .hk-fix:hover { border-color: var(--bd-soft); color: var(--muted); }
-/* Sits where Pick and Default do, centred across both of their columns. */
-.hk-note { grid-column: span 2; text-align: center; white-space: nowrap; font-size: 12px; color: var(--muted); }
+/* Sits where Pick, Default and Off do, centred across all three of their columns. */
+.hk-note { grid-column: span 3; text-align: center; white-space: nowrap; font-size: 12px; color: var(--muted); }
+/* Turned off, so the box names the state instead of a combination. */
+.hk-off { background: var(--chip); font-style: italic; }
 /* Set on this device, rather than left at what the firmware was built with. */
 .hk-set { border-color: var(--bd); color: var(--fg); font-weight: 700; }
 .hk-cap { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
-.hk-p, .hk-x {
+.hk-p, .hk-x, .hk-o {
   height: 28px; padding: 0 6px;
   border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer;
 }
-.hk-p:hover, .hk-x:hover { color: var(--accent-dk); }
-.hk-x[disabled] { color: var(--bd-lock); cursor: default; }
+.hk-p:hover, .hk-x:hover, .hk-o:hover { color: var(--accent-dk); }
+.hk-x[disabled], .hk-o[disabled] { color: var(--bd-lock); cursor: default; }
 
 /* Pick opens this under the list, for the combinations the browser keeps to itself. */
 .hk-ed {

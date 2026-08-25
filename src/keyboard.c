@@ -106,6 +106,8 @@ hotkey_combo_t hotkeys[] = {
    the config page - and appending it here, never inserting, or every stored combo shifts
    onto the wrong action. */
 _Static_assert(ARRAY_SIZE(hotkeys) == NUM_HOTKEYS, "NUM_HOTKEYS no longer matches hotkeys[]");
+_Static_assert((HOTKEY_OFF & 0x00ffffffu) == 0,
+               "HOTKEY_OFF has to stay in the byte a combination never reaches");
 
 /* True only while hotkeys[] is being rewritten, on the other core. */
 static volatile bool hotkeys_updating = false;
@@ -203,12 +205,22 @@ void hotkeys_apply_config(device_t *state) {
         if (n == HOTKEY_CONFIG_IDX)
             packed = state->config.hotkey_cfg[n] = 0;
 
+        /* Turned off, which is the one thing byte 3 says. Read before the clear below, which
+           would otherwise take it for a value naming nothing and erase it. The combination
+           already in hotkeys[n] is left where it is rather than blanked, because
+           check_specific_hotkey answers true for every report on an entry holding no
+           modifier and no key - a stale combo is the safer thing to leave behind. */
+        hotkeys[n].disabled = (packed == HOTKEY_OFF);
+
+        if (hotkeys[n].disabled)
+            continue;
+
         /* A combo naming no key is matched on its modifiers alone, so it fires on every
            report that merely holds them, and check_all_hotkeys would hand it every report
            an action further down was waiting for. Only an entry compiled without a key of
            its own is meant to work that way. The modifier == 0 half catches a value that is
-           non-zero only in the unused top byte, which would otherwise sit in flash forever
-           saying nothing. */
+           non-zero only in byte 3 without being the one thing byte 3 says, which would
+           otherwise sit in flash forever saying nothing. */
         if (packed
             && HOTKEY_KEY1(packed) == HID_KEY_NONE && HOTKEY_KEY2(packed) == HID_KEY_NONE
             && (HOTKEY_MOD(packed) == 0 || HOTKEY_KEY1(compiled_in[n]) != HID_KEY_NONE))
@@ -233,7 +245,8 @@ void hotkeys_apply_config(device_t *state) {
                    out of the way; where something is stored, that entry does the comparing
                    when its own turn arrives and this one is decided by then. */
                 if (m < n)
-                    taken = same_combo(&hotkeys[m], want.modifier, want.keys, want.key_count);
+                    taken = !hotkeys[m].disabled
+                            && same_combo(&hotkeys[m], want.modifier, want.keys, want.key_count);
                 else if (!state->config.hotkey_cfg[m]) {
                     hotkey_combo_t theirs = combo_of(compiled_in[m]);
 
@@ -298,6 +311,12 @@ bool key_in_report(uint8_t key, const hid_keyboard_report_t *report) {
 
 /* Check if the current report matches a specific hotkey passed on */
 bool check_specific_hotkey(hotkey_combo_t keypress, const hid_keyboard_report_t *report) {
+    /* Turned off stands for nothing, so it answers nothing. Asked here rather than in
+       check_all_hotkeys because this is what every caller goes through, including the
+       config-mode check that runs ahead of the loop. */
+    if (keypress.disabled)
+        return false;
+
     /* We expect all modifiers specified to be detected in the report */
     if (keypress.modifier != (report->modifier & keypress.modifier))
         return false;
@@ -336,7 +355,8 @@ hotkey_combo_t *check_all_hotkeys(hid_keyboard_report_t *report, device_t *state
 
         /* An entry with no key of its own is matched on its modifiers, so it also matches
            every combination built on top of those modifiers. Hold it back and let an entry
-           that named a key which was actually pressed answer instead. */
+           that named a key which was actually pressed answer instead. One that is turned
+           off never reaches here, so it cannot become the fallback either. */
         if (combo.key_count == 0) {
             if (keyless == NULL)
                 keyless = &hotkeys[n];

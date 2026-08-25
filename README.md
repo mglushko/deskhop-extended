@@ -84,7 +84,7 @@ configuration.</em></p>
   finally takes effect.
   [0215c72](https://github.com/mglushko/deskhop-extended/commit/0215c72)
 
-<p align="center"><img src="img/config-hotkeys.png" alt="The twelve shortcuts, eleven with Pick and Default and config mode fixed"></p>
+<p align="center"><img src="img/config-hotkeys.png" alt="The twelve shortcuts, eleven with Pick, Default and Off, and config mode fixed"></p>
 
 - **A shortcut cannot take the way back** - the twelfth is config mode, listed but fixed at
   `Left Ctrl + Right Shift + C + O`. It is the only combination that reaches the page, and the page
@@ -101,6 +101,14 @@ configuration.</em></p>
   changes*, and disconnecting without saving left it in force until the board rebooted. Nothing
   reaches the device now until Save, which is what the page has said all along.
   [64aea93](https://github.com/mglushko/deskhop-extended/commit/64aea93)
+- **A shortcut can be turned off** - **Off** on any of the eleven settable rows, and that
+  combination stops being a shortcut at all. It matters because a shortcut that answers is
+  swallowed on the way and never reaches the computer, so switching output, built as
+  `Left Ctrl + Caps Lock`, took Caps Lock with it. Upstream's answer was to rebuild the firmware
+  with the combination pointed at `HID_KEY_F24` on the grounds that few keyboards have one. The
+  row then reads *Disabled*, **Default** puts it back, and the combination it gave up is free for
+  another shortcut to take. Config mode is the one that cannot be turned off, for the same reason
+  it cannot be reassigned.
 
 Wiping the configuration has no shortcut here at all - upstream's `Right Shift + F12 + D` is gone,
 since a combination that erases every setting is too easy to reach by accident. Wipe Config on the
@@ -183,7 +191,7 @@ below was read off a screen.
 
 A board pushes its firmware onto the other one as soon as that one reports a lower version
 (`handle_heartbeat_msg`, once a second), and this build numbers itself above upstream on purpose -
-v1.08 reports `1108` against upstream v0.78's `178`. So flashing a single board back to
+v1.09 reports `1109` against upstream v0.78's `178`. So flashing a single board back to
 [hrvach/deskhop](https://github.com/hrvach/deskhop) only gets it overwritten again the moment the
 two are powered up together. Both boards have to be done, one at a time, while neither is running:
 

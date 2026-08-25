@@ -120,6 +120,44 @@ int main(void) {
     check("and that entry is back to the combo it was built with",
           combo_is(2, KEYBOARD_MODIFIER_RIGHTCTRL, HID_KEY_K, 0), combo_str(2));
 
+    /* HOTKEY_OFF sits in that same byte and has to survive the clear above, or turning a
+       shortcut off would put it back on the combination it was built with instead. */
+    clear_config();
+    global_state.config.hotkey_cfg[2] = HOTKEY_OFF;
+    hotkeys_apply_config(&global_state);
+    check("a shortcut turned off stays turned off",
+          global_state.config.hotkey_cfg[2] == HOTKEY_OFF, combo_str(2));
+    check("and the entry says so", hotkeys[2].disabled, combo_str(2));
+    check("while the ones either side of it do not",
+          !hotkeys[1].disabled && !hotkeys[3].disabled, combo_str(3));
+
+    global_state.config.hotkey_cfg[2] = HOTKEY_PACK(KEYBOARD_MODIFIER_LEFTGUI, HID_KEY_Y,
+                                                    HID_KEY_NONE);
+    hotkeys_apply_config(&global_state);
+    check("storing a combination against it turns it back on",
+          !hotkeys[2].disabled
+          && combo_is(2, KEYBOARD_MODIFIER_LEFTGUI, HID_KEY_Y, 0), combo_str(2));
+
+    clear_config();
+    global_state.config.hotkey_cfg[HOTKEY_CONFIG_IDX] = HOTKEY_OFF;
+    hotkeys_apply_config(&global_state);
+    check("config mode cannot be turned off either",
+          global_state.config.hotkey_cfg[HOTKEY_CONFIG_IDX] == 0
+          && !hotkeys[HOTKEY_CONFIG_IDX].disabled,
+          combo_str(HOTKEY_CONFIG_IDX));
+
+    /* hotkey_toggle is honoured only where nothing is stored, and off is stored. Otherwise
+       turning the switch shortcut off on a board carrying a non-default toggle key would
+       quietly put it back under that key instead of turning it off. */
+    clear_config();
+    global_state.config.hotkey_toggle = HID_KEY_F1;
+    global_state.config.hotkey_cfg[0] = HOTKEY_OFF;
+    hotkeys_apply_config(&global_state);
+    check("off wins over the legacy toggle key", hotkeys[0].disabled, combo_str(0));
+    check("and neither combination answers",
+          matched(HOTKEY_MODIFIER, HID_KEY_F1, 0, 0) == -1
+          && matched(HOTKEY_MODIFIER, HOTKEY_TOGGLE, 0, 0) == -1, combo_str(0));
+
     clear_config();
     global_state.config.hotkey_cfg[HOTKEY_CONFIG_IDX] =
         HOTKEY_PACK(KEYBOARD_MODIFIER_LEFTGUI, HID_KEY_Y, HID_KEY_NONE);
@@ -193,6 +231,15 @@ int main(void) {
     check("a combo freed up by the entry that held it can be taken",
           combo_is(3, KEYBOARD_MODIFIER_RIGHTCTRL, HID_KEY_K, 0), combo_str(3));
 
+    /* An entry that is off is not standing for anything, so what it held is free as well. */
+    clear_config();
+    global_state.config.hotkey_cfg[2] = HOTKEY_OFF;
+    global_state.config.hotkey_cfg[3] = HOTKEY_PACK(KEYBOARD_MODIFIER_RIGHTCTRL, HID_KEY_K,
+                                                    HID_KEY_NONE);
+    hotkeys_apply_config(&global_state);
+    check("a combo held by an entry that is off can be taken",
+          combo_is(3, KEYBOARD_MODIFIER_RIGHTCTRL, HID_KEY_K, 0), combo_str(3));
+
     printf("\n  which entry answers a report\n\n");
 
     clear_config();
@@ -245,6 +292,39 @@ int main(void) {
     check("though it still answers on its own",
           matched(KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT,
                   HID_KEY_C, 0, 0) == 0, detail);
+
+    /* Turned off, and the report goes past it - which is the whole point, since a shortcut
+       that answers is swallowed and never reaches the computer. */
+    clear_config();
+    global_state.config.hotkey_cfg[2] = HOTKEY_OFF;
+    hotkeys_apply_config(&global_state);
+    snprintf(detail, sizeof(detail), "entry %d",
+             matched(KEYBOARD_MODIFIER_RIGHTCTRL, HID_KEY_K, 0, 0));
+    check("an entry that is off answers nothing",
+          matched(KEYBOARD_MODIFIER_RIGHTCTRL, HID_KEY_K, 0, 0) == -1, detail);
+
+    /* The one built without a key is the fallback for its modifiers; off, it is not. */
+    clear_config();
+    global_state.config.hotkey_cfg[1] = HOTKEY_OFF;
+    hotkeys_apply_config(&global_state);
+    snprintf(detail, sizeof(detail), "entry %d",
+             matched(KEYBOARD_MODIFIER_RIGHTALT | KEYBOARD_MODIFIER_RIGHTCTRL, 0, 0, 0));
+    check("nor does the keyless one once it is off",
+          matched(KEYBOARD_MODIFIER_RIGHTALT | KEYBOARD_MODIFIER_RIGHTCTRL, 0, 0, 0) == -1,
+          detail);
+
+    /* Every settable entry off at once, which is as far as this goes, and the way back is
+       still there. */
+    clear_config();
+    for (int n = 0; n < NUM_HOTKEYS; n++)
+        global_state.config.hotkey_cfg[n] = HOTKEY_OFF;
+    hotkeys_apply_config(&global_state);
+    snprintf(detail, sizeof(detail), "entry %d",
+             matched(KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT,
+                     HID_KEY_C, HID_KEY_O, 0));
+    check("config mode still answers with everything else turned off",
+          matched(KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT,
+                  HID_KEY_C, HID_KEY_O, 0) == HOTKEY_CONFIG_IDX, detail);
 
     printf("\n%s\n", failures ? "FAILURES" : "ALL PASS");
     return failures ? 1 : 0;
