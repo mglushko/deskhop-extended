@@ -425,6 +425,10 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .hk:hover { border-color: var(--accent); color: var(--accent-dk); }
+/* Listed but not settable: same box, nothing to press. */
+.hk-fix { display: inline-block; line-height: 26px; background: var(--chip); cursor: default; }
+.hk-fix:hover { border-color: var(--bd-soft); color: var(--muted); }
+.hk-note { flex: 0 0 auto; font-size: 12px; color: var(--muted); }
 /* Set on this device, rather than left at what the firmware was built with. */
 .hk-set { border-color: var(--bd); color: var(--fg); font-weight: 700; }
 .hk-cap { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
@@ -456,6 +460,9 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   background: #fff; color: var(--fg); font-size: 12.5px;
 }
 .hk-ed .row-btn { margin-bottom: 0; }
+.hk-m { color: var(--warn-tx); }
+/* .grp is a flex column with a gap, so an empty span would still take up a row. */
+.hk-m:empty { display: none; }
 .row-btn { display: flex; gap: 8px; margin-bottom: 24px; }
 .box { padding: 16px; background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: 4px; }
 .box .lbl { color: var(--warn-fg); margin-bottom: 6px; }

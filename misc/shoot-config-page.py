@@ -119,7 +119,7 @@ BOXES = {
     }""",
     # The rows on their own, not the whole group: the two paragraphs above them explaining
     # Pick are prose the README already carries, and they run the shot to twice the height.
-    # All thirteen are in the frame, since that is the part worth seeing.
+    # All twelve rows are in the frame, since that is the part worth seeing.
     "config-hotkeys": """() => document.querySelector('.hk-list').getBoundingClientRect()""",
     # The whole header down through the panel, so Export and Import are in the frame next
     # to what pressing Export gets you. From the top of the header rather than the button
@@ -185,7 +185,9 @@ VALUES = {
     # Shortcuts, one per entry in hotkeys[]; 98 is retired, since wiping the config has no
     # shortcut. Zero is what a device that has never had one changed holds, and the page
     # draws the compiled-in combo for it - which is what the shots should show.
-    **{key: 0 for key in range(90, 103) if key != 98},
+    # 98 was retired with the wipe-config shortcut; 100 is config mode, which is listed
+    # on the page but fixed, so it has no field of its own.
+    **{key: 0 for key in range(90, 103) if key not in (98, 100)},
 }
 
 DRIVE = """

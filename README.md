@@ -77,14 +77,22 @@ configuration.</em></p>
 
 <p align="center"><img src="img/config-led.png" alt="The status LED modes and their two timers"></p>
 
-- **Every shortcut can be changed** - all twelve are set from the page by clicking one and pressing
-  the combination you want, read as the physical key so a custom layout picks the right one.
+- **Every shortcut can be changed** - eleven of the twelve are set from the page by clicking one and
+  pressing the combination you want, read as the physical key so a custom layout picks the right one.
   Combinations the browser keeps for itself, `Ctrl + W` among them, are assembled by hand under Pick
   instead, and `config.hotkey_toggle` - stored, defaulted and writable upstream but never read -
   finally takes effect.
   [0215c72](https://github.com/mglushko/deskhop-extended/commit/0215c72)
 
-<p align="center"><img src="img/config-hotkeys.png" alt="The twelve shortcuts, each with Pick and Default"></p>
+<p align="center"><img src="img/config-hotkeys.png" alt="The twelve shortcuts, eleven with Pick and Default and config mode fixed"></p>
+
+- **A shortcut cannot take the way back** - the twelfth is config mode, listed but fixed at
+  `Left Ctrl + Right Shift + C + O`. It is the only combination that reaches the page, and the page
+  is the only way to undo a shortcut, so nothing may be set to it and it answers before the rest.
+  Two shortcuts cannot share a combination either, since the second of them would never fire, and
+  none but slow mouse may be modifiers alone - a combination naming no key matches everything typed
+  while those modifiers are held, and one stored against an early action used to swallow every
+  action below it.
 
 Wiping the configuration has no shortcut here at all - upstream's `Right Shift + F12 + D` is gone,
 since a combination that erases every setting is too easy to reach by accident. Wipe Config on the
@@ -167,7 +175,7 @@ below was read off a screen.
 
 A board pushes its firmware onto the other one as soon as that one reports a lower version
 (`handle_heartbeat_msg`, once a second), and this build numbers itself above upstream on purpose -
-v1.06 reports `1106` against upstream v0.78's `178`. So flashing a single board back to
+v1.07 reports `1107` against upstream v0.78's `178`. So flashing a single board back to
 [hrvach/deskhop](https://github.com/hrvach/deskhop) only gets it overwritten again the moment the
 two are powered up together. Both boards have to be done, one at a time, while neither is running:
 

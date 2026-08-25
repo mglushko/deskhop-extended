@@ -57,6 +57,13 @@
    combo per entry; keyboard.c asserts the table still matches. */
 #define NUM_HOTKEYS 12
 
+/* Where the config-mode combo sits in hotkeys[]. It is the only way into the config page,
+   and the page is the only way to undo a shortcut, so unlike every other entry this one is
+   fixed: hotkeys_apply_config drops whatever is stored against it, and check_all_hotkeys
+   tries it before the rest so nothing above it can answer first. Move the entry and this
+   moves with it. */
+#define HOTKEY_CONFIG_IDX 9
+
 /*==============================================================================
  *  Utility Macros
  *==============================================================================*/

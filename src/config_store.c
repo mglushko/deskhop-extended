@@ -18,7 +18,8 @@
  * thrown away wholesale on any layout change.
  *
  * Kept free of hardware headers so the format can be exercised on the host; the flash
- * access itself lives in utils.c. See misc/test-config-store.c.
+ * access itself lives in utils.c. See misc/hosttest/test_config_store.c, run by
+ * misc/hosttest/run.sh.
  */
 
 #include "main.h"

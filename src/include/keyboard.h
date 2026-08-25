@@ -39,6 +39,7 @@ keyboard_t *get_or_add_keyboard(hid_interface_t *iface, uint8_t report_id);
 extern hotkey_combo_t hotkeys[];
 
 bool check_specific_hotkey(hotkey_combo_t, const hid_keyboard_report_t *);
+hotkey_combo_t *check_all_hotkeys(hid_keyboard_report_t *, device_t *);
 void hotkeys_apply_config(device_t *);
 
 /*==============================================================================

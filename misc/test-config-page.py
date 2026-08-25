@@ -130,8 +130,15 @@ with sync_playwright() as p:
     check("Default is offered once something is stored",
           not page.eval_on_selector('.hk-x[data-for="k90"]', "e => e.disabled"))
 
+    check("config mode is listed but not settable",
+          page.locator('.hk-fix').count() == 1
+          and page.locator('.hk-fix').text_content() == "Left Ctrl + Right Shift + C + O",
+          page.locator('.hk-fix').text_content())
+    check("and carries no field to send it with",
+          page.locator('[data-key="100"]').count() == 0)
+
     # Two keys, and Escape backing out.
-    cfg = page.locator('.hk[data-for="k100"]')
+    cfg = page.locator('.hk[data-for="k99"]')
     cfg.click()
     page.keyboard.down("Shift")
     page.keyboard.down("KeyQ")
@@ -140,9 +147,9 @@ with sync_playwright() as p:
     page.keyboard.up("KeyQ")
     page.keyboard.up("Shift")
     check("two keys and a modifier are recorded",
-          page.eval_on_selector('[data-key="100"]', "e => e.value")
+          page.eval_on_selector('[data-key="99"]', "e => e.value")
           == str(0x02 | (0x14 << 8) | (0x1a << 16)),
-          page.eval_on_selector('[data-key="100"]', "e => e.value"))
+          page.eval_on_selector('[data-key="99"]', "e => e.value"))
 
     lock = page.locator('.hk[data-for="k92"]')
     before = page.eval_on_selector('[data-key="92"]', "e => e.value")
@@ -190,6 +197,76 @@ with sync_playwright() as p:
           page.eval_on_selector('[data-key="90"]', "e => e.value") == "0")
     check("and the label goes back to the compiled-in one",
           first.text_content() == "Left Ctrl + Caps Lock", first.text_content())
+
+    # ---- combinations the page will not store ------------------------------
+    # Modifiers with no key match every report that merely holds them, so the entry would
+    # answer for everything below it - src/keyboard.c clears one on sight either way.
+    before = page.eval_on_selector('[data-key="92"]', "e => e.value")
+    lock.click()
+    page.keyboard.down("Control")
+    page.keyboard.up("Control")
+    check("a modifier on its own is not stored",
+          page.eval_on_selector('[data-key="92"]', "e => e.value") == before,
+          page.eval_on_selector('[data-key="92"]', "e => e.value"))
+    check("and the row says why",
+          "needs a key" in page.eval_on_selector('#hk-m', "e => e.textContent"),
+          page.eval_on_selector('#hk-m', "e => e.textContent"))
+
+    # The same rule under Pick, which builds the value its own way.
+    page.click('.hk-p[data-hk="k92"]')
+    page.select_option('#hk-k1', '0')
+    page.select_option('#hk-k2', '0')
+    page.click('#hk-mods button[data-m="8"]')
+    page.click('#hk-ed-set')
+    check("Pick refuses a modifier-only combination too",
+          page.eval_on_selector('[data-key="92"]', "e => e.value") == before)
+    check("and stays open so it can be corrected",
+          not page.eval_on_selector('#hk-ed', "e => e.hidden"))
+    page.click('#hk-ed-cancel')
+
+    # Two entries on one combination leaves the lower of them dead. Set through Pick, so
+    # that which Ctrl and which Shift is not left to the browser.
+    page.click('.hk-p[data-hk="k92"]')
+    page.click('#hk-mods button[data-m="1"]')    # drop Left Ctrl
+    page.click('#hk-mods button[data-m="2"]')    # drop Left Shift
+    page.click('#hk-mods button[data-m="16"]')   # Right Ctrl
+    page.select_option('#hk-k1', '15')           # L, which is Lock both screens
+    page.select_option('#hk-k2', '0')
+    page.click('#hk-ed-set')
+    check("a combination another shortcut already has is not stored",
+          page.eval_on_selector('[data-key="92"]', "e => e.value") == before,
+          page.eval_on_selector('[data-key="92"]', "e => e.value"))
+    check("and the row names the one that has it",
+          "Lock both screens" in page.eval_on_selector('#hk-m', "e => e.textContent"),
+          page.eval_on_selector('#hk-m', "e => e.textContent"))
+
+    # Config mode is in that search too, though it has no field of its own.
+    page.select_option('#hk-k1', '6')            # C
+    page.select_option('#hk-k2', '18')           # O
+    page.click('#hk-mods button[data-m="16"]')   # drop Right Ctrl
+    page.click('#hk-mods button[data-m="1"]')    # Left Ctrl
+    page.click('#hk-mods button[data-m="32"]')   # Right Shift
+    page.click('#hk-ed-set')
+    check("nor may one take the combination that reaches this page",
+          page.eval_on_selector('[data-key="92"]', "e => e.value") == before,
+          page.eval_on_selector('[data-key="92"]', "e => e.value"))
+    check("and that row is named as well",
+          "Config mode" in page.eval_on_selector('#hk-m', "e => e.textContent"),
+          page.eval_on_selector('#hk-m', "e => e.textContent"))
+    page.click('#hk-ed-cancel')
+
+    # Slow mouse is built without a key, so modifiers alone are what it is for.
+    slow.click()
+    page.keyboard.down("Control")
+    page.keyboard.down("Alt")
+    page.keyboard.up("Alt")
+    page.keyboard.up("Control")
+    check("the one shortcut built without a key may still be set to modifiers alone",
+          page.eval_on_selector('[data-key="91"]', "e => e.value") == str(0x01 | 0x04),
+          page.eval_on_selector('[data-key="91"]', "e => e.value"))
+    check("and a combination that is accepted clears the note",
+          page.eval_on_selector('#hk-m', "e => e.textContent") == "",
+          page.eval_on_selector('#hk-m', "e => e.textContent"))
 
     # ---- export carries the new fields -------------------------------------
     keys = page.evaluate("() => [...backupFields()].map(e => e.dataset.key)")
