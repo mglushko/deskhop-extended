@@ -450,25 +450,29 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 
 /* One row per action: what it does, the combination it answers to, and a way back
    to the combination the firmware was built with. */
-.hk-list { display: flex; flex-direction: column; gap: 6px; }
-.hk-row { display: flex; align-items: center; gap: 8px; }
-.hk-n { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--fg); }
+/* One grid for the whole list rather than a flex line per row, so the columns line up with
+   each other: config mode ends its row with a note instead of two buttons, and a row that
+   sizes itself would put its combination 16px off the rest. */
+.hk-list { display: grid; grid-template-columns: minmax(max-content, 1fr) 214px auto auto; align-items: center; gap: 6px 8px; }
+.hk-row { display: contents; }
+.hk-n { min-width: 0; font-size: 13px; color: var(--fg); }
 .hk {
-  flex: 0 0 214px; height: 28px; padding: 0 10px;
+  height: 28px; padding: 0 10px;
   border: 1px solid var(--bd-soft); border-radius: 4px;
   background: #fff; color: var(--muted); font-size: 12px; cursor: pointer;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .hk:hover { border-color: var(--accent); color: var(--accent-dk); }
 /* Listed but not settable: same box, nothing to press. */
-.hk-fix { display: inline-block; line-height: 26px; background: var(--chip); cursor: default; }
+.hk-fix { line-height: 26px; background: var(--chip); cursor: default; }
 .hk-fix:hover { border-color: var(--bd-soft); color: var(--muted); }
-.hk-note { flex: 0 0 auto; font-size: 12px; color: var(--muted); }
+/* Sits where Pick and Default do, across both of their columns. */
+.hk-note { grid-column: span 2; white-space: nowrap; font-size: 12px; color: var(--muted); }
 /* Set on this device, rather than left at what the firmware was built with. */
 .hk-set { border-color: var(--bd); color: var(--fg); font-weight: 700; }
 .hk-cap { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
 .hk-p, .hk-x {
-  flex: 0 0 auto; height: 28px; padding: 0 6px;
+  height: 28px; padding: 0 6px;
   border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer;
 }
 .hk-p:hover, .hk-x:hover { color: var(--accent-dk); }
@@ -1239,7 +1243,7 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
 <div class="hk-row">
   <span class="hk-n">Config mode</span>
   <span class="hk hk-fix" data-def="1181217"></span>
-  <span class="hk-note">cannot be changed</span>
+  <span class="hk-note">not settable</span>
 </div>
             
 <div class="hk-row">
