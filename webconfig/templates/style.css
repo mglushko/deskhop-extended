@@ -428,11 +428,12 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .hk:hover { border-color: var(--accent); color: var(--accent-dk); }
-/* Listed but not settable: same box, nothing to press. */
-.hk-fix { line-height: 26px; background: var(--chip); cursor: default; }
+/* Listed but not settable: same box, nothing to press. A button centres its own text
+   and a span does not, so this says so to match the rows above it. */
+.hk-fix { line-height: 26px; text-align: center; background: var(--chip); cursor: default; }
 .hk-fix:hover { border-color: var(--bd-soft); color: var(--muted); }
-/* Sits where Pick and Default do, across both of their columns. */
-.hk-note { grid-column: span 2; white-space: nowrap; font-size: 12px; color: var(--muted); }
+/* Sits where Pick and Default do, centred across both of their columns. */
+.hk-note { grid-column: span 2; text-align: center; white-space: nowrap; font-size: 12px; color: var(--muted); }
 /* Set on this device, rather than left at what the firmware was built with. */
 .hk-set { border-color: var(--bd); color: var(--fg); font-weight: 700; }
 .hk-cap { border-color: var(--accent); background: var(--scr); color: var(--accent-dk); }
