@@ -101,6 +101,13 @@ configuration.</em></p>
   way until the board rebooted. Nothing reaches the device now until Save, which is what the page
   has said all along.
   [64aea93](https://github.com/mglushko/deskhop-extended/commit/64aea93)
+- **Force 1 ms polling** - a device asks to be polled every `bInterval` frames and the board used
+  to take the number as given. A Logitech Unifying receiver asks for 8 ms on its keyboard and 2 ms
+  on its mouse; a Lightspeed receiver asks for 10 ms and then lags by roughly half a second. On,
+  which is the default, interrupt endpoints on full speed devices are read every millisecond
+  instead. Sits under Mouse and takes effect when the board restarts, which leaving config mode
+  already does.
+  [4038b55](https://github.com/mglushko/deskhop-extended/commit/4038b55)
 - **A shortcut can be turned off** - press **Off** on any of the eleven settable rows and that
   shortcut stops working. The row reads *Disabled*, **Default** brings it back, and the
   combination it gave up is free for another shortcut to take. There was no way to do this
@@ -156,6 +163,32 @@ being taken on trust.
   keystrokes discarded and one sent keyboard reports down the path that carries Power and Sleep;
   dispatch goes from 13/20 to 20/20.
   [85d6fe5](https://github.com/mglushko/deskhop-extended/commit/85d6fe5)
+- **The polling interval a device asks for is no longer taken as given** - upstream
+  [#215](https://github.com/hrvach/deskhop/issues/215) is a Lightspeed receiver that lags by
+  roughly half a second behind DeskHop and is fine on a cable. The cause was established in that
+  thread rather than guessed: the receiver is a high speed device, this host port is full speed
+  only, so it falls back to a full speed configuration its vendor says is unsupported, asks to be
+  polled every 10 ms, and keeps producing at its normal rate internally until its own buffer
+  stands full. Read off the receiver on my desk, a Unifying `046d:c52b` asks for 8 ms on its
+  keyboard and 2 ms on its mouse, while our own endpoint tells the PC 1 ms - so the board was
+  polling in at half the rate it offers out. Across real Logitech receivers the values are 2, 8
+  and 10 and never 1, which is why this is a general clamp rather than the rewrite-of-10 the issue
+  thread used, a rule that would do nothing for either receiver here. `bInterval` 0 is handled as
+  the 256 ms it really means rather than the fast value it looks like. It changes nothing about the
+  ceiling: both ports are full speed, the RP2040 has no high speed PHY, so 1000 Hz is the most
+  either direction can carry and a 4 kHz mouse is decimated here regardless. Upstream
+  [#285](https://github.com/hrvach/deskhop/issues/285) has no confirmed cause, but an 8BitDo
+  Retro R8 polls at up to 8 kHz on a cable, which only high speed reaches, so it too must fall back
+  here and may well be the same shape.
+  [4038b55](https://github.com/mglushko/deskhop-extended/commit/4038b55)
+- **A relative mouse report no longer waits on the keyboard's endpoint** - the queue drain asked
+  whether interface 0 was free whatever it was about to send, but a relative report goes out on
+  interface 1. So it waited on an endpoint it was not going to use, and interface 0 is the one
+  shared with the keyboard, consumer and system report IDs. Worth being plain about the scope: this
+  only bites in gaming mode or on a Windows output past the first virtual desktop, since those are
+  the only ways relative mode is reached, and it costs about a millisecond per keystroke rather
+  than anything larger.
+  [6bfa95d](https://github.com/mglushko/deskhop-extended/commit/6bfa95d)
 - **Pico-PIO-USB fixes backported onto the vendored 0.5.3** - `calc_usb_crc16` moves into RAM, since
   it was the last thing on the interrupt path still running from flash while a board-to-board
   upgrade rewrites that flash; the receive loops get bounds and timeouts, and the copy is clamped
@@ -185,7 +218,7 @@ being taken on trust.
 
 A board pushes its firmware onto the other one as soon as that one reports a lower version
 (`handle_heartbeat_msg`, once a second), and this build numbers itself above upstream on purpose -
-v1.10 reports `1110` against upstream v0.78's `178`. So flashing a single board back to
+v1.12 reports `1112` against upstream v0.78's `178`. So flashing a single board back to
 [hrvach/deskhop](https://github.com/hrvach/deskhop) only gets it overwritten again the moment the
 two are powered up together. Both boards have to be done, one at a time, while neither is running:
 
