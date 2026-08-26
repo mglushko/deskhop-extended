@@ -37,7 +37,12 @@ def disk_capacity():
     disk = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(disk)
 
-    return disk.IMAGE_LEN - (disk.DATA + (disk.FIRST_CLUSTER - 2) * disk.CLUSTER)
+    tail = disk.IMAGE_LEN - (disk.DATA + (disk.FIRST_CLUSTER - 2) * disk.CLUSTER)
+
+    # Whole clusters only: FAT cannot store the remainder past the last one. A page that
+    # lands in it passes an unrounded check and is then truncated anyway, which is the
+    # very thing this is here to catch. 43008 rather than 43520 at a 2048-byte cluster.
+    return (tail // disk.CLUSTER) * disk.CLUSTER
 
 
 def build_version():
