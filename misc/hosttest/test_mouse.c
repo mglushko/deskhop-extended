@@ -144,6 +144,24 @@ static const char *seen(void) {
     return buf;
 }
 
+/* Defined with the other stand-ins below main. */
+extern mouse_report_t staged;
+extern bool           staged_any;
+extern uint8_t        asked_instance;
+extern uint8_t        wrote_instance;
+
+/* Hand one report to the drain task and report which interface it waited on. */
+static uint8_t drain(uint8_t mode) {
+    staged = (mouse_report_t){.mode = mode};
+    staged_any = true;
+    asked_instance = wrote_instance = 0xFF;
+
+    process_mouse_queue_task(&global_state);
+
+    staged_any = false;
+    return asked_instance;
+}
+
 int main(void) {
     hid_interface_t *keys, *ball, *far, *wide;
 
@@ -361,6 +379,28 @@ int main(void) {
     check("the forwarded report carries the button",
           forwarded_any && forwarded.buttons == 0x01, seen());
 
+    /* Which endpoint the drain task waits on.
+
+       A relative report goes out on its own interface and an absolute one shares
+       interface 0 with the keyboard, consumer and system report IDs. The readiness check
+       used to name interface 0 outright, so a relative report waited on an endpoint it
+       was never going to be written to, and any keyboard traffic stalled it for no
+       reason. Both sides now ask mouse_report_instance(), so the endpoint waited on is
+       the endpoint written by construction. */
+    printf("\n  waiting on the right endpoint\n\n");
+
+    reset_state();
+
+    check("a relative report waits on the relative interface",
+          drain(RELATIVE) == ITF_NUM_HID_REL_M, seen());
+    check("and that is where it was written",
+          wrote_instance == ITF_NUM_HID_REL_M, seen());
+
+    check("an absolute report waits on the shared interface",
+          drain(ABSOLUTE) == ITF_NUM_HID, seen());
+    check("and that is where it was written",
+          wrote_instance == ITF_NUM_HID, seen());
+
     printf("\n%s\n", failures ? "FAILURES" : "ALL PASS");
     return failures ? 1 : 0;
 }
@@ -382,7 +422,19 @@ bool queue_try_add(queue_t *queue, const void *value) {
     return true;
 }
 
-bool queue_try_peek(queue_t *queue, void *value) { (void)queue; (void)value; return false; }
+/* Staged by the drain-side cases below; empty otherwise, which is what every other case
+   here wants. */
+mouse_report_t staged;
+bool           staged_any = false;
+
+bool queue_try_peek(queue_t *queue, void *value) {
+    if (queue != &global_state.mouse_queue || !staged_any)
+        return false;
+
+    memcpy(value, &staged, sizeof(staged));
+    return true;
+}
+
 bool queue_try_remove(queue_t *queue, void *value) { (void)queue; (void)value; return false; }
 
 void queue_packet(const uint8_t *data, enum packet_type_e packet_type, int length) {
@@ -422,8 +474,21 @@ void set_active_output(device_t *state, uint8_t new_output) {
 
 bool tud_suspended(void) { return false; }
 bool tud_remote_wakeup(void) { return false; }
-bool tud_hid_n_ready(uint8_t instance) { (void)instance; return false; }
+
+/* Which interface process_mouse_queue_task() asked about, and which one the report was
+   then written to. The whole point of the drain-side test is that these agree. */
+uint8_t asked_instance = 0xFF;
+uint8_t wrote_instance = 0xFF;
+
+bool tud_hid_n_ready(uint8_t instance) {
+    asked_instance = instance;
+    return true;
+}
+
 uint8_t tud_hid_n_get_protocol(uint8_t instance) { (void)instance; return 1; }
+
 bool tud_mouse_report(uint8_t mode, uint8_t buttons, int16_t x, int16_t y, int8_t wheel, int8_t pan) {
-    (void)mode; (void)buttons; (void)x; (void)y; (void)wheel; (void)pan; return true;
+    (void)buttons; (void)x; (void)y; (void)wheel; (void)pan;
+    wrote_instance = mouse_report_instance(mode);
+    return true;
 }

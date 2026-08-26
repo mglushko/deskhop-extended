@@ -589,8 +589,11 @@ void process_mouse_queue_task(device_t *state) {
     if (tud_suspended())
         tud_remote_wakeup();
 
-    /* If it's not ready, we'll try on the next pass */
-    if (!tud_hid_n_ready(ITF_NUM_HID))
+    /* If it's not ready, we'll try on the next pass. Ask about the interface this
+       report will actually be written to: a relative report goes out on its own
+       interface, so waiting on the shared one stalls it behind keyboard traffic it
+       does not contend with. */
+    if (!tud_hid_n_ready(mouse_report_instance(report.mode)))
         return;
 
     /* Try sending it to the host, if it's successful */

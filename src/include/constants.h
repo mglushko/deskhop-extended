@@ -36,6 +36,15 @@
 #define RELATIVE 1
 #define TOUCH 2
 
+/* Which HID interface a mouse report of this mode goes out on. Absolute reports share
+   interface 0 with the keyboard, consumer and system report IDs; relative reports have
+   interface 1 to themselves. Both tud_mouse_report() and process_mouse_queue_task()'s
+   readiness check ask here, so the endpoint that is waited on is always the endpoint
+   that is then written. */
+static inline uint8_t mouse_report_instance(uint8_t mode) {
+    return (mode == RELATIVE) ? ITF_NUM_HID_REL_M : ITF_NUM_HID;
+}
+
 /*==============================================================================
  *  Boolean States
  *==============================================================================*/
