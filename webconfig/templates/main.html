@@ -442,6 +442,10 @@
           {{ chk(C['Enable Acceleration'], 'Enable Acceleration',
                  'Carry the pointer further the faster the mouse moves, on a curve up to four times
                   the distance. Off passes the movement through as it comes.') }}
+          {{ chk(C['Force 1 ms Polling'], 'Force 1 ms Polling',
+                 'Read the mouse every millisecond instead of as rarely as it asked to be read.
+                  Some receivers ask for far less than they can use and then lag. Takes effect
+                  when the board restarts.') }}
         </div>
 
         <span class="lbl">Device flags</span>

@@ -119,6 +119,24 @@
 #define ENABLE_ACCELERATION 1
 
 /**================================================== *
+ * ============  Host Polling Interval  ============= *
+ * ================================================== *
+ *
+ * A device asks to be polled every bInterval frames and the host port normally
+ * honours that. Some devices ask for far less than they can use: a Logitech
+ * Lightspeed receiver, which is a high speed device forced onto this full speed
+ * port, asks for 10 ms, and a Unifying receiver asks for 8 ms on its keyboard and
+ * 2 ms on its mouse. With this on, interrupt IN endpoints on full speed devices are
+ * polled every frame instead, which is 1000 Hz, the ceiling this hardware has
+ * either way. Low speed devices keep what they asked for.
+ *
+ * FORCE_FAST_POLLING: [0, 1] - 1 polls every frame regardless of what was declared
+ *
+ * */
+
+#define FORCE_FAST_POLLING 1
+
+/**================================================== *
  * ===========  Edge Double-Tap to Switch  ========= *
  * ================================================== *
  *

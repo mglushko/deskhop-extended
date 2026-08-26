@@ -15,6 +15,11 @@
 
 #include "main.h"
 
+/* pio_usb_host_set_interval_filter() lives beside its pio_usb_host_* siblings, and
+   main.h deliberately does not pull this header in: it reaches for hardware/pio.h,
+   which misc/hosttest has no stand-in for. */
+#include "pio_usb_ll.h"
+
 /* ================================================== *
  * Perform initial UART setup
  * ================================================== */
@@ -44,6 +49,28 @@ void serial_init() {
  * PIO USB configuration, D+ pin 14, D- pin 15
  * ================================================== */
 
+/* Called by Pico-PIO-USB once per endpoint as it is opened, to decide how often that
+   endpoint is polled. The decision itself is usb_polling_interval(), kept in its own
+   file with no hardware headers so misc/hosttest can exercise it; all this adds is the
+   setting and, in a debug build, a line saying what was asked for and what was granted. */
+static uint8_t polling_interval_filter(uint8_t attr,
+                                       uint8_t epaddr,
+                                       uint8_t declared,
+                                       bool full_speed,
+                                       uint8_t dev_addr) {
+    uint8_t granted = usb_polling_interval(attr, epaddr, declared, full_speed,
+                                           global_state.config.force_fast_polling);
+
+#ifdef DH_DEBUG
+    dh_debug_printf("[poll] dev %u ep 0x%02x attr 0x%02x %s bInterval %u -> %u\n",
+                    dev_addr, epaddr, attr, full_speed ? "FS" : "LS", declared, granted);
+#else
+    (void)dev_addr;
+#endif
+
+    return granted;
+}
+
 void pio_usb_host_config(device_t *state) {
     /* tuh_configure() must be called before tuh_init() */
     static pio_usb_configuration_t config = PIO_USB_DEFAULT_CONFIG;
@@ -54,6 +81,10 @@ void pio_usb_host_config(device_t *state) {
         tuh_hid_set_default_protocol(HID_PROTOCOL_REPORT);
 
     tuh_configure(BOARD_TUH_RHPORT, TUH_CFGID_RPI_PIO_USB_CONFIGURATION, &config);
+
+    /* Before tuh_init(), so the first endpoint opened already sees it. load_config()
+       runs earlier in initial_setup(), so the setting is in hand by now. */
+    pio_usb_host_set_interval_filter(polling_interval_filter);
 
     /* Initialize and configure TinyUSB Host */
     tuh_init(1);

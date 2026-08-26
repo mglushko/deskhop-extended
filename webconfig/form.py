@@ -38,6 +38,7 @@ CONFIG_ = [
     FormField(1001, "Mouse", elem="label"),
     FormField(71, "Force Mouse Boot Mode", None, {}, "uint8", "checkbox"),
     FormField(75, "Enable Acceleration", None, {}, "uint8", "checkbox"),
+    FormField(104, "Force 1 ms Polling", 1, {}, "uint8", "checkbox"),
     FormField(77, "Jump Threshold", 0, {"min": 0, "max": 3000}, "uint16", "range"),
     FormField(83, "Edge Double-Tap to Switch", None, {}, "uint8", "checkbox"),
     # Not 0: a zero window makes window_us 0 in edge_double_tap_ready(), so the second

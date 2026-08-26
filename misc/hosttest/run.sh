@@ -36,6 +36,13 @@ gcc -std=c11 -Wall -Wextra -Wno-unused-parameter -g -fsanitize=address,undefined
     -I shim/sdk -I "$out/sdk" -I "$root/src/include" \
     test_mouse.c "$root/src/mouse.c" -lm -o "$out/test_mouse"
 
+# usb_polling.c links against nothing and includes no hardware headers, which is the
+# point of keeping the decision out of Pico-PIO-USB. No shim needed at all.
+gcc -std=c11 -Wall -Wextra -Wno-unused-parameter -g -fsanitize=address,undefined \
+    -I "$root/src/include" \
+    test_polling.c "$root/src/usb_polling.c" -o "$out/test_polling"
+
 "$out/test_config_store"
 "$out/test_hotkeys"
 "$out/test_mouse"
+"$out/test_polling"

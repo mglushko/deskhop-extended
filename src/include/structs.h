@@ -101,6 +101,10 @@ typedef struct {
        default", which is what a config from before this field reads as. */
     uint32_t hotkey_cfg[NUM_HOTKEYS];
 
+    /* Poll interrupt endpoints every frame instead of honouring the interval the device
+       declared. See src/usb_polling.c for which endpoints this reaches and why. */
+    uint8_t force_fast_polling;
+
     /* Nothing pins the end of this struct any more: what is already in flash is a
        key-value page keyed by api_field_map (config_store.c), and a page from before
        that format is read as config_v9_t (config.h), which is frozen. Fields may be

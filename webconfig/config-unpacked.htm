@@ -1061,6 +1061,12 @@ input[type=range][disabled] { accent-color: var(--grey); cursor: default; }
   <span class="hint">Carry the pointer further the faster the mouse moves, on a curve up to four times
                   the distance. Off passes the movement through as it comes.</span>
 </div>
+          <div class="chk-f">
+  <label class="chk"><input class="api " type="checkbox" id="k104" data-key="104" data-type="uint8" fetched-value="" ><span>Force 1 ms Polling</span></label>
+  <span class="hint">Read the mouse every millisecond instead of as rarely as it asked to be read.
+                  Some receivers ask for far less than they can use and then lag. Takes effect
+                  when the board restarts.</span>
+</div>
         </div>
 
         <span class="lbl">Device flags</span>

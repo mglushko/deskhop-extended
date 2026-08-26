@@ -142,6 +142,51 @@ void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance) {
     memset(iface, 0, sizeof(hid_interface_t));
 }
 
+/* A high speed device that finds no high speed host downgrades itself and then looks
+   exactly like a native full speed device, which is the whole difficulty behind upstream
+   issue #215: its full speed descriptor asks for a polling interval it does not honour,
+   and nothing on the wire says so. USB 2.0 does give one tell. A high speed capable
+   device operating at full speed must return a device_qualifier descriptor, and a full
+   speed only device must answer that request with a request error. It is the same probe
+   behind the "this device can perform faster on a Hi-Speed port" notice on Windows.
+
+   Debug builds only, and a STALL here is the expected answer for most devices. Read it
+   next to the per-endpoint lines from polling_interval_filter() in setup.c: those say
+   what each endpoint asked for, this says which endpoint belongs to what, and whether
+   the device was ever meant to be running at this speed. */
+static void debug_report_device_speed(uint8_t dev_addr, uint8_t instance, uint8_t itf_protocol) {
+#ifdef DH_DEBUG
+    static const char *const role[] = {"none", "keyboard", "mouse"};
+    tusb_desc_device_qualifier_t qualifier = {0};
+    const char *speed;
+
+    /* The control endpoint has to be free for this to even be attempted, and it may not
+       be this early. Say so rather than reporting a probe that never ran as a full speed
+       device, which is the answer that would send someone looking in the wrong place. */
+    switch (tuh_descriptor_get_sync(dev_addr, TUSB_DESC_DEVICE_QUALIFIER, 0,
+                                    &qualifier, sizeof(qualifier))) {
+        case XFER_RESULT_SUCCESS:
+            speed = "HIGH SPEED device fallen back to full speed";
+            break;
+        case XFER_RESULT_STALLED:
+            speed = "full speed device";
+            break;
+        default:
+            speed = "speed unknown, qualifier probe did not run";
+            break;
+    }
+
+    dh_debug_printf("[poll] dev %u itf %u ep 0x%02x %s, %s\n",
+                    dev_addr, instance, tuh_hid_ep_in(dev_addr, instance),
+                    itf_protocol <= HID_ITF_PROTOCOL_MOUSE ? role[itf_protocol] : "?",
+                    speed);
+#else
+    (void)dev_addr;
+    (void)instance;
+    (void)itf_protocol;
+#endif
+}
+
 void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const *desc_report, uint16_t desc_len) {
     uint8_t itf_protocol = tuh_hid_interface_protocol(dev_addr, instance);
 
@@ -203,6 +248,8 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const *desc_re
 
     /* Also signal the other board to flash LED, to enable easy verification if serial works */
     send_value(ENABLE, FLASH_LED_MSG);
+
+    debug_report_device_speed(dev_addr, instance, itf_protocol);
 
     /* Kick off the report querying */
     tuh_hid_receive_report(dev_addr, instance);

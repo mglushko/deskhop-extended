@@ -45,6 +45,7 @@
 #include "serial.h"
 #include "setup.h"
 #include "tasks.h"
+#include "usb_polling.h"
 #include "watchdog.h"
 
 

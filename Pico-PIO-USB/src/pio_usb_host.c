@@ -391,6 +391,12 @@ static inline __force_inline endpoint_t * _find_ep(uint8_t root_idx,
   return NULL;
 }
 
+static pio_usb_interval_filter_t interval_filter = NULL;
+
+void pio_usb_host_set_interval_filter(pio_usb_interval_filter_t filter) {
+  interval_filter = filter;
+}
+
 bool pio_usb_host_endpoint_open(uint8_t root_idx, uint8_t device_address,
                                 uint8_t const *desc_endpoint, bool need_pre) {
   const endpoint_descriptor_t *d = (const endpoint_descriptor_t *)desc_endpoint;
@@ -403,6 +409,23 @@ bool pio_usb_host_endpoint_open(uint8_t root_idx, uint8_t device_address,
       ep->dev_addr = device_address;
       ep->need_pre = need_pre;
       ep->is_tx = (d->epaddr & 0x80) ? false : true; // host endpoint out is tx
+
+      // DeskHop: revise the declared polling interval. This has to happen here rather
+      // than inside pio_usb_ll_configure_endpoint, which is handed only the endpoint
+      // and its descriptor: need_pre and root_idx are written just above, after that
+      // call, and pool slots are recycled on the size == 0 marker without ever being
+      // zeroed, so a speed-aware decision taken in there would read the previous
+      // occupant's values. A device is full speed when the root port is and no PRE is
+      // needed for it; need_pre is set only for a low speed device behind a hub, and
+      // is_fullspeed covers a low speed device on the port itself.
+      if (interval_filter != NULL) {
+        bool const full_speed =
+            PIO_USB_ROOT_PORT(root_idx)->is_fullspeed && !need_pre;
+        ep->interval = interval_filter(d->attr, d->epaddr, d->interval, full_speed,
+                                       device_address);
+        ep->interval_counter = 0;
+      }
+
       return true;
     }
   }

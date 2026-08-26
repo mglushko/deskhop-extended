@@ -72,6 +72,7 @@ set(COMMON_SOURCES
   ${SRC_DIR}/led.c
   ${SRC_DIR}/uart.c
   ${SRC_DIR}/usb.c
+  ${SRC_DIR}/usb_polling.c
   ${SRC_DIR}/main.c
   ${SRC_DIR}/ramdisk.c
   ${PICO_TINYUSB_PATH}/src/portable/raspberrypi/pio_usb/dcd_pio_usb.c

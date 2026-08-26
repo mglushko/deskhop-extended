@@ -158,6 +158,14 @@ uint8_t tuh_hid_interface_protocol(uint8_t daddr, uint8_t idx) {
   return p_hid ? p_hid->itf_protocol : 0;
 }
 
+// DeskHop: the interrupt IN endpoint this interface polls on. The host port decides a
+// polling interval per endpoint, and without this there is no way to say which endpoint
+// belongs to the mouse rather than to some other interface on the same device.
+uint8_t tuh_hid_ep_in(uint8_t daddr, uint8_t idx) {
+  hidh_interface_t* p_hid = get_hid_itf(daddr, idx);
+  return p_hid ? p_hid->ep_in : 0;
+}
+
 //--------------------------------------------------------------------+
 // Control Endpoint API
 //--------------------------------------------------------------------+

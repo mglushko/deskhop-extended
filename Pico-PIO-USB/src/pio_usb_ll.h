@@ -167,6 +167,16 @@ void pio_usb_host_port_reset_end(uint8_t root_idx);
 
 void pio_usb_host_close_device(uint8_t root_idx, uint8_t device_address);
 
+/* DeskHop: decide how often an endpoint is actually polled, rather than honouring the
+   bInterval it declared. Called once per endpoint from pio_usb_host_endpoint_open with
+   the raw descriptor bytes, and must return the interval in frames. Devices that ask
+   for far less than they can use are the reason; see src/usb_polling.c. Left NULL the
+   declared value is used unchanged, which is stock behaviour. */
+typedef uint8_t (*pio_usb_interval_filter_t)(uint8_t attr, uint8_t epaddr,
+                                             uint8_t declared, bool full_speed,
+                                             uint8_t dev_addr);
+void pio_usb_host_set_interval_filter(pio_usb_interval_filter_t filter);
+
 bool pio_usb_host_endpoint_open(uint8_t root_idx, uint8_t device_address,
                                 uint8_t const *desc_endpoint, bool need_pre);
 bool pio_usb_host_send_setup(uint8_t root_idx, uint8_t device_address,

@@ -65,6 +65,7 @@ const field_map_t api_field_map[] = {
     { 88, false, UINT8,  1, offsetof(device_t, config.led_off_mode) },
     { 89, false, UINT16, 2, offsetof(device_t, config.led_off_sec) },
     { 103, false, UINT16, 2, offsetof(device_t, config.led_switch_sec) },
+    { 104, false, UINT8,  1, offsetof(device_t, config.force_fast_polling) },
 
     /* Hotkeys, one packed combo per entry in hotkeys[] (keyboard.c) and in that order.
 

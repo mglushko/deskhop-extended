@@ -70,4 +70,5 @@ const config_t default_config = {
     .switch_double_tap_enable = SWITCH_DOUBLE_TAP_ENABLE,
     .switch_double_tap_ms = SWITCH_DOUBLE_TAP_MS,
     .switch_double_tap_margin = SWITCH_DOUBLE_TAP_MARGIN,
+    .force_fast_polling = FORCE_FAST_POLLING,
 };
