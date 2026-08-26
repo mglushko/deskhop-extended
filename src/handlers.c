@@ -189,10 +189,13 @@ void handle_mouse_abs_uart_msg(uart_packet_t *packet, device_t *state) {
    report carries only its own sender's buttons. Each board sends its local union here
    whenever it changes, and both then hold the same combined answer. That matters beyond
    the report itself: do_screen_switch refuses to switch outputs while a button is held, and
-   it can now see a button held on the other board. */
+   it can now see a button held on the other board.
+
+   This one arrives on the edge, so it is what makes a press felt immediately. The
+   heartbeat below carries the same value as a level once a second, which is what makes a
+   missed edge heal. */
 void handle_mouse_buttons_msg(uart_packet_t *packet, device_t *state) {
-    state->remote_mouse_buttons = packet->data[0];
-    state->mouse_buttons        = state->local_mouse_buttons | state->remote_mouse_buttons;
+    set_remote_mouse_buttons(state, packet->data[0]);
 }
 
 /* Adopt the authoritative cursor position from the other board.
@@ -395,6 +398,16 @@ void handle_heartbeat_msg(uart_packet_t *packet, device_t *state) {
     /* Keep it before any early return, so the config page still shows a live value while
        an upgrade is in flight - that is exactly when you want to watch it. */
     state->other_fw_version = other_running_version;
+
+    /* Also before the early returns, and for the same reason. MOUSE_BUTTONS_MSG only
+       arrives when the other board's half of the union changes, so nothing repairs a
+       message that was dropped, or a board that restarted or lost its mouse while a button
+       was held: this side would go on holding a button nobody is pressing, telling its
+       computer so on every move of its own and refusing to hand the cursor over. This is
+       the same number sent as a level once a second, so any of those heals within a
+       second. A board on older firmware leaves the field zero, which is the right answer
+       for one that never announces buttons at all. */
+    set_remote_mouse_buttons(state, (uint8_t)packet->data16[1]);
 
     if (state->fw.upgrade_in_progress)
         return;

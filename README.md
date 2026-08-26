@@ -166,9 +166,10 @@ below was read off a screen.
   on a keyboard's mouse keys while moving a trackball released it, so selecting text and dragging
   were impossible, and the same happened with a pointing device plugged into each board. What the
   computer is told is now the union across every interface on both boards, which is what
-  `combine_kbd_states` already does for keyboards. The board that owns a device announces its half
-  of that union to the other one whenever it changes, so both also agree about the rule that stops
-  an output switch while a button is held. Upstream
+  `combine_kbd_states` already does for keyboards. Each board announces its half of that union to the
+  other one the moment it changes and restates it in the heartbeat once a second, so both agree
+  about the rule that stops an output switch while a button is held, and a dropped message or a
+  board that restarted mid-drag cannot leave a button held that nobody is pressing. Upstream
   [#287](https://github.com/hrvach/deskhop/issues/287).
   [38cc93f](https://github.com/mglushko/deskhop-extended/commit/38cc93f)
 - **Pico-PIO-USB fixes backported onto the vendored 0.5.3** - `calc_usb_crc16` moves into RAM, since
@@ -200,7 +201,7 @@ below was read off a screen.
 
 A board pushes its firmware onto the other one as soon as that one reports a lower version
 (`handle_heartbeat_msg`, once a second), and this build numbers itself above upstream on purpose -
-v1.09 reports `1109` against upstream v0.78's `178`. So flashing a single board back to
+v1.10 reports `1110` against upstream v0.78's `178`. So flashing a single board back to
 [hrvach/deskhop](https://github.com/hrvach/deskhop) only gets it overwritten again the moment the
 two are powered up together. Both boards have to be done, one at a time, while neither is running:
 

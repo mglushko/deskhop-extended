@@ -82,10 +82,16 @@ static void unplug(hid_interface_t *iface) {
 }
 
 /* One boot-protocol report: buttons, then relative X and Y. Held in a buffer longer than
-   the length passed in, so a read past the end shows up as a wrong value rather than as
-   an ASan report about this test's own stack. */
+   the length passed in, and the bytes past that length are filled rather than left zero:
+   a read past the end then shows up as a wrong value instead of as the zero the guarded
+   code writes anyway, and it is not an ASan report about this test's own stack either. */
 static void feed(hid_interface_t *iface, uint8_t buttons, int8_t dx, int8_t dy) {
-    uint8_t report[8] = {buttons, (uint8_t)dx, (uint8_t)dy};
+    uint8_t report[8];
+
+    memset(report, 0x7F, sizeof(report));
+    report[0] = buttons;
+    report[1] = (uint8_t)dx;
+    report[2] = (uint8_t)dy;
 
     forget_output();
     process_mouse_report(report, 3, 1, iface);
@@ -235,50 +241,111 @@ int main(void) {
 
     /* A pointing device can be attached to either board and neither board sees the other's
        reports, so each announces its own half of the union with MOUSE_BUTTONS_MSG whenever
-       it changes. What the receiving end does with that - store it in remote_mouse_buttons -
-       is two lines in handlers.c, and handlers.c is not linked here: it reaches for the
-       bootrom, the watchdog and PICO_DEFAULT_LED_PIN, none of which this shim carries and
-       none of which any case below is about. So the arriving value is set by hand. */
+       it changes. Arrivals come in through set_remote_mouse_buttons, which is what both
+       handlers call, so the cases below drive the real thing rather than poking the field.
+       handlers.c itself is not linked here: it reaches for the bootrom, the watchdog and
+       PICO_DEFAULT_LED_PIN, none of which this shim carries. */
     reset_state();
     keys = plug_in(1, 0);
+
+    /* The other board already holds a button of its own, so a report that announced the
+       union instead of our half of it would be caught by what follows. */
+    set_remote_mouse_buttons(&global_state, 0x02);
 
     feed(keys, 0x01, 0, 0);
     check("a local press is announced to the other board", sent_count == 1 && sent_buttons == 0x01,
           seen());
+    check("what the announcement carries is our half, not the union",
+          sent_buttons == 0x01 && queued_any && queued.buttons == 0x03, seen());
 
     feed(keys, 0x01, 4, 0);
     check("moving with it still held announces nothing further", sent_count == 0, seen());
 
     feed(keys, 0x00, 0, 0);
-    check("releasing is announced", sent_count == 1 && sent_buttons == 0x00, seen());
+    check("releasing is announced, again as our half", sent_count == 1 && sent_buttons == 0x00,
+          seen());
+    check("and the other board's button is still held", queued_any && queued.buttons == 0x02,
+          seen());
+
+    /* Arriving values, and what they do to what the host is told. */
+    reset_state();
+    keys = plug_in(1, 0);
+
+    feed(keys, 0x01, 0, 0);
+    set_remote_mouse_buttons(&global_state, 0x02);
+    check("taking the other board's half in recomputes what the host is told",
+          global_state.mouse_buttons == 0x03, seen());
+
+    set_remote_mouse_buttons(&global_state, 0x00);
+    check("and dropping it leaves only ours", global_state.mouse_buttons == 0x01, seen());
 
     /* And in the other direction. */
     reset_state();
     ball = plug_in(2, 0);
-    global_state.remote_mouse_buttons = 0x01;
+    set_remote_mouse_buttons(&global_state, 0x01);
 
     feed(ball, 0x00, 6, 0);
     check("a local move carries the other board's button",
           queued_any && queued.buttons == 0x01, seen());
     check("and does not announce it back as ours", sent_count == 0, seen());
 
-    global_state.remote_mouse_buttons = 0x00;
+    /* The heartbeat carries the same value as a level once a second, which is what heals a
+       phantom left by a dropped announcement or by a board that restarted holding a
+       button. Same entry point, so this is that repair. */
+    set_remote_mouse_buttons(&global_state, 0x00);
     feed(ball, 0x00, 6, 0);
-    check("the other board releasing lets go here",
+    check("the other board letting go, or saying so again, lets go here",
           queued_any && queued.buttons == 0x00, seen());
 
-    /* Why it travels at all: this board refuses to hand the cursor over while a button is
-       held, and it can only honour a button held on the other board if it was told about it. */
+    /* What the heartbeat republishes is recomputed rather than remembered, so a device
+       that went away stops being counted even though no report arrived to notice. */
+    reset_state();
+    keys = plug_in(1, 0);
+    ball = plug_in(2, 0);
+
+    feed(keys, 0x01, 0, 0);
+    check("the union counts a button held anywhere on this board",
+          refresh_local_mouse_buttons(&global_state) == 0x01, seen());
+
+    unplug(keys);
+    check("and stops counting it the moment that device is gone",
+          refresh_local_mouse_buttons(&global_state) == 0x00, seen());
+    check("and what the host is told drops it at the same moment",
+          global_state.mouse_buttons == 0x00, seen());
+
+    printf("\n  handing the cursor over\n\n");
+
+    /* This board refuses to hand the cursor to the other computer while a button is held.
+       First with the button on a device attached here, including the case the union added:
+       the device that is moving holds nothing and another one here does. */
+    reset_state();
+    keys = plug_in(1, 0);
+    ball = plug_in(2, 0);
+
+    feed(keys, 0x01, 0, 0);
+    global_state.pointer_x = MIN_SCREEN_COORD;
+    feed(ball, 0x00, -40, 0);
+    check("a button held on another device here holds the edge switch back",
+          global_state.active_output == OUTPUT_A, seen());
+
+    feed(keys, 0x00, 0, 0);
+    global_state.pointer_x = MIN_SCREEN_COORD;
+    feed(ball, 0x00, -40, 0);
+    check("and the switch goes through once that device lets go",
+          global_state.active_output == OUTPUT_B, seen());
+
+    /* The same guard, for a button held on the other board. It can only honour that if it
+       was told, which is what the announcement above is for. */
     reset_state();
     ball = plug_in(2, 0);
     global_state.pointer_x = MIN_SCREEN_COORD;
-    global_state.remote_mouse_buttons = 0x01;
+    set_remote_mouse_buttons(&global_state, 0x01);
 
     feed(ball, 0x00, -40, 0);
     check("a button held on the other board holds the edge switch back",
           global_state.active_output == OUTPUT_A, seen());
 
-    global_state.remote_mouse_buttons = 0x00;
+    set_remote_mouse_buttons(&global_state, 0x00);
     global_state.pointer_x = MIN_SCREEN_COORD;
     feed(ball, 0x00, -40, 0);
     check("and the switch goes through once it lets go",

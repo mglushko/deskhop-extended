@@ -134,7 +134,7 @@ typedef struct {
        one the host sees has to be the union across every device on both boards, the
        same problem combine_kbd_states solves for keyboards. Each interface keeps what
        it holds (hid_interface_t.mouse_buttons); these two are the halves of the union. */
-    uint8_t local_mouse_buttons;  // Union over devices on this board, and the last value sent
+    uint8_t local_mouse_buttons;  // Union over devices on this board, and what we last announced
     uint8_t remote_mouse_buttons; // Union over devices on the other board, as it last told us
 
     /* Edge "double tap" to switch actual outputs */
