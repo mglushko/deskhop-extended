@@ -188,12 +188,20 @@ VALUES = {
     # 98 was retired with the wipe-config shortcut; 100 is config mode, which is listed
     # on the page but fixed, so it has no field of its own.
     **{key: 0 for key in range(90, 103) if key not in (98, 100)},
-    # One exception to the zeroes above: a row has to be turned off for the shots to show
-    # what that looks like, and a state nobody can see in the README is one people ask
-    # whether the page has. HOTKEY_OFF, src/include/keyboard.h. Lock switching is the one
-    # picked because it says least about the rest of the list: Keep awake: off would read
-    # as a row named off that is off, and Switch output is the example the text uses.
+    # Two exceptions to the zeroes above, so the shots show the three states a row can be
+    # in rather than only the one a new device is in. A state nobody can see in the README
+    # is one people ask whether the page has.
+    #
+    # Lock switching is turned off. HOTKEY_OFF, src/include/keyboard.h. That row is picked
+    # because it says least about the rest of the list: Keep awake: off would read as a row
+    # named off that is off, and Switch output is the example the text uses.
+    #
+    # Lock both screens is set to something of its own, which draws in bold against the
+    # rows still on what the firmware was built with. Left Gui + L because it is what
+    # somebody would actually choose for it, and because no default uses Left Gui, so the
+    # row cannot be mistaken for one of them.
     92: 0xff000000,
+    93: 0x08 | (0x0f << 8),
 }
 
 DRIVE = """

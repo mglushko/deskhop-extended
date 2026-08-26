@@ -84,7 +84,7 @@ configuration.</em></p>
   finally takes effect.
   [0215c72](https://github.com/mglushko/deskhop-extended/commit/0215c72)
 
-<p align="center"><img src="img/config-hotkeys.png" alt="The twelve shortcuts, eleven with Pick, Default and Off, Lock switching turned off, and config mode fixed"></p>
+<p align="center"><img src="img/config-hotkeys.png" alt="The twelve shortcuts, eleven with Pick, Default and Off, Lock both screens set to a combination of its own, Lock switching turned off, and config mode fixed"></p>
 
 - **A shortcut cannot take the way back** - the twelfth is config mode, listed but fixed at
   `Left Ctrl + Right Shift + C + O`. It is the only combination that opens the page, and the page
