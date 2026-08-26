@@ -173,11 +173,26 @@ void handle_mouse_abs_uart_msg(uart_packet_t *packet, device_t *state) {
     mouse_report_t *mouse_report = (mouse_report_t *)packet->data;
     queue_mouse_report(mouse_report, state);
 
+    /* The buttons in this report are already the union across both boards, so it goes to
+       the host as it arrived. state->mouse_buttons is not touched here: MOUSE_BUTTONS_MSG
+       below is what maintains it, and one owner is what keeps the two halves in step. */
     state->pointer_x       = mouse_report->x;
     state->pointer_y       = mouse_report->y;
-    state->mouse_buttons   = mouse_report->buttons;
 
     state->last_activity[BOARD_ROLE] = time_us_64();
+}
+
+/* Take note of which mouse buttons are held down on devices attached to the other board.
+
+   There is one cursor and one set of buttons, but a pointing device may be attached to
+   either board (a keyboard with mouse keys on one, a trackball on the other), and each
+   report carries only its own sender's buttons. Each board sends its local union here
+   whenever it changes, and both then hold the same combined answer. That matters beyond
+   the report itself: do_screen_switch refuses to switch outputs while a button is held, and
+   it can now see a button held on the other board. */
+void handle_mouse_buttons_msg(uart_packet_t *packet, device_t *state) {
+    state->remote_mouse_buttons = packet->data[0];
+    state->mouse_buttons        = state->local_mouse_buttons | state->remote_mouse_buttons;
 }
 
 /* Adopt the authoritative cursor position from the other board.

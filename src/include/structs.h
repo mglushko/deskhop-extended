@@ -128,7 +128,14 @@ typedef struct {
 
     int16_t pointer_x; // Store and update the location of our mouse pointer
     int16_t pointer_y;
-    int16_t mouse_buttons; // Store and update the state of mouse buttons
+    int16_t mouse_buttons; // Which buttons the output PC is being told are held down
+
+    /* A mouse report carries the full button state of the device that sent it, so the
+       one the host sees has to be the union across every device on both boards, the
+       same problem combine_kbd_states solves for keyboards. Each interface keeps what
+       it holds (hid_interface_t.mouse_buttons); these two are the halves of the union. */
+    uint8_t local_mouse_buttons;  // Union over devices on this board, and the last value sent
+    uint8_t remote_mouse_buttons; // Union over devices on the other board, as it last told us
 
     /* Edge "double tap" to switch actual outputs */
     uint64_t last_edge_tap_time;         // Timestamp of the last registered edge tap

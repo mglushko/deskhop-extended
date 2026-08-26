@@ -161,6 +161,15 @@ below was read off a screen.
   [#211](https://github.com/hrvach/deskhop/issues/211) and
   [#295](https://github.com/hrvach/deskhop/issues/295) all share this shape.
   [1338364](https://github.com/mglushko/deskhop-extended/commit/1338364)
+- **Two pointing devices no longer cancel each other's buttons** - every mouse report carries the
+  complete button state of the device that sent it, and whoever reported last won. Holding a button
+  on a keyboard's mouse keys while moving a trackball released it, so selecting text and dragging
+  were impossible, and the same happened with a pointing device plugged into each board. What the
+  computer is told is now the union across every interface on both boards, which is what
+  `combine_kbd_states` already does for keyboards. The board that owns a device announces its half
+  of that union to the other one whenever it changes, so both also agree about the rule that stops
+  an output switch while a button is held. Upstream
+  [#287](https://github.com/hrvach/deskhop/issues/287).
 - **Pico-PIO-USB fixes backported onto the vendored 0.5.3** - `calc_usb_crc16` moves into RAM, since
   it was the last thing on the interrupt path still running from flash while a board-to-board
   upgrade rewrites that flash; the receive loops get bounds and timeouts, and the copy is clamped

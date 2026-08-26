@@ -14,6 +14,11 @@ typedef struct TU_ATTR_PACKED {
     uint8_t modifier, reserved, keycode[6];
 } hid_keyboard_report_t;
 
+typedef struct TU_ATTR_PACKED {
+    uint8_t buttons;
+    int8_t  x, y, wheel, pan;
+} hid_mouse_report_t;
+
 #define HID_KEY_NONE      0x00
 #define HID_KEY_A         0x04
 #define HID_KEY_B         0x05
@@ -39,7 +44,8 @@ typedef struct TU_ATTR_PACKED {
 #define KEYBOARD_MODIFIER_RIGHTALT   0x40
 #define KEYBOARD_MODIFIER_RIGHTGUI   0x80
 
-#define HID_PROTOCOL_BOOT 0
+#define HID_PROTOCOL_BOOT   0
+#define HID_PROTOCOL_REPORT 1
 
 /* The device-side calls keyboard.c makes once a report is on its way out. Declared here,
    defined as no-ops by whichever test links it. */

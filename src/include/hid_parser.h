@@ -165,6 +165,12 @@ struct hid_interface_t {
     process_report_f report_handler[MAX_REPORTS];
     uint8_t protocol;
     bool uses_report_id;
+
+    /* Which mouse buttons this interface is currently holding down. Not from the
+       descriptor, unlike everything above: it is the running state of the device on
+       the other end, kept here because the interface is what identifies that device.
+       tuh_hid_umount_cb clears the whole struct, so unplugging drops these too. */
+    uint8_t mouse_buttons;
 };
 
 typedef struct {

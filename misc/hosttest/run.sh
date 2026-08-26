@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build and run the host-side tests. See test_config_store.c and test_hotkeys.c.
+# Build and run the host-side tests. See test_config_store.c, test_hotkeys.c and test_mouse.c.
 set -euo pipefail
 cd "$(dirname "$0")"
 root="$(git rev-parse --show-toplevel)"
@@ -30,5 +30,12 @@ gcc -std=c11 -Wall -Wextra -Wno-unused-parameter -g -fsanitize=address,undefined
     test_hotkeys.c "$root/src/keyboard.c" "$root/src/constants.c" \
     "$root/src/protocol.c" -o "$out/test_hotkeys"
 
+# mouse.c on its own: the button combining it does reaches nothing outside this file, and
+# -lm is for the acceleration curve. Same include path as test_hotkeys, same reasons.
+gcc -std=c11 -Wall -Wextra -Wno-unused-parameter -g -fsanitize=address,undefined \
+    -I shim/sdk -I "$out/sdk" -I "$root/src/include" \
+    test_mouse.c "$root/src/mouse.c" -lm -o "$out/test_mouse"
+
 "$out/test_config_store"
 "$out/test_hotkeys"
+"$out/test_mouse"

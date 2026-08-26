@@ -139,9 +139,6 @@ enum screen_pos_e update_mouse_position(device_t *state, mouse_values_t *values)
     state->pointer_x = move_and_keep_on_screen(state->pointer_x, offset_x);
     state->pointer_y = move_and_keep_on_screen(state->pointer_y, offset_y);
 
-    /* Update buttons state */
-    state->mouse_buttons = values->buttons;
-
     return switch_direction;
 }
 
@@ -382,6 +379,9 @@ static inline bool extract_value(bool uses_id, int32_t *dst, report_val_t *src, 
     return true;
 }
 
+/* 'state' is unused since the buttons fallback below started reading the interface it was
+   handed, but the signature stays: deskhop-hidtests lifts this function verbatim out of this
+   file and calls it, so changing the shape would break the harness against every tree at once. */
 void extract_report_values(uint8_t *raw_report, int len, device_t *state, mouse_values_t *values, hid_interface_t *iface) {
     /* Interpret values depending on the current protocol used. */
     if (iface->protocol == HID_PROTOCOL_BOOT) {
@@ -408,8 +408,14 @@ void extract_report_values(uint8_t *raw_report, int len, device_t *state, mouse_
     extract_value(uses_id, &values->wheel, &mouse->wheel, raw_report, len);
     extract_value(uses_id, &values->pan, &mouse->pan, raw_report, len);
 
+    /* Buttons live under a different report ID than the axes on some devices (the
+       Kensington Expert Mouse puts them on report 1 and X/Y on report 2), so a movement
+       report says nothing about them and we keep what this interface last held. Reading
+       state->mouse_buttons here would hand back the union across every device and store
+       another device's bits in this one's slot, where they would stay held after that
+       device let go. */
     if (!extract_value(uses_id, &values->buttons, &mouse->buttons, raw_report, len)) {
-        values->buttons = state->mouse_buttons;
+        values->buttons = iface->mouse_buttons;
     }
 }
 
@@ -433,6 +439,27 @@ mouse_report_t create_mouse_report(device_t *state, mouse_values_t *values) {
     return mouse_report;
 }
 
+/* What every pointing device on this board is holding down, taken together.
+
+   Each report carries its sender's complete button state, so a trackball reporting
+   movement with nothing pressed says "no buttons" just as loudly as a keyboard's mouse
+   keys say "left down". Taking the last report at its word lets one device release the
+   other's buttons in the middle of a drag (upstream issue #287). The union is the same
+   answer combine_kbd_states gives for keyboards.
+
+   Keyed on the interface rather than on the device index process_mouse_report is handed:
+   tuh_hid_report_received_cb gives every mouse interface index 1, so two mice would share
+   one slot. */
+static uint8_t combine_local_mouse_buttons(device_t *state) {
+    uint8_t buttons = 0;
+
+    for (int dev = 0; dev < MAX_DEVICES; dev++)
+        for (int idx = 0; idx < MAX_INTERFACES; idx++)
+            buttons |= state->iface[dev][idx].mouse_buttons;
+
+    return buttons;
+}
+
 void process_mouse_report(uint8_t *raw_report, int len, uint8_t itf, hid_interface_t *iface) {
     mouse_values_t values = {0};
     device_t *state = &global_state;
@@ -440,14 +467,39 @@ void process_mouse_report(uint8_t *raw_report, int len, uint8_t itf, hid_interfa
     /* Interpret the mouse HID report, extract and save values we need. */
     extract_report_values(raw_report, len, state, &values, iface);
 
+    /* Narrowed to what the report going out can carry, since mouse_report_t.buttons is a
+       single byte. A device that declares more than eight buttons (the Logi Bolt receiver
+       declares sixteen) is then compared and stored in the width it will be sent in,
+       rather than held at full width here and truncated on the way out. */
+    uint8_t buttons = (uint8_t)values.buttons;
+
     /* If nothing changed, don't send a report. This prevents composite keyboards
        (e.g. QMK) that expose a mouse HID interface from generating spurious
        absolute position reports when they send zero-movement mouse reports during
-       keyboard events. */
+       keyboard events. Compared against what THIS interface last held: against the
+       union, a device holding nothing would stop matching the moment another one
+       pressed a button, and every idle report would get through again. */
     if (values.move_x == 0 && values.move_y == 0 &&
         values.wheel == 0 && values.pan == 0 &&
-        values.buttons == state->mouse_buttons) {
+        buttons == iface->mouse_buttons) {
         return;
+    }
+
+    /* Remember what this device holds, then send the union of everything held anywhere.
+       Done before update_mouse_position so do_screen_switch, further down, still reads a
+       current state->mouse_buttons when it decides whether a button is being held. */
+    iface->mouse_buttons = buttons;
+    uint8_t local        = combine_local_mouse_buttons(state);
+
+    state->mouse_buttons = local | state->remote_mouse_buttons;
+    values.buttons       = state->mouse_buttons;
+
+    /* The other board needs our half of the union to build the same answer, having no
+       other way to hear about a button held on a device attached to us. Only when it
+       changes: movement is continuous, buttons are not. */
+    if (local != state->local_mouse_buttons) {
+        state->local_mouse_buttons = local;
+        send_value(local, MOUSE_BUTTONS_MSG);
     }
 
     /* Calculate and update mouse pointer movement. */
