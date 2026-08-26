@@ -170,6 +170,7 @@ below was read off a screen.
   of that union to the other one whenever it changes, so both also agree about the rule that stops
   an output switch while a button is held. Upstream
   [#287](https://github.com/hrvach/deskhop/issues/287).
+  [38cc93f](https://github.com/mglushko/deskhop-extended/commit/38cc93f)
 - **Pico-PIO-USB fixes backported onto the vendored 0.5.3** - `calc_usb_crc16` moves into RAM, since
   it was the last thing on the interrupt path still running from flash while a board-to-board
   upgrade rewrites that flash; the receive loops get bounds and timeouts, and the copy is clamped
