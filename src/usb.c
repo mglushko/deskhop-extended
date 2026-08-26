@@ -154,32 +154,56 @@ void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance) {
    next to the per-endpoint lines from polling_interval_filter() in setup.c: those say
    what each endpoint asked for, this says which endpoint belongs to what, and whether
    the device was ever meant to be running at this speed. */
-static void debug_report_device_speed(uint8_t dev_addr, uint8_t instance, uint8_t itf_protocol) {
 #ifdef DH_DEBUG
-    static const char *const role[] = {"none", "keyboard", "mouse"};
-    tusb_desc_device_qualifier_t qualifier = {0};
+/* The qualifier answer arrives on a callback rather than a blocking wait, and that is
+   not a style preference. tuh_descriptor_get_sync spins until the transfer completes,
+   re-entering tuh_task from inside the spin, and this runs on core1 from within
+   tuh_hid_mount_cb. Nothing there has a timeout. Unplugging the device mid-probe is
+   enough to hang it for good: process_removing_device forces the control stage back to
+   idle without ever calling the completion callback, so the result the loop is waiting
+   on can no longer be written by anybody. core1 stops updating core1_last_loop_pass,
+   kick_watchdog_task stops kicking, and the board resets half a second later. */
+static uint8_t qualifier_buf[sizeof(tusb_desc_device_qualifier_t)];
+
+static void qualifier_done(tuh_xfer_t *xfer) {
     const char *speed;
 
-    /* The control endpoint has to be free for this to even be attempted, and it may not
-       be this early. Say so rather than reporting a probe that never ran as a full speed
-       device, which is the answer that would send someone looking in the wrong place. */
-    switch (tuh_descriptor_get_sync(dev_addr, TUSB_DESC_DEVICE_QUALIFIER, 0,
-                                    &qualifier, sizeof(qualifier))) {
+    switch (xfer->result) {
         case XFER_RESULT_SUCCESS:
+            /* USB 2.0 makes only a high speed capable device answer this, so it is here
+               and running at full speed because it found no high speed host to chirp
+               back at it. Once fallen back it is indistinguishable from a native full
+               speed device in every other way, which is why upstream #215 needed a USB
+               analyzer to diagnose, and why the interval it declares is not one it was
+               ever designed to honour. */
             speed = "HIGH SPEED device fallen back to full speed";
             break;
         case XFER_RESULT_STALLED:
-            speed = "full speed device";
+            speed = "full speed device";  /* the compliant answer, and the common one */
             break;
         default:
             speed = "speed unknown, qualifier probe did not run";
             break;
     }
 
-    dh_debug_printf("[poll] dev %u itf %u ep 0x%02x %s, %s\n",
+    dh_debug_printf("[poll] dev %u %s\n", xfer->daddr, speed);
+}
+#endif
+
+static void debug_report_device_speed(uint8_t dev_addr, uint8_t instance, uint8_t itf_protocol) {
+#ifdef DH_DEBUG
+    static const char *const role[] = {"none", "keyboard", "mouse"};
+
+    /* Which endpoint this interface owns, so the per-endpoint lines from
+       polling_interval_filter() in setup.c can be read as "this one is the mouse". */
+    dh_debug_printf("[poll] dev %u itf %u ep 0x%02x %s\n",
                     dev_addr, instance, tuh_hid_ep_in(dev_addr, instance),
-                    itf_protocol <= HID_ITF_PROTOCOL_MOUSE ? role[itf_protocol] : "?",
-                    speed);
+                    itf_protocol <= HID_ITF_PROTOCOL_MOUSE ? role[itf_protocol] : "?");
+
+    /* Answers on qualifier_done(), or not at all if the control endpoint is busy this
+       early, which is a missing line rather than a wrong one. */
+    tuh_descriptor_get(dev_addr, TUSB_DESC_DEVICE_QUALIFIER, 0,
+                       qualifier_buf, sizeof(qualifier_buf), qualifier_done, 0);
 #else
     (void)dev_addr;
     (void)instance;

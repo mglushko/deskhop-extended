@@ -30,8 +30,17 @@
  * "greater than 1".
  *
  * bmAttributes has to be masked. Only the low two bits are the transfer type; the rest
- * is synchronisation and usage type, which an interrupt endpoint may set. pio_usb_host.c
- * compares the whole byte and would decline such an endpoint.
+ * is synchronisation and usage type, which an interrupt endpoint is allowed to set. This
+ * function is handed the raw descriptor byte, so comparing all of it would hand back the
+ * declared interval for a perfectly legal interrupt endpoint and leave it slow. (The
+ * scheduler in pio_usb_host.c masks correctly; the whole-byte compare there is in
+ * enumerate_device, which this build never reaches because TinyUSB drives the host.)
+ *
+ * Class does not come into it. The endpoint descriptor is all there is at the point this
+ * is asked, so a hub's interrupt IN status endpoint is clamped along with everything
+ * else. That is deliberate rather than overlooked: it costs one NAKed token per frame,
+ * a few microseconds against a thousand, and the alternative is plumbing an interface
+ * class down to a layer that has no business knowing one.
  *
  * Low speed devices keep whatever they asked for. USB 2.0 permits 1 to 255 there, so
  * clamping them would be legal, but a low speed transaction costs roughly eight times
