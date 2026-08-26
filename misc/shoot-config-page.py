@@ -197,11 +197,11 @@ VALUES = {
     # named off that is off, and Switch output is the example the text uses.
     #
     # Lock both screens is set to something of its own, which draws in bold against the
-    # rows still on what the firmware was built with. Left Gui + L because it is what
-    # somebody would actually choose for it, and because no default uses Left Gui, so the
-    # row cannot be mistaken for one of them.
+    # rows still on what the firmware was built with. Left Ctrl + Left Alt + L reads as a
+    # lock combination, and no default pairs those two modifiers, so the row cannot be
+    # mistaken for one of them.
     92: 0xff000000,
-    93: 0x08 | (0x0f << 8),
+    93: 0x01 | 0x04 | (0x0f << 8),
 }
 
 DRIVE = """
