@@ -84,9 +84,40 @@ def write_file(payload, filename=OUTPUT_FILENAME):
         file.write(payload)
 
 
+def minify(page):
+    """Strip from the rendered page what only a reader of it needs.
+
+    Worth about 10 kB packed, which is most of what stands between config.htm and the
+    43 kB the disk image has room for. The templates keep every comment and every
+    indent: this runs on the rendered output, and only on the copy that gets packed.
+    config-unpacked.htm and config-test.htm are still written from the page as rendered,
+    so there is still something readable to open when the page misbehaves.
+
+    Deliberately conservative, because a minifier that is wrong here breaks the only
+    route into the device's settings. Block comments go, having checked that no /* or
+    */ occurs inside a string or template literal anywhere in the templates. They are
+    replaced by a space rather than nothing, so a comment sitting between two tokens
+    cannot weld them together. Line comments stay: // also opens the authority in a URL,
+    and telling those apart needs a real tokeniser to buy about 200 bytes.
+
+    Only whitespace at the ends of lines goes, never the newlines themselves, so
+    automatic semicolon insertion sees exactly what it saw before. That is safe because
+    every template literal in script.js sits on one line and the one textarea in
+    main.html is empty, leaving no run of spaces in the output that anything renders.
+    """
+    page = re.sub(r'/\*.*?\*/', ' ', page, flags=re.S)
+    page = re.sub(r'[ \t]+\n', '\n', page)
+    page = re.sub(r'\n[ \t]+', '\n', page)
+    page = re.sub(r'\n{2,}', '\n', page)
+
+    return page
+
+
 def encode_file(payload):
-    # Compress using raw DEFLATE
-    compressed_data = zlib.compress(payload.encode('utf-8'))[2:-4]
+    # Raw DEFLATE, at the level that squeezes hardest. This runs once at build time, so
+    # the slower search costs nothing anyone waits on, and every byte it saves is a byte
+    # of headroom in a budget the page has already nearly used up.
+    compressed_data = zlib.compress(payload, 9)[2:-4]
 
     # Encode to base64
     base64_compressed_data = base64.b64encode(compressed_data).decode('utf-8')
@@ -107,14 +138,18 @@ if __name__ == "__main__":
     # Read main template contents
     webpage = render(INPUT_FILENAME, **context)
 
-    # Compress file and encode to base64. The decompressed length goes with it: the packer
-    # inflates into a fixed-size Uint8Array and tiny-inflate does not bounds check its
-    # destination, so a buffer that no longer fits the page corrupts it in the browser
-    # rather than failing here. Sizing it from the page removes the cliff instead of
-    # moving it, and stops the trailing slack being decoded into the document.
+    # Compress file and encode to base64. What gets packed is the minified page, so the
+    # payload and the length the packer inflates into must both be taken from it and not
+    # from the page as rendered. The packer inflates into a fixed-size Uint8Array and
+    # tiny-inflate does not bounds check its destination, so a length that no longer
+    # matches corrupts the page in the browser rather than failing here. Sizing it from
+    # the same bytes removes the cliff instead of moving it, and stops the trailing slack
+    # being decoded into the document.
+    packed_page = minify(webpage).encode('utf-8')
+
     encoded_data = {
-        'payload': encode_file(webpage),
-        'decoded_len': len(webpage.encode('utf-8')),
+        'payload': encode_file(packed_page),
+        'decoded_len': len(packed_page),
     }
 
     # Tiny Inflate JS decoder (https://github.com/foliojs/tiny-inflate)
