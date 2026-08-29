@@ -24,10 +24,13 @@
 #define MAX_INTERFACES              12  // Per device; allows for complex devices like QMK
 #define MAX_KEYS                    32
 #define MAX_NKRO_BLOCKS             4
-/* Total bitmap width, across every block, below which a keyboard is not treated as
-   NKRO. Restates the threshold the single-block code used, but applied to the sum:
-   one narrow block is padding or a stray bit field, several adding up to this are a
-   real key bitmap. */
+/* Bitmap width below which a keyboard is not treated as NKRO. Restates the threshold
+   the single-block code used, and is now asked twice. Of the sum, which is where the
+   NKRO decision is actually made, so one narrow block reads as padding while several
+   adding up to this read as a real key bitmap. And of a single block whose usage range
+   is wider than its bits, where being this wide is what says "bitmap" rather than
+   "stray keyboard-page field". Non-strict there and strict on the sum, so that two
+   halves which only tie the threshold are both kept and their sum clears it. */
 #define NKRO_MIN_BITS               32
 #define MAX_REPORTS                 24
 #define MAX_KEYBOARDS               5
