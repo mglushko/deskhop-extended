@@ -162,6 +162,13 @@ below was read off a screen.
   [#211](https://github.com/hrvach/deskhop/issues/211) and
   [#295](https://github.com/hrvach/deskhop/issues/295) all share this shape.
   [1338364](https://github.com/mglushko/deskhop-extended/commit/1338364)
+- **A key bitmap is taken on its width, not only on a 1:1 usage range** - the Keychron
+  Ultra-Link declares 153 usages over 152 bits on its NKRO collection, one too many, so the
+  bitmap was never recorded and every report fell through to the key-array path, which that
+  collection does not have: the modifier decoded and every keycode vanished. The 6KRO
+  collection beside it kept working, so the keyboard half worked. Report `11 00 10` decodes
+  to nothing before and to `a` after; of 47 descriptors only this keyboard's two entries
+  parse differently. Upstream [#324](https://github.com/hrvach/deskhop/issues/324).
 - **Pico-PIO-USB fixes backported onto the vendored 0.5.3** - `calc_usb_crc16` moves into RAM, since
   it was the last thing on the interrupt path still running from flash while a board-to-board
   upgrade rewrites that flash; the receive loops get bounds and timeouts, and the copy is clamped
