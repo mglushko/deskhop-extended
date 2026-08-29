@@ -127,10 +127,11 @@ so they can be used before (and regardless of whether) they land upstream:
 - [#356](https://github.com/hrvach/deskhop/pull/356) - boot-protocol keyboard support for UEFI/BitLocker pre-boot
 - [#357](https://github.com/hrvach/deskhop/pull/357) - fixes the cursor jumping when a pointing device is attached to each board ([#263](https://github.com/hrvach/deskhop/issues/263))
 - [#358](https://github.com/hrvach/deskhop/pull/358) - fixes media keys on keyboards that don't use HID report IDs ([#236](https://github.com/hrvach/deskhop/issues/236))
-- [#359](https://github.com/hrvach/deskhop/pull/359) - keeps all key sections on keyboards that use more than one
+- [#359](https://github.com/hrvach/deskhop/pull/359) - keeps all key sections on keyboards that use more than one, and gives each keyboard collection on an interface its own slot ([#57](https://github.com/hrvach/deskhop/issues/57), [#211](https://github.com/hrvach/deskhop/issues/211), [#295](https://github.com/hrvach/deskhop/issues/295))
 - [#360](https://github.com/hrvach/deskhop/pull/360) - lets the board-to-board firmware upgrade finish instead of hanging one request short of the end
 - [#361](https://github.com/hrvach/deskhop/pull/361) - fixes an out-of-bounds write when a HID descriptor has a large report count ([#332](https://github.com/hrvach/deskhop/issues/332))
 - [#365](https://github.com/hrvach/deskhop/pull/365) - combines the buttons from every pointing device, so two of them no longer cancel each other ([#287](https://github.com/hrvach/deskhop/issues/287))
+- [#366](https://github.com/hrvach/deskhop/pull/366) - keeps the key bitmap on a keyboard that declares one usage more than it has bits for ([#324](https://github.com/hrvach/deskhop/issues/324))
 
 ### Fixes beyond the pull requests above
 
@@ -139,8 +140,8 @@ and why the fix looks the way it does. The measurements come from
 [deskhop-hidtests](https://github.com/mglushko/deskhop-hidtests), which replays real descriptors and
 reports against this firmware's own decode paths; its
 [emulator](https://github.com/mglushko/deskhop-hidtests/tree/main/emu) turns a spare RP2040 into the
-device in question, so a finding can be checked on hardware and not just on the host - the `gmovw3`
-below was read off a screen.
+device in question, so a finding can be checked on hardware and not just on the host rather than
+being taken on trust.
 
 - **Short reports no longer read past the end** - a device can send a report shorter than its
   descriptor promised, and nothing checked. Four decode paths read past the end of the buffer: 774
@@ -155,21 +156,6 @@ below was read off a screen.
   keystrokes discarded and one sent keyboard reports down the path that carries Power and Sleep;
   dispatch goes from 13/20 to 20/20.
   [85d6fe5](https://github.com/mglushko/deskhop-extended/commit/85d6fe5)
-- **One `keyboard_t` per keyboard collection** - a keyboard that declares a 6KRO collection for BIOS
-  compatibility beside an NKRO bitmap had both written into the same slot. A Keychron Ultra-Link
-  then types nothing for a bare `a`; an 8BitDo Retro Mechanical types `gmovw3` for `abcdef`.
-  Upstream [#57](https://github.com/hrvach/deskhop/issues/57),
-  [#211](https://github.com/hrvach/deskhop/issues/211) and
-  [#295](https://github.com/hrvach/deskhop/issues/295) all share this shape.
-  [1338364](https://github.com/mglushko/deskhop-extended/commit/1338364)
-- **A key bitmap is taken on its width, not only on a 1:1 usage range** - the Keychron
-  Ultra-Link declares 153 usages over 152 bits on its NKRO collection, one too many, so the
-  bitmap was never recorded and every report fell through to the key-array path, which that
-  collection does not have: the modifier decoded and every keycode vanished. The 6KRO
-  collection beside it kept working, so the keyboard half worked. Report `11 00 10` decodes
-  to nothing before and to `a` after; of 47 descriptors only this keyboard's two entries
-  parse differently. Upstream [#324](https://github.com/hrvach/deskhop/issues/324).
-  [524b61d](https://github.com/mglushko/deskhop-extended/commit/524b61d)
 - **Pico-PIO-USB fixes backported onto the vendored 0.5.3** - `calc_usb_crc16` moves into RAM, since
   it was the last thing on the interrupt path still running from flash while a board-to-board
   upgrade rewrites that flash; the receive loops get bounds and timeouts, and the copy is clamped
