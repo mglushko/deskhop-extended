@@ -62,8 +62,16 @@ void tud_hid_set_report_cb(uint8_t instance,
         process_packet(packet, &global_state);
     }
 
-    /* Only other set report we care about is LED state change, and that's exactly 1 byte long */
-    if (report_id != REPORT_ID_KEYBOARD || bufsize != 1 || report_type != HID_REPORT_TYPE_OUTPUT)
+    /* Only other set report we care about is LED state change, and that's exactly 1 byte long.
+       It belongs to the keyboard interface, the only one of ours that declares an output report
+       at all. In boot protocol the host sends that report with no report ID in front of it, so
+       accept report ID 0 there too while boot protocol is the one in force. */
+    bool is_led_report = instance == ITF_NUM_HID
+                      && (report_id == REPORT_ID_KEYBOARD
+                          || (report_id == 0
+                              && tud_hid_n_get_protocol(ITF_NUM_HID) == HID_PROTOCOL_BOOT));
+
+    if (!is_led_report || bufsize != 1 || report_type != HID_REPORT_TYPE_OUTPUT)
         return;
 
     uint8_t leds = buffer[0];
