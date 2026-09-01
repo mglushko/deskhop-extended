@@ -20,12 +20,58 @@ _Static_assert(MAX_DEVICES <= CFG_TUH_DEVICE_MAX,
 
 /* Invoked when we get GET_REPORT control request.
  * We are expected to fill buffer with the report content, update reqlen
- * and return its length. We return 0 to STALL the request. */
+ * and return its length. We return 0 to STALL the request.
+ *
+ * Returning 0 for everything used to stall it every time, and a stall is the
+ * wrong answer for a report we do put in our own descriptor. It went unnoticed
+ * while nothing bound the keyboard interface, but a boot keyboard is driven by
+ * the firmware's own keyboard driver, which may ask. The HID spec makes
+ * Get_Report mandatory.
+ *
+ * Only ITF_NUM_HID has anything to answer with, being the interface that
+ * declares a keyboard input report and an LED output report. A boot-protocol
+ * host asks with no report ID at all and a report-protocol one asks by ID, so
+ * take both. TinyUSB writes the ID byte itself and shortens request_len to
+ * match whenever the ID is non-zero, so what belongs in the buffer here is the
+ * payload alone either way.
+ *
+ * Everything else still returns 0. That stalls, which is the correct answer for
+ * a report this device does not declare. */
 uint16_t tud_hid_get_report_cb(uint8_t instance,
                                uint8_t report_id,
                                hid_report_type_t report_type,
                                uint8_t *buffer,
                                uint16_t request_len) {
+    if (instance != ITF_NUM_HID)
+        return 0;
+
+    if (report_id != 0 && report_id != REPORT_ID_KEYBOARD)
+        return 0;
+
+    if (report_type == HID_REPORT_TYPE_OUTPUT) {
+        if (request_len < 1)
+            return 0;
+
+        /* What the host last asked for, which is also what the attached keyboard
+           was told, since kbd_led_as_indicator rewrites the bit before it is
+           stored rather than on the way out. */
+        buffer[0] = global_state.keyboard_leds_desired[BOARD_ROLE];
+
+        return 1;
+    }
+
+    if (report_type == HID_REPORT_TYPE_INPUT) {
+        hid_keyboard_report_t report;
+
+        if (request_len < sizeof(report))
+            return 0;
+
+        combine_kbd_states(&global_state, &report);
+        memcpy(buffer, &report, sizeof(report));
+
+        return sizeof(report);
+    }
+
     return 0;
 }
 
