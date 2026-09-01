@@ -22,11 +22,13 @@ _Static_assert(MAX_DEVICES <= CFG_TUH_DEVICE_MAX,
  * We are expected to fill buffer with the report content, update reqlen
  * and return its length. We return 0 to STALL the request.
  *
- * Returning 0 for everything used to stall it every time, and a stall is the
- * wrong answer for a report we do put in our own descriptor. It went unnoticed
- * while nothing bound the keyboard interface, but a boot keyboard is driven by
- * the firmware's own keyboard driver, which may ask. The HID spec makes
- * Get_Report mandatory.
+ * Returning 0 for everything answered badly in two different ways. With a report
+ * ID the host gets a one-byte reply carrying nothing but the ID echoed back,
+ * since TinyUSB counts that byte before calling us. Without one, which is how a
+ * boot-protocol host asks, the count stays at zero and the request stalls. Both
+ * are wrong for a report we put in our own descriptor, and the HID spec makes
+ * Get_Report mandatory. It went unnoticed while nothing bound this interface as
+ * a keyboard, which a boot keyboard now does.
  *
  * Only ITF_NUM_HID has anything to answer with, being the interface that
  * declares a keyboard input report and an LED output report. A boot-protocol
@@ -61,12 +63,19 @@ uint16_t tud_hid_get_report_cb(uint8_t instance,
     }
 
     if (report_type == HID_REPORT_TYPE_INPUT) {
-        hid_keyboard_report_t report;
+        hid_keyboard_report_t report = {0};
 
         if (request_len < sizeof(report))
             return 0;
 
-        combine_kbd_states(&global_state, &report);
+        /* Only the computer being typed into is told what is held down. Key state is tracked
+           on whichever board the keyboard is plugged into, whatever output is selected, so
+           answering this from that state alone would let an idle computer read back, over its
+           own control pipe, what is being typed into the other one. It is told what it is
+           actually receiving, which is nothing. */
+        if (CURRENT_BOARD_IS_ACTIVE_OUTPUT)
+            combine_kbd_states(&global_state, &report);
+
         memcpy(buffer, &report, sizeof(report));
 
         return sizeof(report);
