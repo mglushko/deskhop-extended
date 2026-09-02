@@ -58,9 +58,10 @@ uint16_t tud_hid_get_report_cb(uint8_t instance,
         if (request_len < 1)
             return 0;
 
-        /* What the host last asked for, which is also what the attached keyboard
-           was told, since kbd_led_as_indicator rewrites the bit before it is
-           stored rather than on the way out. */
+        /* What the host last set, after the Caps Lock rewrite kbd_led_as_indicator
+           makes before the byte is stored, so it is also what the attached keyboard
+           was told. With the indicator on, a host that turned Caps Lock off and
+           reads back sees it on while this board is the active output. */
         buffer[0] = global_state.keyboard_leds_desired[BOARD_ROLE];
 
         return 1;
