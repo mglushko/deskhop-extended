@@ -30,15 +30,19 @@ _Static_assert(MAX_DEVICES <= CFG_TUH_DEVICE_MAX,
  * Get_Report mandatory. It went unnoticed while nothing bound this interface as
  * a keyboard, which a boot keyboard now does.
  *
- * Only ITF_NUM_HID has anything to answer with, being the interface that
- * declares a keyboard input report and an LED output report. A boot-protocol
- * host asks with no report ID at all and a report-protocol one asks by ID, so
- * take both. TinyUSB writes the ID byte itself and shortens request_len to
- * match whenever the ID is non-zero, so what belongs in the buffer here is the
- * payload alone either way.
+ * Answered here: the keyboard input report and the LED output report, both on
+ * ITF_NUM_HID. A boot-protocol host asks with no report ID at all and a
+ * report-protocol one asks by ID, so take both. TinyUSB writes the ID byte
+ * itself and shortens request_len to match whenever the ID is non-zero, so what
+ * belongs in the buffer here is the payload alone either way.
  *
- * Everything else still returns 0. That stalls, which is the correct answer for
- * a report this device does not declare. */
+ * Everything else still returns 0, and stalls. Some of that is declared by this
+ * device: the absolute mouse, consumer and system reports on this same
+ * interface, the relative mouse on ITF_NUM_HID_REL_M and the vendor report on
+ * ITF_NUM_HID_VENDOR. They stay stalled on purpose. Their idle state is all
+ * zero and says nothing a host could use, and the absolute mouse report is
+ * actively unsafe to answer that way: a host that feeds Get_Report answers into
+ * its input path reads x = 0, y = 0 as a jump to the top left corner. */
 uint16_t tud_hid_get_report_cb(uint8_t instance,
                                uint8_t report_id,
                                hid_report_type_t report_type,
