@@ -118,9 +118,11 @@ void tud_hid_set_report_cb(uint8_t instance,
     }
 
     /* Only other set report we care about is LED state change, and that's exactly 1 byte long.
-       It belongs to the keyboard interface, the only one of ours that declares an output report
-       at all. In boot protocol the host sends that report with no report ID in front of it, so
-       accept report ID 0 there too while boot protocol is the one in force. */
+       It belongs to the keyboard interface. The vendor interface declares an output report too,
+       twelve bytes wide on REPORT_ID_VENDOR and handled above, but no other interface of ours
+       has a one byte output report to offer this test, which is what makes scoping it to
+       ITF_NUM_HID sound. In boot protocol the host sends the LED report with no report ID in
+       front of it, so accept report ID 0 there too while boot protocol is the one in force. */
     bool is_led_report = instance == ITF_NUM_HID
                       && (report_id == REPORT_ID_KEYBOARD
                           || (report_id == 0
