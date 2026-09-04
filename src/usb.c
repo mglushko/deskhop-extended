@@ -283,7 +283,7 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const *desc_re
  * uses_report_id is a fact about the *descriptor*, decided once at enumeration.
  * Boot protocol overrides it: the device then sends the fixed boot layout, which
  * carries no report ID whatever the descriptor declared. Reading report[0] as an ID
- * in that mode indexes report_handler[] with the modifier byte on a keyboard, or the
+ * in that mode looks the receiver up by the modifier byte on a keyboard, or by the
  * button byte on a mouse, so the report lands on whichever receiver that number
  * happens to select - usually none at all, and on a receiver that declares consumer
  * or system collections on low report IDs, the wrong one.
@@ -309,10 +309,7 @@ process_report_f pick_receiver(const hid_interface_t *iface, uint8_t itf_protoco
         if (report_carries_id(iface))
             report_id = report[0];
 
-        if (report_id >= MAX_REPORTS)
-            return NULL;
-
-        return iface->report_handler[report_id];
+        return get_report_handler(iface, report_id);
     }
 
     if (itf_protocol == HID_ITF_PROTOCOL_KEYBOARD)

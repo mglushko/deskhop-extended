@@ -159,13 +159,23 @@ typedef struct {
     bool is_array;
 } report_t;
 
+/* Which receiver decodes the reports carrying a given report ID. Matched by value: an ID is any
+   byte, so a table indexed by it would need 256 entries per interface, and one of MAX_REPORTS
+   entries indexed that way silently dropped every collection on an ID of MAX_REPORTS or more.
+   Packed, like report_val_t: there are MAX_DEVICES * MAX_INTERFACES of these tables. */
+typedef struct TU_ATTR_PACKED {
+    uint8_t report_id;
+    process_report_f receiver;
+} report_handler_t;
+
 struct hid_interface_t {
     keyboard_t keyboards[MAX_KEYBOARDS];
     uint8_t num_keyboards;
     mouse_t mouse;
     report_t consumer;
     report_t system;
-    process_report_f report_handler[MAX_REPORTS];
+    report_handler_t report_handlers[MAX_REPORTS];
+    uint8_t num_report_handlers;
     uint8_t protocol;
     bool uses_report_id;
 
