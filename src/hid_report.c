@@ -220,6 +220,34 @@ static uint8_t *get_system_id(hid_interface_t *iface) {
 }
 
 
+/* The receiver bound to a report ID on this interface, or NULL if no collection on the interface
+   declared that ID. Searched by value, see report_handler_t. */
+process_report_f get_report_handler(const hid_interface_t *iface, uint8_t report_id) {
+    for (int i = 0; i < iface->num_report_handlers; i++) {
+        if (iface->report_handlers[i].report_id == report_id)
+            return iface->report_handlers[i].receiver;
+    }
+
+    return NULL;
+}
+
+/* Bind a receiver to a report ID, replacing whatever the ID was bound to before: when two
+   collections share an ID, the one parsed last wins, as it always has. */
+static void set_report_handler(hid_interface_t *iface, uint8_t report_id, process_report_f receiver) {
+    for (int i = 0; i < iface->num_report_handlers; i++) {
+        if (iface->report_handlers[i].report_id == report_id) {
+            iface->report_handlers[i].receiver = receiver;
+            return;
+        }
+    }
+
+    if (iface->num_report_handlers < MAX_REPORTS) {
+        iface->report_handlers[iface->num_report_handlers].report_id = report_id;
+        iface->report_handlers[iface->num_report_handlers].receiver  = receiver;
+        iface->num_report_handlers++;
+    }
+}
+
 void extract_data(hid_interface_t *iface, report_val_t *val) {
     const usage_map_t map[] = {
         {.usage_page   = HID_USAGE_PAGE_BUTTON,
@@ -299,8 +327,7 @@ void extract_data(hid_interface_t *iface, report_val_t *val) {
 
             hay->handler(val, hay->dst, iface);
 
-            if (val->report_id < MAX_REPORTS)
-                iface->report_handler[val->report_id] = hay->receiver;
+            set_report_handler(iface, val->report_id, hay->receiver);
         }
     }
 }

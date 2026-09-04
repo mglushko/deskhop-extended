@@ -156,6 +156,11 @@ being taken on trust.
   keystrokes discarded and one sent keyboard reports down the path that carries Power and Sleep;
   dispatch goes from 13/20 to 20/20.
   [85d6fe5](https://github.com/mglushko/deskhop-extended/commit/85d6fe5)
+- **Report IDs of 24 and above reach their receiver** - the handler table was indexed by the
+  report ID and had 24 slots, so the Microsoft Sculpt mouse on report ID 0x1A
+  ([#367](https://github.com/hrvach/deskhop/issues/367)) was parsed correctly and then dropped
+  on every report. Receivers are now looked up by ID value; dispatch goes from 27/29 to 29/29.
+  [969e35e](https://github.com/mglushko/deskhop-extended/commit/969e35e)
 - **Pico-PIO-USB fixes backported onto the vendored 0.5.3** - `calc_usb_crc16` moves into RAM, since
   it was the last thing on the interrupt path still running from flash while a board-to-board
   upgrade rewrites that flash; the receive loops get bounds and timeouts, and the copy is clamped
