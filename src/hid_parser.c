@@ -54,38 +54,24 @@ uint32_t get_current_offset(parser_state_t *parser) {
     return offset ? *offset : 0;
 }
 
-/* Usages are kept in a fixed-size array, so this returns how many slots are still
-   free at the current position. Guarding on an index relative to p_usage is not
-   enough - p_usage has usually moved on by then. */
-uint32_t usages_left(parser_state_t *parser) {
-    uint32_t used = (uint32_t)(parser->p_usage - parser->usages);
-
-    return (used < HID_MAX_USAGES) ? HID_MAX_USAGES - used : 0;
-}
-
-void update_usage(parser_state_t *parser, int i) {
-    /* If we don't have as many usages as elements, the usage for the previous element applies */
-    if (i > 0 && i >= parser->usage_count && (uint32_t)i < usages_left(parser))
-        *(parser->p_usage + i) = *(parser->p_usage + i - 1);
-}
-
-/* Usage that applies to element i of the current main item. A report count can be far
-   larger than the number of usages we have room for - vendor collections happily declare
-   blocks of hundreds or thousands of bytes with a single usage - and past the last
-   declared usage that same usage keeps applying anyway, so reuse the last slot instead
-   of walking off the end of the array. */
+/* Return the usage for element i. Once the local usage list is exhausted
+   the last declared usage repeats (HID spec). */
 uint16_t get_usage(parser_state_t *parser, int i) {
-    uint32_t left = usages_left(parser);
+    int idx;
 
-    if (left == 0)
-        return 0;
+    if (parser->usage_count == 0) {
+        idx = 0;                      /* use carried/default usage */
+    } else if (i >= parser->usage_count) {
+        idx = parser->usage_count - 1;
+    } else {
+        idx = i;
+    }
 
-    if ((uint32_t)i >= left)
-        i = (int)left - 1;
+    uint16_t *slot = parser->p_usage + idx;
+    if (slot >= parser->usages + HID_MAX_USAGES)
+        slot = parser->usages + HID_MAX_USAGES - 1;
 
-    update_usage(parser, i);
-
-    return *(parser->p_usage + i);
+    return *slot;
 }
 
 void store_element(parser_state_t *parser, report_val_t *val, uint16_t usage, uint32_t data, uint16_t size, hid_interface_t *iface) {
@@ -128,7 +114,7 @@ void handle_local_item(parser_state_t *parser, item_t *item) {
         if(IS_BLOCK_END)
             parser->global_usage = item->val;
 
-        else if (parser->usage_count + 1 < usages_left(parser))
+        else if (parser->p_usage + parser->usage_count + 1 < parser->usages + HID_MAX_USAGES)
             *(parser->p_usage + parser->usage_count++) = item->val;
     }
 }
@@ -161,14 +147,15 @@ void handle_main_input(parser_state_t *parser, item_t *item, hid_interface_t *if
         *current_offset += size;
     }
 
-    /* Advance the usage array pointer by global report count and reset the count variable.
-       Once we are out of room we stop advancing, otherwise the carry below writes past
-       the end of the array (and straight into the parser's own state). */
-    if (parser->usage_count < usages_left(parser)) {
+    /* Advance the usage cursor and carry the last usage of this block.
+       Pin to the last slot if the array is full. */
+    if (parser->p_usage + parser->usage_count < parser->usages + HID_MAX_USAGES) {
         parser->p_usage += parser->usage_count;
 
-        /* Carry the last usage to the new location */
-        *parser->p_usage = *(parser->p_usage - parser->usage_count);
+        /* Carry the last usage of this block to the new location */
+        *parser->p_usage = *(parser->p_usage - 1);
+    } else {
+        parser->p_usage = parser->usages + HID_MAX_USAGES - 1;
     }
 }
 
