@@ -128,10 +128,16 @@ so they can be used before (and regardless of whether) they land upstream:
 - [#357](https://github.com/hrvach/deskhop/pull/357) - fixes the cursor jumping when a pointing device is attached to each board ([#263](https://github.com/hrvach/deskhop/issues/263))
 - [#358](https://github.com/hrvach/deskhop/pull/358) - fixes media keys on keyboards that don't use HID report IDs ([#236](https://github.com/hrvach/deskhop/issues/236))
 - [#359](https://github.com/hrvach/deskhop/pull/359) - keeps all key sections on keyboards that use more than one, and gives each keyboard collection on an interface its own slot ([#57](https://github.com/hrvach/deskhop/issues/57), [#211](https://github.com/hrvach/deskhop/issues/211), [#295](https://github.com/hrvach/deskhop/issues/295))
-- [#360](https://github.com/hrvach/deskhop/pull/360) - lets the board-to-board firmware upgrade finish instead of hanging one request short of the end
-- [#361](https://github.com/hrvach/deskhop/pull/361) - fixes an out-of-bounds write when a HID descriptor has a large report count ([#332](https://github.com/hrvach/deskhop/issues/332))
 - [#365](https://github.com/hrvach/deskhop/pull/365) - combines the buttons from every pointing device, so two of them no longer cancel each other ([#287](https://github.com/hrvach/deskhop/issues/287))
 - [#366](https://github.com/hrvach/deskhop/pull/366) - keeps the key bitmap on a keyboard that declares one usage more than it has bits for ([#324](https://github.com/hrvach/deskhop/issues/324))
+
+### Merged upstream pull requests
+
+These are in [hrvach/deskhop](https://github.com/hrvach/deskhop)'s main, merged after its v0.78
+release, so the next upstream release will carry them too:
+
+- [#360](https://github.com/hrvach/deskhop/pull/360) - lets the board-to-board firmware upgrade finish instead of hanging one request short of the end
+- [#361](https://github.com/hrvach/deskhop/pull/361) - fixes an out-of-bounds write when a HID descriptor has a large report count ([#332](https://github.com/hrvach/deskhop/issues/332))
 
 ### Fixes beyond the pull requests above
 
