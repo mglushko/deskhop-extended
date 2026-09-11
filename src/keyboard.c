@@ -557,24 +557,17 @@ void process_keyboard_report(uint8_t *raw_report, int length, uint8_t itf, hid_i
 }
 
 void process_consumer_report(uint8_t *raw_report, int length, uint8_t itf, hid_interface_t *iface) {
+    /* Consumer interfaces may omit the report ID. */
+    int data_len = length - iface->uses_report_id;
+
+    if (data_len <= 0)
+        return;
+
+    uint8_t *data = raw_report + iface->uses_report_id;
     uint8_t new_report[CONSUMER_CONTROL_LENGTH] = {0};
     uint16_t *report_ptr = (uint16_t *)new_report;
-
     device_t *state = &global_state;
     keyboard_t *keyboard = get_keyboard(iface, raw_report[0]);
-
-    /* Only skip the leading byte if this interface actually uses report IDs. Keyboards
-       that expose consumer controls on a dedicated interface commonly omit the report
-       ID entirely (e.g. Cherry KC 6000), in which case the data starts at byte 0 and
-       skipping unconditionally would read the wrong byte - reporting the wrong keys or,
-       when the payload is short, none at all. */
-    uint8_t *data = raw_report;
-    int data_len  = length;
-
-    if (iface->uses_report_id) {
-        data++;
-        data_len--;
-    }
 
     /* If consumer control is variable, read the values from cc_array and send as array. */
     if (iface->consumer.is_variable) {
@@ -600,20 +593,12 @@ void process_consumer_report(uint8_t *raw_report, int length, uint8_t itf, hid_i
 }
 
 void process_system_report(uint8_t *raw_report, int length, uint8_t itf, hid_interface_t *iface) {
-    /* As in process_consumer_report, the report ID is only present if the interface
-       uses one - without this an interface that omits it either reads the wrong byte
-       or gets rejected by the length check below. */
-    uint8_t *data = raw_report;
-    int data_len  = length;
-
-    if (iface->uses_report_id) {
-        data++;
-        data_len--;
-    }
+    int data_len = length - iface->uses_report_id;
 
     if (data_len < SYSTEM_CONTROL_LENGTH)
         return;
 
+    uint8_t *data = raw_report + iface->uses_report_id;
     uint16_t new_report = data[0];
     uint8_t *report_ptr = (uint8_t *)&new_report;
     device_t *state = &global_state;
