@@ -216,22 +216,14 @@ void firmware_upgrade_task(device_t *state) {
         return;
 
     /* If we're on the last element of the current page, page is done - write it.
-       Address zero is not the end of a page: nothing has arrived yet, and
-       (0 - 1) & 0xFFFFFF00 would put the target below ADDR_FW_RUNNING. */
+       Address zero is not the end of a page: nothing has arrived yet */
     if (TU_U32_BYTE0(state->fw.address) == 0x00 && state->fw.address != 0) {
 
         uint32_t page_start_addr = (state->fw.address - 1) & 0xFFFFFF00;
         write_flash_page((uint32_t)ADDR_FW_RUNNING + page_start_addr - XIP_BASE, state->page_buffer);
     }
 
-    /* End condition, when reached the process is completed.
-
-       Checked after the page write above, so the final page is in flash before
-       the checksum is taken over it, and reached AT the image size rather than
-       past it. The address only advances when a response arrives, and
-       handle_request_byte_msg returns without answering anything at or beyond
-       STAGING_IMAGE_SIZE - so waiting for the address to exceed it is waiting
-       for a response that is never sent. */
+    /* End condition, when reached the process is completed. */
     if (state->fw.address >= STAGING_IMAGE_SIZE) {
         state->fw.upgrade_in_progress = 0;
         state->fw.checksum = ~state->fw.checksum;
