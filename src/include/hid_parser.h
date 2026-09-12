@@ -32,7 +32,8 @@
    "stray keyboard-page field". Non-strict there and strict on the sum, so that two
    halves which only tie the threshold are both kept and their sum clears it. */
 #define NKRO_MIN_BITS               32
-#define MAX_REPORTS                 24
+#define MAX_REPORTS_PER_IFACE       24
+#define REPORT_ID_MAP_SIZE         256
 #define MAX_KEYBOARDS               5
 #define MAX_SYS_BUTTONS             8
 #define PRIMARY_KEYBOARD            0
@@ -124,6 +125,14 @@ typedef struct {
 typedef struct hid_interface_t hid_interface_t;
 typedef void (*process_report_f)(uint8_t *, int, uint8_t, hid_interface_t *);
 
+typedef enum {
+    REPORT_RECEIVER_NONE,
+    REPORT_RECEIVER_MOUSE,
+    REPORT_RECEIVER_KEYBOARD,
+    REPORT_RECEIVER_CONSUMER,
+    REPORT_RECEIVER_SYSTEM,
+} receiver_id_t;
+
 /* One contiguous run of NKRO bitmap bits. Keyboards often split the bitmap into several
    usage ranges with padding in between (to keep sections byte-aligned), so a single
    offset/usage_min/usage_max triplet can't describe the whole thing. */
@@ -159,23 +168,13 @@ typedef struct {
     bool is_array;
 } report_t;
 
-/* Which receiver decodes the reports carrying a given report ID. Matched by value: an ID is any
-   byte, so a table indexed by it would need 256 entries per interface, and one of MAX_REPORTS
-   entries indexed that way silently dropped every collection on an ID of MAX_REPORTS or more.
-   Packed, like report_val_t: there are MAX_DEVICES * MAX_INTERFACES of these tables. */
-typedef struct TU_ATTR_PACKED {
-    uint8_t report_id;
-    process_report_f receiver;
-} report_handler_t;
-
 struct hid_interface_t {
     keyboard_t keyboards[MAX_KEYBOARDS];
     uint8_t num_keyboards;
     mouse_t mouse;
     report_t consumer;
     report_t system;
-    report_handler_t report_handlers[MAX_REPORTS];
-    uint8_t num_report_handlers;
+    uint8_t report_handler[REPORT_ID_MAP_SIZE];
     uint8_t protocol;
     bool uses_report_id;
 
@@ -199,7 +198,7 @@ typedef struct {
 
     collection_t collection;
 
-    report_offset_map_t report_offsets[MAX_REPORTS];
+    report_offset_map_t report_offsets[MAX_REPORTS_PER_IFACE];
     uint8_t num_report_offsets;
 
     /* as tag is 4 bits, there can be 16 different tags in global header type */

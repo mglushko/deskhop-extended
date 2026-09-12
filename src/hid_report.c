@@ -220,40 +220,20 @@ static uint8_t *get_system_id(hid_interface_t *iface) {
 }
 
 
-/* The receiver bound to a report ID on this interface, or NULL if no collection on the interface
-   declared that ID. Searched by value, see report_handler_t. */
-process_report_f get_report_handler(const hid_interface_t *iface, uint8_t report_id) {
-    for (int i = 0; i < iface->num_report_handlers; i++) {
-        if (iface->report_handlers[i].report_id == report_id)
-            return iface->report_handlers[i].receiver;
-    }
-
-    return NULL;
-}
-
-/* Bind a receiver to a report ID, replacing whatever the ID was bound to before: when two
-   collections share an ID, the one parsed last wins, as it always has. */
-static void set_report_handler(hid_interface_t *iface, uint8_t report_id, process_report_f receiver) {
-    for (int i = 0; i < iface->num_report_handlers; i++) {
-        if (iface->report_handlers[i].report_id == report_id) {
-            iface->report_handlers[i].receiver = receiver;
-            return;
-        }
-    }
-
-    if (iface->num_report_handlers < MAX_REPORTS) {
-        iface->report_handlers[iface->num_report_handlers].report_id = report_id;
-        iface->report_handlers[iface->num_report_handlers].receiver  = receiver;
-        iface->num_report_handlers++;
-    }
-}
+const process_report_f report_receivers[] = {
+    [REPORT_RECEIVER_NONE]     = NULL,
+    [REPORT_RECEIVER_MOUSE]    = process_mouse_report,
+    [REPORT_RECEIVER_KEYBOARD] = process_keyboard_report,
+    [REPORT_RECEIVER_CONSUMER] = process_consumer_report,
+    [REPORT_RECEIVER_SYSTEM]   = process_system_report,
+};
 
 void extract_data(hid_interface_t *iface, report_val_t *val) {
     const usage_map_t map[] = {
         {.usage_page   = HID_USAGE_PAGE_BUTTON,
          .global_usage = HID_USAGE_DESKTOP_MOUSE,
          .handler      = handle_buttons,
-         .receiver     = process_mouse_report,
+         .receiver_id  = REPORT_RECEIVER_MOUSE,
          .dst          = &iface->mouse.buttons,
          .get_id       = get_mouse_id},
 
@@ -261,7 +241,7 @@ void extract_data(hid_interface_t *iface, report_val_t *val) {
          .global_usage = HID_USAGE_DESKTOP_MOUSE,
          .usage        = HID_USAGE_DESKTOP_X,
          .handler      = _store,
-         .receiver     = process_mouse_report,
+         .receiver_id  = REPORT_RECEIVER_MOUSE,
          .dst          = &iface->mouse.move_x,
          .get_id       = get_mouse_id},
 
@@ -269,7 +249,7 @@ void extract_data(hid_interface_t *iface, report_val_t *val) {
          .global_usage = HID_USAGE_DESKTOP_MOUSE,
          .usage        = HID_USAGE_DESKTOP_Y,
          .handler      = _store,
-         .receiver     = process_mouse_report,
+         .receiver_id  = REPORT_RECEIVER_MOUSE,
          .dst          = &iface->mouse.move_y,
          .get_id       = get_mouse_id},
 
@@ -277,7 +257,7 @@ void extract_data(hid_interface_t *iface, report_val_t *val) {
          .global_usage = HID_USAGE_DESKTOP_MOUSE,
          .usage        = HID_USAGE_DESKTOP_WHEEL,
          .handler      = _store,
-         .receiver     = process_mouse_report,
+         .receiver_id  = REPORT_RECEIVER_MOUSE,
          .dst          = &iface->mouse.wheel,
          .get_id       = get_mouse_id},
 
@@ -285,26 +265,26 @@ void extract_data(hid_interface_t *iface, report_val_t *val) {
          .global_usage = HID_USAGE_DESKTOP_MOUSE,
          .usage        = HID_USAGE_CONSUMER_AC_PAN,
          .handler      = _store,
-         .receiver     = process_mouse_report,
+         .receiver_id  = REPORT_RECEIVER_MOUSE,
          .dst          = &iface->mouse.pan,
          .get_id       = get_mouse_id},
 
         {.usage_page   = HID_USAGE_PAGE_KEYBOARD,
          .global_usage = HID_USAGE_DESKTOP_KEYBOARD,
          .handler      = handle_keyboard_descriptor_values,
-         .receiver     = process_keyboard_report},
+         .receiver_id  = REPORT_RECEIVER_KEYBOARD},
 
         {.usage_page   = HID_USAGE_PAGE_CONSUMER,
          .global_usage = HID_USAGE_CONSUMER_CONTROL,
          .handler      = handle_consumer_control_values,
-         .receiver     = process_consumer_report,
+         .receiver_id  = REPORT_RECEIVER_CONSUMER,
          .dst          = &iface->consumer.val,
          .get_id       = get_consumer_id},
 
         {.usage_page   = HID_USAGE_PAGE_DESKTOP,
          .global_usage = HID_USAGE_DESKTOP_SYSTEM_CONTROL,
          .handler      = _store,
-         .receiver     = process_system_report,
+         .receiver_id  = REPORT_RECEIVER_SYSTEM,
          .dst          = &iface->system.val,
          .get_id       = get_system_id},
     };
@@ -327,7 +307,7 @@ void extract_data(hid_interface_t *iface, report_val_t *val) {
 
             hay->handler(val, hay->dst, iface);
 
-            set_report_handler(iface, val->report_id, hay->receiver);
+            iface->report_handler[val->report_id] = hay->receiver_id;
         }
     }
 }

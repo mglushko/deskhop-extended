@@ -10,6 +10,7 @@
  */
 
 #include "main.h"
+#include "hid_report.h"
 
 _Static_assert(MAX_DEVICES <= CFG_TUH_DEVICE_MAX,
                "MAX_DEVICES must not exceed CFG_TUH_DEVICE_MAX");
@@ -309,7 +310,7 @@ process_report_f pick_receiver(const hid_interface_t *iface, uint8_t itf_protoco
         if (report_carries_id(iface))
             report_id = report[0];
 
-        return get_report_handler(iface, report_id);
+        return report_receivers[iface->report_handler[report_id]];
     }
 
     if (itf_protocol == HID_ITF_PROTOCOL_KEYBOARD)

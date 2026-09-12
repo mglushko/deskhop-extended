@@ -40,7 +40,7 @@ uint32_t *get_or_create_report_offset(parser_state_t *parser, uint8_t report_id)
         }
     }
 
-    if (parser->num_report_offsets < MAX_REPORTS) {
+    if (parser->num_report_offsets < MAX_REPORTS_PER_IFACE) {
         parser->report_offsets[parser->num_report_offsets].report_id = report_id;
         parser->report_offsets[parser->num_report_offsets].offset_in_bits = 0;
         return &parser->report_offsets[parser->num_report_offsets++].offset_in_bits;
