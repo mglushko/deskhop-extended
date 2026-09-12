@@ -147,6 +147,10 @@ void handle_main_input(parser_state_t *parser, item_t *item, hid_interface_t *if
         *current_offset += size;
     }
 
+    /* If no usages were declared for this main item, nothing to carry. */
+    if (parser->usage_count == 0)
+        return;
+
     /* Advance the usage cursor and carry the last usage of this block.
        Pin to the last slot if the array is full. */
     if (parser->p_usage + parser->usage_count < parser->usages + HID_MAX_USAGES) {
