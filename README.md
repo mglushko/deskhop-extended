@@ -132,13 +132,14 @@ so they can be used before (and regardless of whether) they land upstream:
 
 ### Merged upstream pull requests
 
-These are in [hrvach/deskhop](https://github.com/hrvach/deskhop)'s main, merged after its v0.78
-release, so the next upstream release will carry them too:
+These are in [hrvach/deskhop](https://github.com/hrvach/deskhop)'s v0.79 release:
 
 - [#358](https://github.com/hrvach/deskhop/pull/358) - fixes media keys on keyboards that don't use HID report IDs ([#236](https://github.com/hrvach/deskhop/issues/236))
 - [#360](https://github.com/hrvach/deskhop/pull/360) - lets the board-to-board firmware upgrade finish instead of hanging one request short of the end
 - [#361](https://github.com/hrvach/deskhop/pull/361) - fixes an out-of-bounds write when a HID descriptor has a large report count ([#332](https://github.com/hrvach/deskhop/issues/332))
+- [#364](https://github.com/hrvach/deskhop/pull/364) - shows the screensaver timers in seconds instead of microseconds; this fork's config page already did, in its own layout
 - [#368](https://github.com/hrvach/deskhop/pull/368) - closed in favor of upstream's own fix, [ce8abb6](https://github.com/hrvach/deskhop/commit/ce8abb69861c6e5d9ffb731e1df557a128d4c222), which this fork carries: receivers are looked up by the full report ID, so the Microsoft Sculpt mouse on report ID 0x1A works ([#367](https://github.com/hrvach/deskhop/issues/367))
+- [#369](https://github.com/hrvach/deskhop/pull/369) - copies USB endpoint data to and from the RP2040's DPRAM byte by byte, so an optimized copy can no longer corrupt the last word of a 64-byte packet
 
 ### Fixes beyond the pull requests above
 
