@@ -77,14 +77,17 @@ def dir_entry_offset(image) -> int:
 def rebuild(template: bytes, payload: bytes) -> bytes:
     buf = bytearray(template)
     needed = -(-len(payload) // CLUSTER) or 1
-    end = DATA + (FIRST_CLUSTER - 2 + needed) * CLUSTER
 
     if len(payload) > capacity():
         raise SystemExit(f"config.htm is {len(payload)} bytes, {len(payload) - capacity()} over "
                          f"the {capacity()} the image has room for. The page has outgrown it")
 
+    # From the file's first cluster to the end of the image, not just as far as this page
+    # reaches: the clusters a previous, longer page occupied would otherwise keep their
+    # contents, and the image would be a function of its own history rather than of the
+    # page alone. create.sh starts from zeros, so this is also what it produces.
     start = DATA + (FIRST_CLUSTER - 2) * CLUSTER
-    buf[start:end] = b'\0' * (end - start)
+    buf[start:IMAGE_LEN] = b'\0' * (IMAGE_LEN - start)
     buf[start:start + len(payload)] = payload
 
     for i in range(needed):
