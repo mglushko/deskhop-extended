@@ -45,7 +45,10 @@ with sync_playwright() as p:
     page = ctx.new_page()
     errs = []; page.on("pageerror", lambda e: errs.append(str(e)))
     page.goto(f"file://{REPO}/webconfig/config.htm")
-    page.wait_for_selector("#panel", timeout=15000)
+    # Unpacking is asynchronous: wait for the written document to finish loading, so its
+    # load handler has run, and not just for an element of it to exist.
+    page.wait_for_function("document.readyState === 'complete' && document.getElementById('panel')",
+                           timeout=15000)
 
     page.evaluate("() => { setConnected(true); "
                   "document.querySelectorAll('.api:not([readonly])').forEach((e,i) => "

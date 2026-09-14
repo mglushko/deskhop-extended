@@ -38,7 +38,10 @@ with sync_playwright() as p:
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.goto((REPO / "webconfig/config.htm").as_uri())
-    page.wait_for_selector("#panel", timeout=15000)
+    # Unpacking is asynchronous: wait for the written document to finish loading, so its
+    # load handler has run, and not just for an element of it to exist.
+    page.wait_for_function("document.readyState === 'complete' && document.getElementById('panel')",
+                           timeout=15000)
     page.evaluate("() => setConnected(true)")
 
     check("page loads without errors", not errors, errors)

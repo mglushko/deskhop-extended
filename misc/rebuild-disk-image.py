@@ -35,6 +35,14 @@ IMAGE_LEN = 65536                                # create.sh keeps the first 128
 NAME = b'CONFIG  HTM'
 
 
+def capacity() -> int:
+    """Bytes the page can occupy: the whole clusters from where the file starts to the end
+    of the image. A file takes whole clusters and the last one has to lie inside the 64 kB
+    that create.sh keeps, so the partial cluster at the end of the data area counts for
+    nothing. render.py checks against this same number, so the two cannot disagree."""
+    return ((IMAGE_LEN - DATA) // CLUSTER - (FIRST_CLUSTER - 2)) * CLUSTER
+
+
 def repo_root() -> Path:
     out = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=Path(__file__).parent,
                          capture_output=True, text=True, check=True)
@@ -69,14 +77,17 @@ def dir_entry_offset(image) -> int:
 def rebuild(template: bytes, payload: bytes) -> bytes:
     buf = bytearray(template)
     needed = -(-len(payload) // CLUSTER) or 1
-    end = DATA + (FIRST_CLUSTER - 2 + needed) * CLUSTER
 
-    if end > IMAGE_LEN:
-        raise SystemExit(f"config.htm needs {needed} clusters ending at {end}, past the "
-                         f"{IMAGE_LEN}-byte partition - the page has outgrown the image")
+    if len(payload) > capacity():
+        raise SystemExit(f"config.htm is {len(payload)} bytes, {len(payload) - capacity()} over "
+                         f"the {capacity()} the image has room for. The page has outgrown it")
 
+    # From the file's first cluster to the end of the image, not just as far as this page
+    # reaches: the clusters a previous, longer page occupied would otherwise keep their
+    # contents, and the image would be a function of its own history rather than of the
+    # page alone. create.sh starts from zeros, so this is also what it produces.
     start = DATA + (FIRST_CLUSTER - 2) * CLUSTER
-    buf[start:end] = b'\0' * (end - start)
+    buf[start:IMAGE_LEN] = b'\0' * (IMAGE_LEN - start)
     buf[start:start + len(payload)] = payload
 
     for i in range(needed):

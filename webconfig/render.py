@@ -27,17 +27,19 @@ DISK_REBUILDER = os.path.join(HERE, "..", "misc", "rebuild-disk-image.py")
 def disk_capacity():
     """Bytes available to config.htm inside the 64 kB FAT image.
 
-    Taken from misc/rebuild-disk-image.py rather than restated here, so the geometry lives
-    in one place. That script raises when the page does not fit, but disk/create.sh - what
-    CI actually runs - does not: mkdosfs writes the file across as many clusters as it
-    needs and the trailing `dd` then cuts the image back to 128 sectors, silently
-    truncating the page. Checking at render time is what turns that into a build failure.
+    Asked of misc/rebuild-disk-image.py rather than restated here, so the geometry lives
+    in one place and the number is the one that script itself accepts: whole clusters,
+    since a file takes nothing smaller and the last one has to fit inside the image. That
+    script raises when the page does not fit, but disk/create.sh, which is what CI
+    actually runs, does not: mkdosfs writes the file across as many clusters as it needs
+    and the trailing `dd` then cuts the image back to 128 sectors, silently truncating
+    the page. Checking at render time is what turns that into a build failure.
     """
     spec = importlib.util.spec_from_file_location("rebuild_disk_image", DISK_REBUILDER)
     disk = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(disk)
 
-    return disk.IMAGE_LEN - (disk.DATA + (disk.FIRST_CLUSTER - 2) * disk.CLUSTER)
+    return disk.capacity()
 
 
 def build_version():
@@ -114,10 +116,11 @@ def minify(page):
 
 
 def encode_file(payload):
-    # Raw DEFLATE, at the level that squeezes hardest. This runs once at build time, so
-    # the slower search costs nothing anyone waits on, and every byte it saves is a byte
-    # of headroom in a budget the page has already nearly used up.
-    compressed_data = zlib.compress(payload, 9)[2:-4]
+    # zlib-wrapped DEFLATE, at the level that squeezes hardest. The wrapper is the six
+    # bytes of header and Adler checksum that DecompressionStream('deflate') expects around
+    # the stream. This runs once at build time, so the slower search costs nothing anyone
+    # waits on, and every byte it saves is a byte of headroom in the disk image.
+    compressed_data = zlib.compress(payload, 9)
 
     # Encode to base64
     base64_compressed_data = base64.b64encode(compressed_data).decode('utf-8')
@@ -138,23 +141,12 @@ if __name__ == "__main__":
     # Read main template contents
     webpage = render(INPUT_FILENAME, **context)
 
-    # Compress file and encode to base64. What gets packed is the minified page, so the
-    # payload and the length the packer inflates into must both be taken from it and not
-    # from the page as rendered. The packer inflates into a fixed-size Uint8Array and
-    # tiny-inflate does not bounds check its destination, so a length that no longer
-    # matches corrupts the page in the browser rather than failing here. Sizing it from
-    # the same bytes removes the cliff instead of moving it, and stops the trailing slack
-    # being decoded into the document.
+    # What gets packed is the minified page, not the page as rendered.
     packed_page = minify(webpage).encode('utf-8')
 
-    encoded_data = {
-        'payload': encode_file(packed_page),
-        'decoded_len': len(packed_page),
-    }
-
-    # Tiny Inflate JS decoder (https://github.com/foliojs/tiny-inflate)
-    # Decompress the data and replace existing HTML with the decoded version
-    self_extracting_webpage = render(PACKER_FILENAME, encoded_data)
+    # The packer holds nothing but the base64 payload and the line that hands it to the
+    # browser's DecompressionStream, which sizes its own output.
+    self_extracting_webpage = render(PACKER_FILENAME, payload=encode_file(packed_page))
 
     capacity = disk_capacity()
     packed = len(self_extracting_webpage.encode('utf-8'))
@@ -167,7 +159,7 @@ if __name__ == "__main__":
     write_file(self_extracting_webpage)
 
     print(f"{OUTPUT_FILENAME}: {packed} bytes of {capacity} available "
-          f"({encoded_data['decoded_len']} unpacked)")
+          f"({len(packed_page)} unpacked)")
 
     # Write unpacked webpage
     write_file(webpage, OUTPUT_UNPACKED)
