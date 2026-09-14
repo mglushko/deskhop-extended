@@ -27,17 +27,19 @@ DISK_REBUILDER = os.path.join(HERE, "..", "misc", "rebuild-disk-image.py")
 def disk_capacity():
     """Bytes available to config.htm inside the 64 kB FAT image.
 
-    Taken from misc/rebuild-disk-image.py rather than restated here, so the geometry lives
-    in one place. That script raises when the page does not fit, but disk/create.sh - what
-    CI actually runs - does not: mkdosfs writes the file across as many clusters as it
-    needs and the trailing `dd` then cuts the image back to 128 sectors, silently
-    truncating the page. Checking at render time is what turns that into a build failure.
+    Asked of misc/rebuild-disk-image.py rather than restated here, so the geometry lives
+    in one place and the number is the one that script itself accepts: whole clusters,
+    since a file takes nothing smaller and the last one has to fit inside the image. That
+    script raises when the page does not fit, but disk/create.sh, which is what CI
+    actually runs, does not: mkdosfs writes the file across as many clusters as it needs
+    and the trailing `dd` then cuts the image back to 128 sectors, silently truncating
+    the page. Checking at render time is what turns that into a build failure.
     """
     spec = importlib.util.spec_from_file_location("rebuild_disk_image", DISK_REBUILDER)
     disk = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(disk)
 
-    return disk.IMAGE_LEN - (disk.DATA + (disk.FIRST_CLUSTER - 2) * disk.CLUSTER)
+    return disk.capacity()
 
 
 def build_version():
