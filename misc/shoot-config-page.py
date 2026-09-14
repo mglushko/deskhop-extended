@@ -272,7 +272,10 @@ def main() -> None:
         errors: list[str] = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.goto(page_url)
-        page.wait_for_selector("#panel", timeout=15000)
+        # Unpacking is asynchronous: wait for the written document to finish loading, so its
+        # load handler has run, and not just for an element of it to exist.
+        page.wait_for_function("document.readyState === 'complete' && document.getElementById('panel')",
+                               timeout=15000)
         undriven = page.evaluate(DRIVE, [{str(k): v for k, v in VALUES.items()},
                                          firmware_version(), firmware_checksum()])
         page.wait_for_timeout(400)
