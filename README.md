@@ -126,20 +126,9 @@ so they can be used before (and regardless of whether) they land upstream:
 - [#355](https://github.com/hrvach/deskhop/pull/355) - optional edge double-tap requirement for output switching
 - [#356](https://github.com/hrvach/deskhop/pull/356) - boot-protocol keyboard support for UEFI/BitLocker pre-boot
 - [#357](https://github.com/hrvach/deskhop/pull/357) - fixes the cursor jumping when a pointing device is attached to each board ([#263](https://github.com/hrvach/deskhop/issues/263))
-- [#359](https://github.com/hrvach/deskhop/pull/359) - keeps all key sections on keyboards that use more than one, and gives each keyboard collection on an interface its own slot ([#57](https://github.com/hrvach/deskhop/issues/57), [#211](https://github.com/hrvach/deskhop/issues/211), [#295](https://github.com/hrvach/deskhop/issues/295))
+- [#359](https://github.com/hrvach/deskhop/pull/359) - keeps all key sections on keyboards that use more than one, gives each keyboard collection on an interface its own slot, and decides NKRO on the whole bitmap rather than one block of it ([#57](https://github.com/hrvach/deskhop/issues/57), [#211](https://github.com/hrvach/deskhop/issues/211), [#295](https://github.com/hrvach/deskhop/issues/295))
 - [#365](https://github.com/hrvach/deskhop/pull/365) - combines the buttons from every pointing device, so two of them no longer cancel each other ([#287](https://github.com/hrvach/deskhop/issues/287))
 - [#366](https://github.com/hrvach/deskhop/pull/366) - keeps the key bitmap on a keyboard that declares one usage more than it has bits for ([#324](https://github.com/hrvach/deskhop/issues/324))
-
-### Merged upstream pull requests
-
-These are in [hrvach/deskhop](https://github.com/hrvach/deskhop)'s v0.79 release:
-
-- [#358](https://github.com/hrvach/deskhop/pull/358) - fixes media keys on keyboards that don't use HID report IDs ([#236](https://github.com/hrvach/deskhop/issues/236))
-- [#360](https://github.com/hrvach/deskhop/pull/360) - lets the board-to-board firmware upgrade finish instead of hanging one request short of the end
-- [#361](https://github.com/hrvach/deskhop/pull/361) - fixes an out-of-bounds write when a HID descriptor has a large report count ([#332](https://github.com/hrvach/deskhop/issues/332))
-- [#364](https://github.com/hrvach/deskhop/pull/364) - shows the screensaver timers in seconds instead of microseconds; this fork's config page already did, in its own layout
-- [#368](https://github.com/hrvach/deskhop/pull/368) - closed in favor of upstream's own fix, [ce8abb6](https://github.com/hrvach/deskhop/commit/ce8abb69861c6e5d9ffb731e1df557a128d4c222), which this fork carries: receivers are looked up by the full report ID, so the Microsoft Sculpt mouse on report ID 0x1A works ([#367](https://github.com/hrvach/deskhop/issues/367))
-- [#369](https://github.com/hrvach/deskhop/pull/369) - copies USB endpoint data to and from the RP2040's DPRAM byte by byte, so an optimized copy can no longer corrupt the last word of a 64-byte packet
 
 ### Fixes beyond the pull requests above
 
@@ -153,14 +142,12 @@ being taken on trust.
 
 - **Short reports no longer read past the end** - a device can send a report shorter than its
   descriptor promised, and nothing checked. Four decode paths read past the end of the buffer: 774
-  of 1159 truncated reports overread before, none after.
+  of 1159 truncated reports overread before, none after. The bound on the bitmap walk also
+  travels with #359; the other three are here only.
   [fe908d0](https://github.com/mglushko/deskhop-extended/commit/fe908d0)
-- **NKRO is decided on the key bitmap, not the whole report** - a keyboard with eight function-key
-  bits where the reserved byte usually sits was taken for NKRO, so its ordinary key array was never
-  read: modifiers worked and every keycode vanished.
-  [1749e6a](https://github.com/mglushko/deskhop-extended/commit/1749e6a)
 - **Boot-protocol reports are routed by the interface, not the first byte** - a keyboard switched
-  into boot protocol was routed by its modifier byte instead. Of three affected devices, one had its
+  into boot protocol was routed by its modifier byte instead ([#363](https://github.com/hrvach/deskhop/issues/363)).
+  Of three affected devices, one had its
   keystrokes discarded and one sent keyboard reports down the path that carries Power and Sleep;
   dispatch goes from 13/20 to 20/20.
   [85d6fe5](https://github.com/mglushko/deskhop-extended/commit/85d6fe5)
