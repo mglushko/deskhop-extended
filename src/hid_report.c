@@ -85,14 +85,71 @@ void handle_system_control_values(report_val_t *src, report_val_t *dst, hid_inte
     iface->system.is_array |= (src->data_type == ARRAY);
 }
 
-/* After processing the descriptor, assign the values so we can later use them to interpret reports */
-void handle_keyboard_descriptor_values(report_val_t *src, report_val_t *dst, hid_interface_t *iface) {
-    const int LEFT_CTRL = 0xE0;
+static bool is_modifier_descriptor(const report_val_t *value) {
+    const int left_ctrl_usage = 0xE0;
 
-    /* Parse time, so claim a slot for a report ID we have not seen. An interface can
-       carry several keyboard collections - a 6KRO one for the boot protocol and one or
-       more NKRO bitmaps is the usual arrangement - and each needs its own keyboard_t or
-       the later ones write over the earlier. */
+    return value->size <= MODIFIER_BIT_LENGTH
+           && left_ctrl_usage >= value->usage_min
+           && left_ctrl_usage <= value->usage_max;
+}
+
+/* A key bitmap maps one usage to each bit. Ordinary NKRO sections declare exactly that;
+   the Keychron Ultra-Link declares one usage too many, 153 over 152 bits, so a block at
+   least NKRO_MIN_BITS wide is also taken when its range covers the bits, the surplus
+   being unreachable. Narrower blocks keep the exact test, or a lazily declared range
+   like 19 00 29 FF would pass any stray field off as a bitmap. The span is 64-bit so a
+   4-byte usage range cannot overflow it. */
+static bool maps_usage_to_bitmap_bits(const report_val_t *value) {
+    int64_t span = (int64_t)value->usage_max - value->usage_min + 1;
+
+    return value->usage_max > value->usage_min
+           && span >= value->size
+           && (span == value->size || value->size >= NKRO_MIN_BITS);
+}
+
+static void store_modifier(keyboard_t *keyboard, const report_val_t *value) {
+    if (is_modifier_descriptor(value) && value->data_type == VARIABLE)
+        keyboard->modifier = *value;
+}
+
+/* An array field contains one of several possible usages, so its report position
+   contains a keycode that can be copied into the 6KRO keyboard report. */
+static void store_key_field(keyboard_t *keyboard, const report_val_t *value) {
+    if (value->offset_idx < MAX_KEYS)
+        keyboard->key_array[value->offset_idx] = value->data_type == ARRAY;
+}
+
+static void store_nkro_block(
+    keyboard_t *keyboard, const report_val_t *value, bool is_modifier) {
+    /* Modifier bits are stored separately, not as ordinary NKRO keys. */
+    if (is_modifier)
+        return;
+
+    /* NKRO uses variable fields: one bit represents one key. */
+    if (value->data_type != VARIABLE)
+        return;
+
+    /* An NKRO bitmap must contain one consecutive usage for every bit. */
+    if (!maps_usage_to_bitmap_bits(value))
+        return;
+
+    /* Prevent overflowing available storage for NKRO blocks. */
+    if (keyboard->nkro_count >= MAX_NKRO_BLOCKS)
+        return;
+
+    keyboard->nkro[keyboard->nkro_count++] = (nkro_block_t){
+        .offset_bits = value->offset,
+        .size_bits   = value->size,
+        .usage_min = value->usage_min,
+        .usage_max = value->usage_max,
+    };
+    keyboard->nkro_bit_count += value->size;
+    keyboard->is_nkro = keyboard->nkro_bit_count > NKRO_MIN_BITS;
+}
+
+/* Store descriptor values so they can later be used to interpret reports. */
+void handle_keyboard_descriptor_values(report_val_t *src, report_val_t *dst, hid_interface_t *iface) {
+    /* Parse time: an unseen report ID claims its own keyboard_t. */
     keyboard_t *keyboard = get_or_add_keyboard(iface, src->report_id);
 
     /* Constants are normally used for padding, so skip'em */
@@ -103,84 +160,12 @@ void handle_keyboard_descriptor_values(report_val_t *src, report_val_t *dst, hid
     if (iface->num_keyboards >= MAX_KEYBOARDS)
         return;
 
-    /* Detect and handle modifier keys. <= if modifier is less + constant padding? */
-    if (src->size <= MODIFIER_BIT_LENGTH && src->data_type == VARIABLE) {
-        /* To make sure this really is the modifier key, we expect e.g. left control to be
-           within the usage interval */
-        if (LEFT_CTRL >= src->usage_min && LEFT_CTRL <= src->usage_max)
-            keyboard->modifier = *src;
-    }
+    bool is_modifier = is_modifier_descriptor(src);
 
-    /* If we have an array member, that's most likely a key (0x00 - 0xFF, 1 byte) */
-    if (src->offset_idx < MAX_KEYS) {
-        keyboard->key_array[src->offset_idx] = (src->data_type == ARRAY);
-    }
+    store_modifier(keyboard, src);
 
-    /* Handle NKRO, normally size = 1, count = 240 or so, but they are swapped.
-       The bitmap may be split across several usage ranges (Wooting keyboards use four,
-       with padding in between to keep each one byte-aligned), so collect every block
-       instead of keeping only the last one we saw. MAX_NKRO_BLOCKS is 4 and the Wooting
-       declares exactly 4, so there is no headroom: a keyboard splitting its bitmap five
-       ways still loses the last section, silently.
-
-       Two questions get asked of an item here, and one test used to answer both. The
-       first is what the extraction needs: extract_bit_variable walks a block by its bit
-       count and emits usage_min + bit, so the range has to be at least as wide as the
-       block. Wider is harmless, because the surplus usages have nowhere to live and are
-       never reached. Requiring a non-empty range also keeps out items that never carried
-       a Usage Minimum/Maximum, where both ends are still zero.
-
-       The second is whether the item is a key bitmap at all rather than some other run of
-       keyboard-page bits, and coverage cannot answer that on its own: 19 00 29 FF covers
-       any block up to 256 bits. Two shapes count. One usage per bit exactly, which is
-       what an ordinary NKRO section looks like and what this test used to demand of
-       everything. Or a block at least as wide as the threshold the is_nkro sum below
-       uses, which is that same question put to one block instead of to all of them, so
-       nothing is called a bitmap here that the sum would not have called NKRO anyway.
-
-       The exact arm is what keeps the short sections: the Wooting declares an 8-bit range
-       and the Superlight2 a 5-bit and a 3-bit one, and a width rule alone would drop all
-       three and the keys in them. The width arm is what takes the Keychron Ultra-Link,
-       which declares 19 00 2A 98 00 with 95 98 - usage minimum 0, usage maximum 152, over
-       152 bits, so 153 usages in 152. Off by one, and what the device ships. Rejected,
-       its bitmap was never recorded, is_nkro stayed false, and extract_kbd_data sent every
-       report to _extract_kbd_other, which reads key_array - and both items in that
-       collection are VARIABLE, so key_array is empty. The modifier decoded and every
-       keycode disappeared.
-
-       The modifier is the one small run that also maps one usage per bit, and it is
-       handled above, so leave it out here. That exclusion carries more weight than it
-       did: it and the VARIABLE test are what keep the width arm off an ARRAY key list,
-       which is where an ordinary 6KRO keyboard keeps its keys.
-
-       Whether this keyboard *is* NKRO is then decided on the total width rather than per
-       block. Deciding per block would flag any keyboard carrying a stray keyboard-page
-       bit field - which routes it through _extract_kbd_nkro and leaves its ordinary key
-       array unread - while a per-block threshold big enough to avoid that would drop the
-       8-bit Wooting range and the keys in it. The sum separates the two cleanly. */
-    bool has_usage_range = src->usage_max > src->usage_min;
-    int32_t usage_span   = has_usage_range ? src->usage_max - src->usage_min + 1 : 0;
-
-    /* Keep the subtraction behind the ordering guard rather than hoisting it: evaluated
-       unconditionally it is a signed overflow a hostile 4-byte Usage Minimum can reach. */
-    bool covers_every_bit = has_usage_range && usage_span >= (int32_t)src->size;
-    bool is_key_bitmap    = covers_every_bit && (usage_span == (int32_t)src->size
-                                                 || src->size >= NKRO_MIN_BITS);
-
-    bool is_modifier = src->size <= MODIFIER_BIT_LENGTH && LEFT_CTRL >= src->usage_min
-                       && LEFT_CTRL <= src->usage_max;
-
-    if (is_key_bitmap && !is_modifier && src->data_type == VARIABLE
-        && keyboard->nkro_count < MAX_NKRO_BLOCKS) {
-        keyboard->nkro[keyboard->nkro_count++] = (nkro_block_t){
-            .offset    = src->offset,
-            .size      = src->size,
-            .usage_min = src->usage_min,
-            .usage_max = src->usage_max,
-        };
-        keyboard->nkro_bits += src->size;
-        keyboard->is_nkro = (keyboard->nkro_bits > NKRO_MIN_BITS);
-    }
+    store_key_field(keyboard, src);
+    store_nkro_block(keyboard, src, is_modifier);
 
     /* We found a keyboard on this interface for a specific report id. */
     if (!keyboard->is_found) {
@@ -218,7 +203,6 @@ static uint8_t *get_consumer_id(hid_interface_t *iface) {
 static uint8_t *get_system_id(hid_interface_t *iface) {
     return &iface->system.report_id;
 }
-
 
 const process_report_f report_receivers[] = {
     [REPORT_RECEIVER_NONE]     = NULL,
@@ -299,9 +283,7 @@ void extract_data(hid_interface_t *iface, report_val_t *val) {
         bool usage_pages_match   = (val->usage_page == hay->usage_page) || (hay->usage_page == 0);
 
         if (global_usages_match && usages_match && usage_pages_match) {
-            /* Keyboards have no get_id: which slot a collection belongs to depends on
-               the report ID, which this cannot see, so get_or_add_keyboard does it in
-               the handler instead. */
+            /* Keyboards claim their slot in the handler, where the report ID is known. */
             if (hay->get_id != NULL)
                 *(hay->get_id(iface)) = val->report_id;
 
@@ -312,26 +294,22 @@ void extract_data(hid_interface_t *iface, report_val_t *val) {
     }
 }
 
-/* Walk one NKRO bitmap block, appending every pressed usage to dst. raw_report points at the
-   start of the report payload (report ID already skipped) and len is that payload's length.
-
-   Bounded by the block's bit count rather than by usage_max: a range declaring more usages
-   than the block has bits for is accepted at parse time - the Keychron Ultra-Link declares
-   153 over 152 - and the surplus has nowhere to live. */
-int32_t extract_bit_variable(nkro_block_t *block, uint8_t *raw_report, int len, uint8_t *dst, int max_keys) {
+/* Append pressed usages from one bitmap block. The report pointer excludes any report ID. */
+int32_t extract_bit_variable(
+    const nkro_block_t *block, const uint8_t *raw_report, int report_length, uint8_t *dst, int max_keys) {
     int key_count = 0;
 
-    for (int bit = 0; bit < block->size && key_count < max_keys; bit++) {
-        int j          = block->offset + bit;
-        int byte_index = j >> 3;
-        int bit_index  = j & 0b111;
+    for (int block_bit = 0; block_bit < block->size_bits && key_count < max_keys; block_bit++) {
+        int report_bit  = block->offset_bits + block_bit;
+        int byte_index  = report_bit >> 3;
+        int bit_index   = report_bit & 0b111;
 
         /* Report is shorter than the descriptor claims, don't read past the end of it */
-        if (byte_index >= len)
+        if (byte_index >= report_length)
             break;
 
         if (raw_report[byte_index] & (1 << bit_index)) {
-            dst[key_count++] = (uint8_t)(block->usage_min + bit);
+            dst[key_count++] = (uint8_t)(block->usage_min + block_bit);
         }
     }
 
@@ -389,11 +367,6 @@ int32_t _extract_kbd_nkro(uint8_t *raw_report, int len, hid_interface_t *iface, 
     if (kb->nkro_count == 0)
         return -1;
 
-    /* No 1:1 recheck here. The walk below needs the range to cover the block's bits and
-       nothing beyond that, and handle_keyboard_descriptor_values will not record a block
-       that fails it. A range wider than its block is recorded on purpose, so rechecking
-       for 1:1 would throw away exactly the bitmaps this is meant to decode. */
-
     /* We expect modifier to be 8 bits long, otherwise we'll fallback to boot mode */
     if (kb->modifier.size != MODIFIER_BIT_LENGTH || kb->modifier.offset_idx >= len)
         return -1;
@@ -420,9 +393,7 @@ int32_t extract_kbd_data(
     if (iface->protocol == HID_PROTOCOL_BOOT)
         return _extract_kbd_boot(raw_report, len, report);
 
-    /* NKRO is a special case. If extraction fails (descriptor parsed as NKRO but the
-       actual report layout doesn't match — e.g. wireless dongles that advertise an NKRO
-       collection but transmit standard boot-style reports), fall through to other extractors. */
+    /* NKRO is a special case. If extraction fails, fall through to other extractors. */
     if (keyboard->is_nkro) {
         int32_t ret = _extract_kbd_nkro(raw_report, len, iface, report);
         if (ret >= 0)
