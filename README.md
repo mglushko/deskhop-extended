@@ -127,7 +127,6 @@ so they can be used before (and regardless of whether) they land upstream:
 - [#356](https://github.com/hrvach/deskhop/pull/356) - boot-protocol keyboard support for UEFI/BitLocker pre-boot
 - [#357](https://github.com/hrvach/deskhop/pull/357) - fixes the cursor jumping when a pointing device is attached to each board ([#263](https://github.com/hrvach/deskhop/issues/263))
 - [#365](https://github.com/hrvach/deskhop/pull/365) - combines the buttons from every pointing device, so two of them no longer cancel each other ([#287](https://github.com/hrvach/deskhop/issues/287))
-- [#366](https://github.com/hrvach/deskhop/pull/366) - keeps the key bitmap on a keyboard that declares one usage more than it has bits for ([#324](https://github.com/hrvach/deskhop/issues/324))
 
 ### Fixes beyond the pull requests above
 
