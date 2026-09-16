@@ -126,7 +126,6 @@ so they can be used before (and regardless of whether) they land upstream:
 - [#355](https://github.com/hrvach/deskhop/pull/355) - optional edge double-tap requirement for output switching
 - [#356](https://github.com/hrvach/deskhop/pull/356) - boot-protocol keyboard support for UEFI/BitLocker pre-boot
 - [#357](https://github.com/hrvach/deskhop/pull/357) - fixes the cursor jumping when a pointing device is attached to each board ([#263](https://github.com/hrvach/deskhop/issues/263))
-- [#359](https://github.com/hrvach/deskhop/pull/359) - keeps all key sections on keyboards that use more than one, gives each keyboard collection on an interface its own slot, and decides NKRO on the whole bitmap rather than one block of it ([#57](https://github.com/hrvach/deskhop/issues/57), [#211](https://github.com/hrvach/deskhop/issues/211), [#295](https://github.com/hrvach/deskhop/issues/295))
 - [#365](https://github.com/hrvach/deskhop/pull/365) - combines the buttons from every pointing device, so two of them no longer cancel each other ([#287](https://github.com/hrvach/deskhop/issues/287))
 - [#366](https://github.com/hrvach/deskhop/pull/366) - keeps the key bitmap on a keyboard that declares one usage more than it has bits for ([#324](https://github.com/hrvach/deskhop/issues/324))
 
@@ -142,8 +141,8 @@ being taken on trust.
 
 - **Short reports no longer read past the end** - a device can send a report shorter than its
   descriptor promised, and nothing checked. Four decode paths read past the end of the buffer: 774
-  of 1159 truncated reports overread before, none after. The bound on the bitmap walk also
-  travels with #359; the other three are here only.
+  of 1159 truncated reports overread before, none after. The bound on the bitmap walk went
+  upstream with #359; the other three are here only.
   [fe908d0](https://github.com/mglushko/deskhop-extended/commit/fe908d0)
 - **Boot-protocol reports are routed by the interface, not the first byte** - a keyboard switched
   into boot protocol was routed by its modifier byte instead ([#363](https://github.com/hrvach/deskhop/issues/363)).
