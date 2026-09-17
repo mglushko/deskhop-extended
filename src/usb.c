@@ -279,49 +279,6 @@ void tuh_hid_mount_cb(uint8_t dev_addr, uint8_t instance, uint8_t const *desc_re
     tuh_hid_receive_report(dev_addr, instance);
 }
 
-/* Does the report on the wire carry a leading report ID?
- *
- * uses_report_id is a fact about the *descriptor*, decided once at enumeration.
- * Boot protocol overrides it: the device then sends the fixed boot layout, which
- * carries no report ID whatever the descriptor declared. Reading report[0] as an ID
- * in that mode looks the receiver up by the modifier byte on a keyboard, or by the
- * button byte on a mouse, so the report lands on whichever receiver that number
- * happens to select - usually none at all, and on a receiver that declares consumer
- * or system collections on low report IDs, the wrong one.
- *
- * The decode side already draws this distinction: extract_kbd_data and
- * extract_report_values both branch on HID_PROTOCOL_BOOT before they ever consult
- * uses_report_id. This is the same rule applied one level earlier, at routing. */
-static inline bool report_carries_id(const hid_interface_t *iface) {
-    return iface->uses_report_id && iface->protocol != HID_PROTOCOL_BOOT;
-}
-
-/* Which receiver does this report belong to? A pure function of the interface and
-   the bytes that arrived, deliberately kept separate from the callback below so it
-   can be tested off the device - deskhop-hidtests lifts it verbatim rather than
-   maintaining its own copy of these rules, which is how the boot-protocol case
-   above went unnoticed for as long as it did. Returns NULL when the report has
-   nowhere to go. */
-process_report_f pick_receiver(const hid_interface_t *iface, uint8_t itf_protocol,
-                               uint8_t const *report) {
-    if (report_carries_id(iface) || itf_protocol == HID_ITF_PROTOCOL_NONE) {
-        uint8_t report_id = 0;
-
-        if (report_carries_id(iface))
-            report_id = report[0];
-
-        return report_receivers[iface->report_handler[report_id]];
-    }
-
-    if (itf_protocol == HID_ITF_PROTOCOL_KEYBOARD)
-        return process_keyboard_report;
-
-    if (itf_protocol == HID_ITF_PROTOCOL_MOUSE)
-        return process_mouse_report;
-
-    return NULL;
-}
-
 /* Invoked when received report from device via interrupt endpoint */
 void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t const *report, uint16_t len) {
     uint8_t const itf_protocol = tuh_hid_interface_protocol(dev_addr, instance);
@@ -359,10 +316,28 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
         device_idx = (dev_addr - 1) % (MAX_DEVICES - 1);
     }
 
-    process_report_f receiver = pick_receiver(iface, itf_protocol, report);
+    /* In boot protocol the device sends the fixed boot layout, which carries no report ID
+       whatever the descriptor declared, so report[0] is data there: the modifier byte on a
+       keyboard, the button byte on a mouse. The decode side already makes this distinction. */
+    bool carries_id = iface->uses_report_id && iface->protocol != HID_PROTOCOL_BOOT;
 
-    if (receiver != NULL)
-        receiver((uint8_t *)report, len, device_idx, iface);
+    if (carries_id || itf_protocol == HID_ITF_PROTOCOL_NONE) {
+        uint8_t report_id = 0;
+
+        if (carries_id)
+            report_id = report[0];
+
+        process_report_f receiver = report_receivers[iface->report_handler[report_id]];
+
+        if (receiver != NULL)
+            receiver((uint8_t *)report, len, device_idx, iface);
+    }
+    else if (itf_protocol == HID_ITF_PROTOCOL_KEYBOARD) {
+        process_keyboard_report((uint8_t *)report, len, device_idx, iface);
+    }
+    else if (itf_protocol == HID_ITF_PROTOCOL_MOUSE) {
+        process_mouse_report((uint8_t *)report, len, device_idx, iface);
+    }
 
     /* Continue requesting reports */
     tuh_hid_receive_report(dev_addr, instance);
