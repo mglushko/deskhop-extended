@@ -127,6 +127,7 @@ so they can be used before (and regardless of whether) they land upstream:
 - [#356](https://github.com/hrvach/deskhop/pull/356) - boot-protocol keyboard support for UEFI/BitLocker pre-boot
 - [#357](https://github.com/hrvach/deskhop/pull/357) - fixes the cursor jumping when a pointing device is attached to each board ([#263](https://github.com/hrvach/deskhop/issues/263))
 - [#365](https://github.com/hrvach/deskhop/pull/365) - combines the buttons from every pointing device, so two of them no longer cancel each other ([#287](https://github.com/hrvach/deskhop/issues/287))
+- [#372](https://github.com/hrvach/deskhop/pull/372) - routes boot-protocol reports by the interface rather than by the first byte, so a keyboard or mouse forced into boot protocol is no longer routed by its modifier or button byte ([#363](https://github.com/hrvach/deskhop/issues/363))
 
 ### Fixes beyond the pull requests above
 
@@ -143,12 +144,6 @@ being taken on trust.
   of 1159 truncated reports overread before, none after. The bound on the bitmap walk went
   upstream with #359; the other three are here only.
   [fe908d0](https://github.com/mglushko/deskhop-extended/commit/fe908d0)
-- **Boot-protocol reports are routed by the interface, not the first byte** - a keyboard switched
-  into boot protocol was routed by its modifier byte instead ([#363](https://github.com/hrvach/deskhop/issues/363)).
-  Of three affected devices, one had its
-  keystrokes discarded and one sent keyboard reports down the path that carries Power and Sleep;
-  dispatch goes from 13/20 to 20/20.
-  [85d6fe5](https://github.com/mglushko/deskhop-extended/commit/85d6fe5)
 - **Pico-PIO-USB fixes backported onto the vendored 0.5.3** - `calc_usb_crc16` moves into RAM, since
   it was the last thing on the interrupt path still running from flash while a board-to-board
   upgrade rewrites that flash; the receive loops get bounds and timeouts, and the copy is clamped
