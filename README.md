@@ -124,7 +124,6 @@ These are all open against [hrvach/deskhop](https://github.com/hrvach/deskhop) a
 so they can be used before (and regardless of whether) they land upstream:
 
 - [#355](https://github.com/hrvach/deskhop/pull/355) - optional edge double-tap requirement for output switching
-- [#356](https://github.com/hrvach/deskhop/pull/356) - boot-protocol keyboard support for UEFI/BitLocker pre-boot
 - [#357](https://github.com/hrvach/deskhop/pull/357) - fixes the cursor jumping when a pointing device is attached to each board ([#263](https://github.com/hrvach/deskhop/issues/263))
 - [#365](https://github.com/hrvach/deskhop/pull/365) - combines the buttons from every pointing device, so two of them no longer cancel each other ([#287](https://github.com/hrvach/deskhop/issues/287))
 - [#372](https://github.com/hrvach/deskhop/pull/372) - routes boot-protocol reports by the interface rather than by the first byte, so a keyboard or mouse forced into boot protocol is no longer routed by its modifier or button byte ([#363](https://github.com/hrvach/deskhop/issues/363))
