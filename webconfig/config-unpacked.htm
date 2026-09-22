@@ -1566,22 +1566,16 @@ async function handleInputReport(event) {
 /* Writes one control to both boards. Only saveHandler calls this - a set lands in the
    live config the moment it arrives, and for a shortcut the device rebuilds its hotkey
    table on the spot, so sending on edit would apply it before Save. */
-async function valueChangedHandler(element) {
+async function writeValue(element) {
   var key = element.getAttribute('data-key');
   var dataType = element.getAttribute('data-type');
+  var value = getValue(element);
 
-  var origValue = element.getAttribute('fetched-value');
-  var newValue = getValue(element);
+  /* Send to both devices */
+  await sendReport(packetType.setValMsg, packValue(element, key, dataType), true);
 
-  if (origValue != newValue) {
-    uintBuffer = packValue(element, key, dataType);
-
-    /* Send to both devices */
-    await sendReport(packetType.setValMsg, uintBuffer, true);
-
-    /* Set this as the current value */
-    element.setAttribute('fetched-value', newValue);
-  }
+  /* Set this as the current value */
+  element.setAttribute('fetched-value', value);
 }
 
 /* ---------------------------------------------------------------- device */
@@ -1612,21 +1606,17 @@ async function connectHandler() {
   await reloadFromDevice();
 }
 
+/* Every setting goes to both boards, changed or not. The page reads only the board it is
+   connected to, so comparing against that board says nothing about the other one: a
+   setting that already matched here was never sent there, and a board whose copy had
+   drifted stayed that way until Wipe Config reset both. */
 async function saveHandler() {
-  const elements = document.querySelectorAll('.api');
-
   if (!device || !device.opened)
     return;
 
-  for (const element of elements) {
-    var origValue = element.getAttribute('fetched-value')
+  for (const element of document.querySelectorAll('.api:not([readonly])'))
+    await writeValue(element);
 
-    if (element.hasAttribute('readonly'))
-      continue;
-
-    if (origValue != getValue(element))
-      await valueChangedHandler(element);
-  }
   await sendReport(packetType.saveConfigMsg, [], true);
   markClean();
 }

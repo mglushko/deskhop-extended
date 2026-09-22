@@ -101,6 +101,11 @@ configuration.</em></p>
   way until the board rebooted. Nothing reaches the device now until Save, which is what the page
   has said all along.
   [64aea93](https://github.com/mglushko/deskhop-extended/commit/64aea93)
+- **Save writes every setting to both boards** - the page reads settings only from the board it
+  is connected to, and Save used to send a setting only where it differed from what that board
+  reported. A setting that already matched there never reached the other board, whatever the
+  other board held, so once the two copies drifted apart nothing on the page could bring them back
+  short of Wipe Config. Save now writes every setting to both boards, changed or not.
 - **A shortcut can be turned off** - press **Off** on any of the eleven settable rows and that
   shortcut stops working. The row reads *Disabled*, **Default** brings it back, and the
   combination it gave up is free for another shortcut to take. There was no way to do this

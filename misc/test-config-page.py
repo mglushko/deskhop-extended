@@ -387,10 +387,10 @@ with sync_playwright() as p:
           [b[2] for b in sent])
     check("and the page is clean again", page.evaluate("() => dirty") is False)
 
-    # Off reaches the device as the value the firmware reads for it, and a row that arrives
-    # off is not written back on the next Save. That last one is what a sentinel with the
-    # top bit set would do forever, since saveHandler compares these as strings and the
-    # page would compose a negative number where the device reported a positive one.
+    # Off reaches the device as the value the firmware reads for it. A row that arrives off
+    # goes back out on the next Save, which writes every setting, so it has to go out as
+    # the same Off: the sentinel has its top bit set, and a page that composed it as a
+    # signed number would still have to pack it to the same four bytes.
     page.evaluate("() => { __sent = []; markClean(); }")
     page.click('.hk-o[data-for="k96"]')
     page.evaluate("async () => { await saveHandler(); }")
@@ -405,9 +405,9 @@ with sync_playwright() as p:
           page.locator('.hk[data-for="k96"]').text_content() == "Disabled",
           page.locator('.hk[data-for="k96"]').text_content())
     page.evaluate("async () => { await saveHandler(); }")
-    check("and Save does not write it back again",
-          not [b for b in page.evaluate("() => __sent") if b[2] == 21 and b[3] == 96],
-          [b for b in page.evaluate("() => __sent") if b[2] == 21])
+    again = {b[3]: int.from_bytes(bytes(b[4:8]), "little")
+             for b in page.evaluate("() => __sent") if b[2] == 21}
+    check("and Save writes it back as the same Off", again.get(96) == HOTKEY_OFF, again.get(96))
 
     page.evaluate("() => { device = undefined; setConnected(true); }")
 
