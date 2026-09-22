@@ -106,6 +106,7 @@ configuration.</em></p>
   reported. A setting that already matched there never reached the other board, whatever the
   other board held, so once the two copies drifted apart nothing on the page could bring them back
   short of Wipe Config. Save now writes every setting to both boards, changed or not.
+  [f86c072](https://github.com/mglushko/deskhop-extended/commit/f86c072)
 - **A shortcut can be turned off** - press **Off** on any of the eleven settable rows and that
   shortcut stops working. The row reads *Disabled*, **Default** brings it back, and the
   combination it gave up is free for another shortcut to take. There was no way to do this
