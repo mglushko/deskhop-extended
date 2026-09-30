@@ -517,6 +517,12 @@ void do_screen_switch(device_t *state, int direction) {
 }
 
 static inline bool extract_value(bool uses_id, int32_t *dst, report_val_t *src, uint8_t *raw_report, int len) {
+    /* A report with no payload byte, nothing at all or its report ID alone, carries no field.
+       TinyUSB hands on zero-length transfers (a STALL, a zero-length packet, three failed
+       transactions), and decoding one as zeros told the host every held button was released. */
+    if (len <= uses_id)
+        return false;
+
     /* If HID Report ID is used, the report is prefixed by the report ID so we have to move by 1 byte.
        len has to move with it: descriptor offsets are relative to the payload, so handing
        get_report_value the unshifted length leaves its bound off by one in this frame. */
@@ -540,13 +546,13 @@ void extract_report_values(uint8_t *raw_report, int len, device_t *state, mouse_
 
         /* hid_mouse_report_t is five bytes, but the boot report is only defined as far as
            buttons/x/y and plenty of mice stop there or after the wheel. Take what arrived
-           instead of reading the whole struct out of a shorter buffer. */
-        if (len < MOUSE_BOOT_REPORT_LEN - 1)
-            return;
-
-        values->buttons = mouse_report->buttons;
-        values->move_x  = mouse_report->x;
-        values->move_y  = mouse_report->y;
+           instead of reading the whole struct out of a shorter buffer. A report too short to
+           carry the button byte, the zero-length transfer TinyUSB hands on after a STALL,
+           says nothing about the buttons, so they stay as this interface last held them;
+           returning zeros for it released them. */
+        values->buttons = (len >= 1) ? mouse_report->buttons : iface->mouse_buttons;
+        values->move_x  = (len >= 2) ? mouse_report->x : 0;
+        values->move_y  = (len >= 3) ? mouse_report->y : 0;
         values->wheel   = (len >= MOUSE_BOOT_REPORT_LEN) ? mouse_report->wheel : 0;
         values->pan     = (len > MOUSE_BOOT_REPORT_LEN) ? mouse_report->pan : 0;
         return;

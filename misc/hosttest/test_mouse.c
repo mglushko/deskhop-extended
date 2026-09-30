@@ -106,6 +106,33 @@ static void feed_report(hid_interface_t *iface) {
     process_mouse_report(report, sizeof(report), 1, iface);
 }
 
+/* A boot report cut to len bytes, the rest of the buffer filled as in feed(). TinyUSB hands
+   the report callback whatever the transfer brought, zero bytes included: a STALL, a
+   zero-length packet or three failed transactions all complete with nothing, and the
+   endpoint buffer still holds the previous report. */
+static void feed_short(hid_interface_t *iface, int len, uint8_t buttons, int8_t dx, int8_t dy) {
+    uint8_t report[8];
+
+    memset(report, 0x7F, sizeof(report));
+    report[0] = buttons;
+    report[1] = (uint8_t)dx;
+    report[2] = (uint8_t)dy;
+
+    forget_output();
+    process_mouse_report(report, len, 1, iface);
+}
+
+/* A report-protocol report of len bytes: the report ID alone when the interface uses one,
+   or nothing at all. */
+static void feed_report_len(hid_interface_t *iface, int len) {
+    uint8_t report[8] = {0};
+
+    report[0] = iface->mouse.buttons.report_id;
+
+    forget_output();
+    process_mouse_report(report, len, 1, iface);
+}
+
 /* Both boards agree the cursor is in the middle of the screen, so nothing that follows is
    anywhere near an edge and no case accidentally switches outputs. */
 static void reset_state(void) {
@@ -213,6 +240,56 @@ int main(void) {
 
     feed(keys, 0x01, 0, 0);
     check("and a device repeating its own held button is dropped too", !queued_any, seen());
+
+    printf("\n  reports that carry no button byte\n\n");
+
+    /* A report with no button byte says nothing about the buttons, so they stay as this
+       interface last held them. Letting go there sent the host a release in the middle of
+       a drag whenever a transfer came back empty. */
+    reset_state();
+    keys = plug_in(1, 0);
+
+    feed(keys, 0x01, 0, 0);
+    feed_short(keys, 0, 0x00, 0, 0);
+    check("a zero-length boot report leaves a held button held",
+          !queued_any && global_state.mouse_buttons == 0x01, seen());
+
+    feed_short(keys, 1, 0x01, 0, 0);
+    check("a one-byte boot report holding it keeps it held",
+          !queued_any && global_state.mouse_buttons == 0x01, seen());
+
+    feed_short(keys, 2, 0x01, 5, 0);
+    check("a two-byte boot report takes the X it carries and keeps the button",
+          queued_any && queued.buttons == 0x01 && queued.x > MAX_SCREEN_COORD / 2, seen());
+
+    feed_short(keys, 1, 0x00, 0, 0);
+    check("a one-byte boot report saying nothing is held lets go",
+          queued_any && queued.buttons == 0x00, seen());
+
+    /* The same in report protocol, where the decode goes through get_report_value. The stub
+       answers 0 for the buttons, which is what decoding an empty report gives. */
+    reset_state();
+    wide = plug_in_wide(1, 0);
+
+    wide_buttons = 0x01;
+    feed_report(wide);
+    wide_buttons = 0x00;
+    feed_report_len(wide, 0);
+    check("a zero-length report leaves a held button held",
+          !queued_any && global_state.mouse_buttons == 0x01, seen());
+
+    reset_state();
+    wide = plug_in_wide(1, 0);
+    wide->uses_report_id           = true;
+    wide->mouse.buttons.report_id  = 2;
+
+    wide_buttons = 0x01;
+    feed_report(wide);
+    feed_report_len(wide, 2);   /* stands in for any report under this ID */
+    wide_buttons = 0x00;
+    feed_report_len(wide, 1);
+    check("a report of its ID alone leaves a held button held",
+          !queued_any && global_state.mouse_buttons == 0x01, seen());
 
     printf("\n  more buttons than the report can carry\n\n");
 
