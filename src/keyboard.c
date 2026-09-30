@@ -167,6 +167,66 @@ static bool combo_within(const hotkey_combo_t *part, const hotkey_combo_t *whole
     return true;
 }
 
+/* Whether a packed combo is one key and nothing else: no modifier, and a single key, whether
+   named once or twice. */
+static bool lone_key(uint32_t packed) {
+    hotkey_combo_t combo = combo_of(packed);
+
+    return !combo.modifier && combo.key_count
+           && (combo.key_count == 1 || combo.keys[0] == combo.keys[1]);
+}
+
+/* Whether entry n standing for this combo would leave an entry unable to fire - n itself or
+   another. A report goes to the first entry it satisfies, and satisfying one asks only that
+   everything it names is held. So an entry is dead when one asked ahead of it names nothing
+   its own combination does not already hold: pressing it runs that one instead. Config mode
+   is asked ahead of everything, the rest in table order, and an entry that names no key is
+   held back until no entry that named one has answered (check_all_hotkeys), so such an
+   entry neither takes another's combination nor loses its own and is left out of this on
+   both sides.
+
+   Compared against the entries already decided this pass and against config mode; an entry
+   further down with something stored is caught when its own turn comes, because by then
+   this one is decided. That holds only for a pass over the whole set, which is why the
+   config API calls hotkeys_apply_config once on Save rather than after each shortcut it is
+   sent: half a swap would otherwise collide with the other half's old combination and be
+   cleared. */
+static bool combo_taken(const device_t *state, const uint32_t *compiled_in,
+                        const hotkey_combo_t *config_combo, int n, uint32_t packed) {
+    hotkey_combo_t want = combo_of(packed);
+
+    if (!want.key_count)
+        return false;
+
+    if (combo_within(config_combo, &want))
+        return true;
+
+    for (int m = 0; m < NUM_HOTKEYS; m++) {
+        if (m == n || m == HOTKEY_CONFIG_IDX)
+            continue;
+
+        /* Entries already decided this pass are read from the table, and are asked ahead
+           of this one. Ones still to come are only worth comparing where nothing is stored
+           against them, so they are going to land on what they were compiled with and
+           cannot move out of the way; this one is asked ahead of them. Where something is
+           stored, that entry does the comparing when its own turn arrives and this one is
+           decided by then. */
+        if (m < n) {
+            hotkey_combo_t theirs = hotkeys[m];
+
+            if (!theirs.disabled && theirs.key_count && combo_within(&theirs, &want))
+                return true;
+        } else if (!state->config.hotkey_cfg[m]) {
+            hotkey_combo_t theirs = combo_of(compiled_in[m]);
+
+            if (combo_within(&want, &theirs))
+                return true;
+        }
+    }
+
+    return false;
+}
+
 /* One pass over the table, deciding each entry in order from what is stored against it.
    Returns whether it refused a stored combination for colliding with another entry. */
 static bool apply_pass(device_t *state, const uint32_t *compiled_in,
@@ -212,52 +272,18 @@ static bool apply_pass(device_t *state, const uint32_t *compiled_in,
             && (HOTKEY_MOD(packed) == 0 || HOTKEY_KEY1(compiled_in[n]) != HID_KEY_NONE))
             packed = state->config.hotkey_cfg[n] = 0;
 
-        /* A report goes to the first entry it satisfies, and satisfying one asks only that
-           everything it names is held. So an entry is dead when one asked ahead of it names
-           nothing its own combination does not already hold: pressing it runs that one
-           instead. Config mode is asked ahead of everything, the rest in table order, and an
-           entry that names no key is held back until no entry that named one has answered
-           (check_all_hotkeys), so such an entry neither takes another's combination nor
-           loses its own and is left out of this on both sides. Refuse the stored
-           combination rather than let an action go quietly dead, whether it would be the
-           dead one or would take a combination from an entry below it.
+        /* One key and no modifier would take that key away from everything typed, since a
+           report an entry answers is swallowed rather than passed on. A build may still be
+           compiled with one - HOTKEY_MODIFIER in user_config.h may be HID_KEY_NONE - but it
+           is not something a shortcut may be set to. */
+        if (packed && lone_key(packed))
+            packed = state->config.hotkey_cfg[n] = 0;
 
-           Compared against the entries already decided this pass and against config mode;
-           an entry further down with something stored is caught when its own turn comes,
-           because by then this one is decided. That holds only for a pass over the whole
-           set, which is why the config API calls this once on Save rather than after each
-           shortcut it is sent: half a swap would otherwise collide with the other half's
-           old combination and be cleared. */
-        if (packed) {
-            hotkey_combo_t want = combo_of(packed);
-            bool taken = want.key_count && combo_within(config_combo, &want);
-
-            for (int m = 0; m < NUM_HOTKEYS && want.key_count && !taken; m++) {
-                if (m == n || m == HOTKEY_CONFIG_IDX)
-                    continue;
-
-                /* Entries already decided this pass are read from the table, and are asked
-                   ahead of this one. Ones still to come are only worth comparing where
-                   nothing is stored against them, so they are going to land on what they
-                   were compiled with and cannot move out of the way; this one is asked
-                   ahead of them. Where something is stored, that entry does the comparing
-                   when its own turn arrives and this one is decided by then. */
-                if (m < n) {
-                    hotkey_combo_t theirs = hotkeys[m];
-
-                    taken = !theirs.disabled && theirs.key_count
-                            && combo_within(&theirs, &want);
-                } else if (!state->config.hotkey_cfg[m]) {
-                    hotkey_combo_t theirs = combo_of(compiled_in[m]);
-
-                    taken = combo_within(&want, &theirs);
-                }
-            }
-
-            if (taken) {
-                packed = state->config.hotkey_cfg[n] = 0;
-                refused = true;
-            }
+        /* Refuse the stored combination rather than let an action go quietly dead, whether
+           it would be the dead one or would take a combination from an entry below it. */
+        if (packed && combo_taken(state, compiled_in, config_combo, n, packed)) {
+            packed = state->config.hotkey_cfg[n] = 0;
+            refused = true;
         }
 
         /* config.hotkey_toggle names the key for the switch combo and predates this
@@ -269,8 +295,18 @@ static bool apply_pass(device_t *state, const uint32_t *compiled_in,
            instruction to change anything. */
         if (n == 0 && !packed
             && state->config.hotkey_toggle != HOTKEY_TOGGLE
-            && state->config.hotkey_toggle != HID_KEY_NONE)
+            && state->config.hotkey_toggle != HID_KEY_NONE) {
             packed = HOTKEY_PACK(HOTKEY_MODIFIER, state->config.hotkey_toggle, HID_KEY_NONE);
+
+            /* Held to the same rules as a stored combo, since it is one. Where it fails them
+               the key goes back to the one this firmware was built with, so what the config
+               API reports is what is in force - the same as clearing a stored combo. Nothing
+               is decided ahead of entry 0, so this needs no second pass. */
+            if (lone_key(packed) || combo_taken(state, compiled_in, config_combo, n, packed)) {
+                state->config.hotkey_toggle = HOTKEY_TOGGLE;
+                packed = 0;
+            }
+        }
 
         if (!packed)
             packed = compiled_in[n];

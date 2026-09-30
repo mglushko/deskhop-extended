@@ -2735,6 +2735,16 @@ function comboTaken(view, packed) {
 const HOTKEY_NEEDS_KEY = 'needs a key besides the modifiers - on its own it would match '
   + 'everything typed while they are held. Nothing was changed.';
 
+const HOTKEY_LONE_KEY = 'needs a modifier - a single key on its own would be taken away from '
+  + 'everything typed, since the board keeps a shortcut it answers to itself. Nothing was '
+  + 'changed.';
+
+/* True when a combination is one key and nothing else: no modifier, and a single key whether
+   named once or twice. hotkeys_apply_config() in src/keyboard.c refuses one on Save. */
+function comboLoneKey(packed) {
+  return !(packed & 0xff) && new Set(comboKeys(packed)).size === 1;
+}
+
 /* Says which row was refused and why, or clears the line. */
 function hotkeyNote(view, message) {
   el('hk-m').textContent = message
@@ -2743,13 +2753,17 @@ function hotkeyNote(view, message) {
 }
 
 /* Why this combination cannot be stored against this row, or '' if it can. Zero is always
-   allowed - it is what Default writes, and means the compiled-in combination stands. */
+   allowed - it is what Default writes, and means the compiled-in combination stands; see
+   restoreDefault for what it does to a row in its way. */
 function hotkeyRefusal(view, packed) {
   if (!packed || packed === HOTKEY_OFF)
     return '';
 
   if (comboNeedsKey(view, packed))
     return HOTKEY_NEEDS_KEY;
+
+  if (comboLoneKey(packed))
+    return HOTKEY_LONE_KEY;
 
   const clash = comboTaken(view, packed);
 
@@ -2769,6 +2783,37 @@ function hotkeyRefusal(view, packed) {
   }
 
   return '';
+}
+
+/* Default: the row goes back to the combination the firmware was built with. That is always
+   allowed, since the board never refuses a built-in combination, only a stored one - so where
+   a row holds a stored combination the default cannot live beside, that row gives way and
+   goes back to its own default, which can move another in turn. Save does exactly this on the
+   board, so the page shows what Save will keep. Returns the names of the rows that gave way. */
+function restoreDefault(input) {
+  const moved = [];
+  const queue = [input];
+
+  setApi(input, 0);
+
+  while (queue.length) {
+    const view = document.querySelector(`.hk[data-for="${queue.shift().id}"]`);
+
+    for (let clash; (clash = comboTaken(view, comboOf(view)));) {
+      const other = clash.dataset.for ? el(clash.dataset.for) : null;
+
+      /* Built-in combinations never clash with each other, so the one in the way is always
+         stored. Checked anyway: anything else could not give way, and this would not end. */
+      if (!other || !(parseInt(other.value, 10) || 0))
+        break;
+
+      setApi(other, 0);
+      moved.push(clash.closest('.hk-row').querySelector('.hk-n').textContent);
+      queue.push(other);
+    }
+  }
+
+  return moved;
 }
 
 var capturing = null;
@@ -2981,9 +3026,15 @@ function panelClick(event) {
     /* Closes the editor too, or Set would write the combination it still holds back over
        the default that was just restored. */
     closeHotkeyEditor();
-    hotkeyNote(button, '');
 
-    return setApi(el(button.dataset.for), 0);
+    const moved = restoreDefault(el(button.dataset.for));
+    const last = moved[moved.length - 1];
+
+    return hotkeyNote(button, !moved.length ? ''
+      : moved.length === 1
+        ? `back on its default, and so is ${last}, which clashed with it.`
+        : `back on its default, and so are ${moved.slice(0, -1).join(', ')} and ${last}, `
+          + 'which clashed with the defaults this put back.');
   }
 
   if (button.dataset.m)

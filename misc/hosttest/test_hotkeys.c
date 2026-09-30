@@ -121,6 +121,44 @@ int main(void) {
           combo_is(1, KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_LEFTSHIFT, 0, 0),
           combo_str(1));
 
+    /* One key and no modifier would take that key away from everything typed, since a
+       report a shortcut answers is swallowed. Neither slot, nor both holding the same key,
+       gets it past. */
+    {
+        static const uint32_t lone[] = {
+            HOTKEY_PACK(0, HID_KEY_F1, HID_KEY_NONE),
+            HOTKEY_PACK(0, HID_KEY_NONE, HID_KEY_F1),
+            HOTKEY_PACK(0, HID_KEY_F1, HID_KEY_F1),
+        };
+        int kept = 0;
+
+        for (unsigned v = 0; v < ARRAY_SIZE(lone); v++) {
+            clear_config();
+            global_state.config.hotkey_cfg[5] = lone[v];
+            hotkeys_apply_config(&global_state);
+            kept += global_state.config.hotkey_cfg[5] != 0;
+        }
+
+        snprintf(detail, sizeof(detail), "%d of %d kept", kept, (int)ARRAY_SIZE(lone));
+        check("a single key with no modifier is not stored", kept == 0, detail);
+        check("and that entry is back to the combo it was built with",
+              combo_is(5, KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT,
+                       HID_KEY_S, 0), combo_str(5));
+    }
+
+    clear_config();
+    global_state.config.hotkey_cfg[5] = HOTKEY_PACK(0, HID_KEY_F1, HID_KEY_F12);
+    hotkeys_apply_config(&global_state);
+    check("two keys with no modifier may still be stored",
+          combo_is(5, 0, HID_KEY_F1, HID_KEY_F12), combo_str(5));
+
+    clear_config();
+    global_state.config.hotkey_cfg[5] = HOTKEY_PACK(KEYBOARD_MODIFIER_LEFTGUI, HID_KEY_F1,
+                                                    HID_KEY_NONE);
+    hotkeys_apply_config(&global_state);
+    check("as may one key with a modifier",
+          combo_is(5, KEYBOARD_MODIFIER_LEFTGUI, HID_KEY_F1, 0), combo_str(5));
+
     /* Byte 3 of the packed word carries nothing. A value that is non-zero only there is not
        the "use the default" sentinel, and unpacks to no modifier and no key. */
     clear_config();
@@ -196,6 +234,31 @@ int main(void) {
     hotkeys_apply_config(&global_state);
     check("and a refused combo falls back to it, not past it",
           combo_is(0, HOTKEY_MODIFIER, HID_KEY_F1, 0), combo_str(0));
+
+    /* hotkey_toggle is a stored combination too, and held to the same rules. Left Ctrl + G
+       is part of Gaming mode's Left Ctrl + Right Shift + G, which it is asked ahead of. */
+    clear_config();
+    global_state.config.hotkey_toggle = HID_KEY_G;
+    hotkeys_apply_config(&global_state);
+    check("a toggle key that would leave another entry dead is not honoured",
+          combo_is(0, HOTKEY_MODIFIER, HOTKEY_TOGGLE, 0), combo_str(0));
+    check("and goes back to the key this firmware was built with",
+          global_state.config.hotkey_toggle == HOTKEY_TOGGLE, "");
+    snprintf(detail, sizeof(detail), "entry %d",
+             matched(KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT, HID_KEY_G, 0, 0));
+    check("so Gaming mode still answers its own",
+          matched(KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT,
+                  HID_KEY_G, 0, 0) == 4, detail);
+
+    /* Once Gaming mode has moved off it, the same key is free. */
+    clear_config();
+    global_state.config.hotkey_toggle = HID_KEY_G;
+    global_state.config.hotkey_cfg[4] = HOTKEY_PACK(KEYBOARD_MODIFIER_LEFTGUI, HID_KEY_G,
+                                                    HID_KEY_NONE);
+    hotkeys_apply_config(&global_state);
+    check("but is honoured once the entry it clashed with has moved",
+          combo_is(0, HOTKEY_MODIFIER, HID_KEY_G, 0)
+          && global_state.config.hotkey_toggle == HID_KEY_G, combo_str(0));
 
     printf("\n  duplicates\n\n");
 
