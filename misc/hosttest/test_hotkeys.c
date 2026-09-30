@@ -67,6 +67,17 @@ static void clear_config(void) {
     global_state.config.hotkey_toggle = HOTKEY_TOGGLE;
 }
 
+/* The first entry that is on and does not answer its own combination, or -1. This is what
+   a shortcut left dead looks like from the keyboard: pressing it runs something else. */
+static int first_dead(void) {
+    for (int n = 0; n < NUM_HOTKEYS; n++)
+        if (!hotkeys[n].disabled
+            && matched(hotkeys[n].modifier, hotkeys[n].keys[0], hotkeys[n].keys[1], 0) != n)
+            return n;
+
+    return -1;
+}
+
 int main(void) {
     char detail[64];
 
@@ -239,6 +250,179 @@ int main(void) {
     hotkeys_apply_config(&global_state);
     check("a combo held by an entry that is off can be taken",
           combo_is(3, KEYBOARD_MODIFIER_RIGHTCTRL, HID_KEY_K, 0), combo_str(3));
+
+    printf("\n  one combination inside another\n\n");
+
+    /* A report goes to the first entry whose modifiers and keys it holds, and it may hold
+       more. So an entry set to a combination that contains one asked ahead of it would
+       never fire: pressing it runs the other. Entry 3, Lock both screens, is Right Ctrl + L
+       and is asked ahead of entry 4, Gaming mode. */
+    clear_config();
+    global_state.config.hotkey_cfg[4] = HOTKEY_PACK(
+        KEYBOARD_MODIFIER_RIGHTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT, HID_KEY_L, HID_KEY_NONE);
+    hotkeys_apply_config(&global_state);
+    check("a combo containing one asked ahead of it is not stored",
+          global_state.config.hotkey_cfg[4] == 0, combo_str(4));
+    check("and that entry is back to the combo it was built with",
+          combo_is(4, KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT, HID_KEY_G, 0),
+          combo_str(4));
+
+    /* The same from the other side: set above an entry that cannot move, to part of its
+       combination. Entry 4 is Left Ctrl + Right Shift + G, with nothing stored. */
+    clear_config();
+    global_state.config.hotkey_cfg[2] = HOTKEY_PACK(KEYBOARD_MODIFIER_RIGHTSHIFT, HID_KEY_G,
+                                                    HID_KEY_NONE);
+    hotkeys_apply_config(&global_state);
+    check("nor is part of the combo of an entry below it",
+          global_state.config.hotkey_cfg[2] == 0, combo_str(2));
+    snprintf(detail, sizeof(detail), "entry %d",
+             matched(KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT, HID_KEY_G, 0, 0));
+    check("and the entry below still answers its own",
+          matched(KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT,
+                  HID_KEY_G, 0, 0) == 4, detail);
+
+    /* Config mode is asked ahead of everything, wherever it sits in the table. */
+    clear_config();
+    global_state.config.hotkey_cfg[2] = HOTKEY_PACK(
+        KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT | KEYBOARD_MODIFIER_LEFTALT,
+        HID_KEY_C, HID_KEY_O);
+    hotkeys_apply_config(&global_state);
+    check("nor a combo containing the config mode one",
+          global_state.config.hotkey_cfg[2] == 0, combo_str(2));
+
+    /* Part of the combination of an entry asked ahead of it is fine: that entry needs more
+       than this one's combination holds, and gets its own first. Entry 5 is Keep awake:
+       pong, below Gaming mode. */
+    clear_config();
+    global_state.config.hotkey_cfg[5] = HOTKEY_PACK(KEYBOARD_MODIFIER_RIGHTSHIFT, HID_KEY_G,
+                                                    HID_KEY_NONE);
+    hotkeys_apply_config(&global_state);
+    check("part of an entry above it may be stored",
+          combo_is(5, KEYBOARD_MODIFIER_RIGHTSHIFT, HID_KEY_G, 0), combo_str(5));
+    check("and each of the two answers its own",
+          matched(KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT,
+                  HID_KEY_G, 0, 0) == 4
+          && matched(KEYBOARD_MODIFIER_RIGHTSHIFT, HID_KEY_G, 0, 0) == 5, "");
+
+    /* Slow mouse names no key, so it is held back until no entry that named one answered,
+       and neither takes a combination built on its modifiers nor loses its own. */
+    clear_config();
+    global_state.config.hotkey_cfg[5] = HOTKEY_PACK(
+        KEYBOARD_MODIFIER_RIGHTALT | KEYBOARD_MODIFIER_RIGHTCTRL, HID_KEY_S, HID_KEY_NONE);
+    hotkeys_apply_config(&global_state);
+    check("a combo built on slow mouse's modifiers may be stored",
+          combo_is(5, KEYBOARD_MODIFIER_RIGHTALT | KEYBOARD_MODIFIER_RIGHTCTRL, HID_KEY_S, 0),
+          combo_str(5));
+    check("and both still answer their own",
+          matched(KEYBOARD_MODIFIER_RIGHTALT | KEYBOARD_MODIFIER_RIGHTCTRL,
+                  HID_KEY_S, 0, 0) == 5
+          && matched(KEYBOARD_MODIFIER_RIGHTALT | KEYBOARD_MODIFIER_RIGHTCTRL, 0, 0, 0) == 1,
+          "");
+
+    /* Nor when it is slow mouse that moves, onto modifiers another entry's combination is
+       built on. Entry 4, Gaming mode, is Left Ctrl + Right Shift + G. */
+    clear_config();
+    global_state.config.hotkey_cfg[1] = HOTKEY_PACK(
+        KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT, HID_KEY_NONE, HID_KEY_NONE);
+    hotkeys_apply_config(&global_state);
+    check("slow mouse may be set to modifiers another entry is built on",
+          combo_is(1, KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT, 0, 0),
+          combo_str(1));
+    check("and both still answer their own",
+          matched(KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT, 0, 0, 0) == 1
+          && matched(KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTSHIFT,
+                     HID_KEY_G, 0, 0) == 4, "");
+
+    /* A key named twice is that key once, as far as the matcher is concerned. */
+    clear_config();
+    global_state.config.hotkey_cfg[5] = HOTKEY_PACK(KEYBOARD_MODIFIER_RIGHTCTRL, HID_KEY_L,
+                                                    HID_KEY_L);
+    hotkeys_apply_config(&global_state);
+    check("naming a key twice does not get a taken combo past the check",
+          global_state.config.hotkey_cfg[5] == 0, combo_str(5));
+
+    /* A refused entry goes back to the combination it was built with, which an entry decided
+       earlier on the same pass took to be moving away. Entry 5's stored combo contains Lock
+       both screens and is refused; entry 2's is part of the combo entry 5 then goes back
+       to, so it has to go as well. */
+    clear_config();
+    global_state.config.hotkey_cfg[2] = HOTKEY_PACK(KEYBOARD_MODIFIER_RIGHTSHIFT, HID_KEY_S,
+                                                    HID_KEY_NONE);
+    global_state.config.hotkey_cfg[5] = HOTKEY_PACK(KEYBOARD_MODIFIER_RIGHTCTRL, HID_KEY_L,
+                                                    HID_KEY_Q);
+    hotkeys_apply_config(&global_state);
+    check("an entry refused onto its built-in combo takes it back from one decided earlier",
+          global_state.config.hotkey_cfg[5] == 0 && global_state.config.hotkey_cfg[2] == 0,
+          combo_str(2));
+    snprintf(detail, sizeof(detail), "entry %d", first_dead());
+    check("and no entry is left without its own combination", first_dead() == -1, detail);
+
+    /* Every settable entry set, one at a time, to each combination one modifier or one key
+       more or fewer than another entry's, to that combination itself with its keys either
+       way round, and to it with its key named twice. Whatever is kept, no entry that is on
+       may be left without its own. */
+    {
+        hotkey_combo_t built[NUM_HOTKEYS];
+        static const uint8_t extra_keys[] = {HID_KEY_Q, HID_KEY_L, HID_KEY_G, HID_KEY_O};
+        int tried = 0, dead = 0;
+        char first[64] = "none", summary[128];
+
+        clear_config();
+        hotkeys_apply_config(&global_state);
+        memcpy(built, hotkeys, sizeof(built));
+        snprintf(detail, sizeof(detail), "entry %d", first_dead());
+        check("as built, every entry answers its own combination", first_dead() == -1, detail);
+
+        for (int n = 0; n < NUM_HOTKEYS; n++) {
+            if (n == HOTKEY_CONFIG_IDX)
+                continue;
+
+            for (int m = 0; m < NUM_HOTKEYS; m++) {
+                uint32_t variants[16];
+                int count = 0;
+                uint8_t mod = built[m].modifier, k1 = built[m].keys[0], k2 = built[m].keys[1];
+
+                if (m == n)
+                    continue;
+
+                variants[count++] = HOTKEY_PACK(mod, k1, k2);
+
+                for (int bit = 0; bit < 8; bit++)
+                    variants[count++] = HOTKEY_PACK(mod ^ (1 << bit), k1, k2);
+
+                if (k2) {
+                    variants[count++] = HOTKEY_PACK(mod, k2, k1);
+                    variants[count++] = HOTKEY_PACK(mod, k1, HID_KEY_NONE);
+                    variants[count++] = HOTKEY_PACK(mod, k2, HID_KEY_NONE);
+                }
+
+                if (!k2)
+                    for (unsigned e = 0; e < ARRAY_SIZE(extra_keys); e++)
+                        if (extra_keys[e] != k1)
+                            variants[count++] = HOTKEY_PACK(mod, k1 ? k1 : extra_keys[e],
+                                                            k1 ? extra_keys[e] : HID_KEY_NONE);
+
+                if (k1 && !k2)
+                    variants[count++] = HOTKEY_PACK(mod, k1, k1);
+
+                for (int v = 0; v < count; v++) {
+                    clear_config();
+                    global_state.config.hotkey_cfg[n] = variants[v];
+                    hotkeys_apply_config(&global_state);
+                    tried++;
+
+                    if (first_dead() != -1 && dead++ == 0)
+                        snprintf(first, sizeof(first), "entry %d stored %08x kills %d", n,
+                                 variants[v], first_dead());
+                }
+            }
+        }
+
+        snprintf(summary, sizeof(summary), "%d of %d, first: %s", dead, tried, first);
+        check("no single stored combination leaves an entry without its own", dead == 0,
+              summary);
+        printf("    (%d combinations tried)\n", tried);
+    }
 
     printf("\n  which entry answers a report\n\n");
 

@@ -2686,20 +2686,49 @@ function comboOf(view) {
   return stored || (parseInt(view.dataset.def, 10) || 0);
 }
 
-/* Which row already stands for this combination, or null. Modifiers have to match, and the
-   two keys as a pair rather than in order - the device does not care which slot holds
-   which. Fixed rows are in the search: config mode cannot move out of the way. */
-function comboTaken(view, packed) {
-  const keys = [(packed >> 8) & 0xff, (packed >> 16) & 0xff].filter(Boolean).sort();
+/* The keys a combination names, without the empty slots. */
+function comboKeys(packed) {
+  return [(packed >> 8) & 0xff, (packed >> 16) & 0xff].filter(Boolean);
+}
 
-  return [...document.querySelectorAll('.hk')].find(other => {
+/* Whether a report holding exactly the whole combination also holds everything the part
+   names: its modifiers are among the whole's and its keys are among the whole's keys. The
+   device asks only that each thing a shortcut names is held, and more may be, so this is
+   whether the part's row could answer for the whole's. Keys as a set - which slot holds
+   which, or a key named twice, does not matter to the device. */
+function comboWithin(part, whole) {
+  const keys = comboKeys(whole);
+
+  return !((part & 0xff) & ~(whole & 0xff)) && comboKeys(part).every(key => keys.includes(key));
+}
+
+/* Which row this combination cannot live beside, or null. The device hands a report to the
+   first row it satisfies: config mode ahead of everything, the rest in this order, and a row
+   that names no key only once none that named one has answered. So a combination that
+   contains the one of a row asked ahead of it would never fire, and one that is part of the
+   combination of a row asked after it would leave that row never firing. Rows that name no
+   key are left out on both sides, as is a row that is off. The same rule as
+   hotkeys_apply_config() in src/keyboard.c, which refuses whatever gets past this on Save.
+   Fixed rows are in the search: config mode cannot move out of the way. */
+function comboTaken(view, packed) {
+  if (!comboKeys(packed).length)
+    return null;
+
+  const rows = [...document.querySelectorAll('.hk')];
+  const mine = rows.indexOf(view);
+
+  return rows.find((other, index) => {
     if (other === view)
       return false;
 
     const theirs = comboOf(other);
-    const mine = [(theirs >> 8) & 0xff, (theirs >> 16) & 0xff].filter(Boolean).sort();
 
-    return (theirs & 0xff) === (packed & 0xff) && String(mine) === String(keys);
+    if (!comboKeys(theirs).length)
+      return false;
+
+    return (!other.dataset.for || index < mine)
+      ? comboWithin(theirs, packed)
+      : comboWithin(packed, theirs);
   }) || null;
 }
 
@@ -2724,9 +2753,20 @@ function hotkeyRefusal(view, packed) {
 
   const clash = comboTaken(view, packed);
 
-  if (clash)
-    return 'is already ' + clash.closest('.hk-row').querySelector('.hk-n').textContent
-      + ', and the second of two would never fire. Nothing was changed.';
+  if (clash) {
+    const name = clash.closest('.hk-row').querySelector('.hk-n').textContent;
+    const theirs = comboOf(clash);
+
+    if (comboWithin(theirs, packed) && comboWithin(packed, theirs))
+      return 'is already ' + name + ', and the second of two would never fire. Nothing was changed.';
+
+    if (comboWithin(theirs, packed))
+      return 'contains ' + name + ', which is checked first, so pressing it would run ' + name
+        + ' instead. Nothing was changed.';
+
+    return 'is part of ' + name + ', which would then never fire, since this one is checked '
+      + 'first. Nothing was changed.';
+  }
 
   return '';
 }

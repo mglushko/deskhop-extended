@@ -113,9 +113,10 @@ configuration.</em></p>
   `Left Ctrl + Right Shift + C + O`. It is the only combination that opens the page, and the page
   is the only way to undo a shortcut, so nothing else can be set to it and it is checked before
   the rest. Two shortcuts cannot share a combination either, since only the first of them would
-  ever work, and only slow mouse may be modifiers with no key: a combination like that triggers
-  on anything typed while those modifiers are held, and one set on an early action used to take
-  over every action below it.
+  ever work, nor can one contain the whole of another that is checked ahead of it, since pressing
+  it would run that one instead. Only slow mouse may be modifiers with no key: a combination like
+  that triggers on anything typed while those modifiers are held, and one set on an early action
+  used to take over every action below it.
   [2ac2c87](https://github.com/mglushko/deskhop-extended/commit/2ac2c87)
 - **An edit waits for Save** - every control sent its value to the device the moment it changed,
   and Save only wrote it to flash. For a shortcut that meant the new combination started working
