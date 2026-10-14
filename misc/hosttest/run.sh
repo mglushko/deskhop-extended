@@ -17,6 +17,13 @@ for header in pio_usb.h hardware/dma.h hardware/uart.h \
     echo '#pragma once' > "$out/sdk/$header"
 done
 
+# Packet validation has no hardware dependencies, so exercise the real config endpoint
+# allowlist directly before the broader host-side tests.
+gcc -std=c11 -Wall -Wextra -Wno-unused-parameter -g -fsanitize=address,undefined \
+    -I shim -I shim/sdk -I "$root/src/include" \
+    test_packet_validation.c "$root/src/packet_validation.c" \
+    -o "$out/test_packet_validation"
+
 # test_config_store keeps its own main.h, which stubs hid_interface_t so it stays clear of
 # hid_parser.h. test_hotkeys wants the real interface and keyboard types, so it builds
 # against the firmware's own main.h with the generated headers underneath - which is why
@@ -54,6 +61,7 @@ gcc -std=c11 -Wall -Wextra -Wno-unused-parameter -g -fsanitize=address,undefined
     -I shim/sdk -I "$out/sdk" -I "$root/src/include" \
     test_uniform_speed.c "$root/src/mouse.c" -lm -o "$out/test_uniform_speed"
 
+"$out/test_packet_validation"
 "$out/test_config_store"
 "$out/test_hotkeys"
 "$out/test_save_shortcuts"
